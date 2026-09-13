@@ -1,0 +1,9 @@
+# Math and coding validation
+
+Math: define the target skill, difficulty, assumptions, units and domain. Author the worked solution first, then independently recalculate the answer by another derivation or executed calculation. Include numbered steps and an interpretation. Current math cards accept `numeric: {value,tolerance,unit}`; do not claim automated proof or handwriting grading. Paper work can be attached and compared after explicit reveal.
+
+Coding: use Python and/or C++17 only where implementation reinforces the concept. Supply filename, imports/includes, stub, solution and harness. State input constraints, error behavior and runtime/dependencies. Tests should check meaningful edge cases and fail representative misconceptions, not merely mirror the reference code.
+
+After reviewing the proposed code, run `node scripts/validate-card-exercises.cjs CARDS MUTANTS REPORT` in the Recall checkout. The reference must pass, the unfinished stub must fail, and realistic incorrect implementations must fail behavioral tests (not just syntax/compilation). The report contains per-language outcomes and an exercise digest. Validate all supplied languages. Import remains separate; `recall cards trust ID REPORT --apply` is an explicit local trust decision after inspection and validation. A downloaded validation report alone is not evidence of code safety.
+
+Runner processes use the local user's permissions and are not an OS security sandbox. Never execute unknown community code as an automatic side effect of ingestion. Do not install dependencies on card load. Run and Load are user actions. Keep solutions behind reveal and preserve drafts, attachments and existing ratings.

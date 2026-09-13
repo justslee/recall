@@ -1,0 +1,22 @@
+{
+  "name": "recall-public",
+  "version": "0.5.0-beta.1",
+  "description": "Build a knowledge base, author visual flashcards and prepare daily self-tests with local Recall.",
+  "author": {
+    "name": "Recall contributors"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Recall learning toolkit",
+    "shortDescription": "Turn learning into lasting recall",
+    "longDescription": "Build a knowledge base, author visual flashcards and prepare daily self-tests with local Recall.",
+    "developerName": "Recall contributors",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": [
+      "Explain and capture a concept in my knowledge base",
+      "Create visual Recall cards from my notes",
+      "Prepare my daily self test"
+    ]
+  }
+}

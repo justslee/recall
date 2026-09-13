@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "validatedAt": "2026-09-13T15:26:44.365Z",
+  "exercises": [
+    {
+      "id": "demo:weighted-mean:code",
+      "sha256": "14eb9baa6bf08d2297ea744927082c9d4375e0080cd5169d1ca56326fd8c4956",
+      "languages": {
+        "python": {
+          "reference": "passed",
+          "stub": "failed",
+          "rejectedMutants": [
+            "ignores weights"
+          ],
+          "output": "All behavioral checks passed\n"
+        },
+        "cpp": {
+          "reference": "passed",
+          "stub": "failed",
+          "rejectedMutants": [
+            "wrong denominator"
+          ],
+          "output": "All behavioral checks passed\n"
+        }
+      }
+    }
+  ]
+}

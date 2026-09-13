@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ValidationReport",
+  "type": "object",
+  "required": ["version", "validatedAt", "exercises"],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "validatedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exercises": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "sha256", "languages"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "languages": {
+            "type": "object",
+            "minProperties": 1
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

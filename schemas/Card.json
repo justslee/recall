@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "Card",
+  "type": "object",
+  "required": [
+    "id",
+    "conceptId",
+    "kind",
+    "title",
+    "prompt",
+    "answer",
+    "topic",
+    "decks",
+    "tags",
+    "difficulty",
+    "status",
+    "source"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "conceptId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "answer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "enum": ["concept", "math", "code"]
+    },
+    "decks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "difficulty": {
+      "enum": ["Foundation", "Application", "Advanced"]
+    },
+    "status": {
+      "enum": ["ready", "draft"]
+    },
+    "widgetsAllowed": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,15 @@
+{
+  "id": "demo:weighted-mean",
+  "title": "Weighted mean",
+  "aliases": [
+    "Weighted average"
+  ],
+  "topics": [
+    "Mathematics"
+  ],
+  "body": "# Weighted mean\n\nA weighted mean averages values in proportion to their weights.\n\n$$\\bar{x}_w = \\frac{\\sum_i w_i x_i}{\\sum_i w_i}$$\n\nFor scores 80 and 50 with weights 2 and 1, the mean is 70.",
+  "sources": [
+    "Recall original example"
+  ],
+  "related": []
+}

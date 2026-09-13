@@ -1,0 +1,41 @@
+const { contextBridge, ipcRenderer } = require("electron");
+const methods = [
+  "snapshot",
+  "demo",
+  "profileInfo",
+  "configureLearning",
+  "selfTests",
+  "startSelfTest",
+  "showLearningLog",
+  "setting",
+  "draft",
+  "intervals",
+  "rate",
+  "undo",
+  "saveCard",
+  "suspend",
+  "newDeck",
+  "run",
+  "stop",
+  "attachments",
+  "attach",
+  "removeAttachment",
+  "importAnki",
+  "backup",
+  "export",
+  "exportAttempt",
+  "showData",
+  "copyChallengeCode",
+  "challengeState",
+  "challengeAttempts",
+  "challengeSource",
+];
+contextBridge.exposeInMainWorld(
+  "recall",
+  Object.fromEntries(
+    methods.map((name) => [
+      name,
+      (...args) => ipcRenderer.invoke("recall:" + name, ...args),
+    ]),
+  ),
+);

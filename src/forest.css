@@ -1,0 +1,727 @@
+/* Approved Forest Glass direction. Reading stays opaque; only chrome has sheen. */
+.main {
+  max-width: 1420px;
+  padding: 30px 38px 90px;
+}
+.titlebar {
+  border-color: var(--border);
+  box-shadow: inset 0 1px var(--sheen);
+}
+.brand {
+  font-size: 13px;
+  font-weight: 500;
+}
+.titlebar-caption {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 11px;
+}
+.sidebar {
+  padding: 22px 14px 16px;
+  border-right-color: transparent;
+  overflow: hidden;
+}
+.nav-primary {
+  flex-shrink: 0;
+}
+.sidebar-library {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sidebar .selected,
+.sidebar .selected:hover {
+  background: var(--raised);
+  border-color: transparent;
+}
+.sidebar button {
+  font-size: 12.5px;
+  padding: 10px 12px;
+}
+.nav-label {
+  padding-top: 26px;
+  font-size: 10px;
+}
+.sidebar-topics {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 2px;
+}
+.sidebar-topics button {
+  border-radius: 9px;
+  border: 0;
+  text-align: left;
+}
+.sidebar-topics button.active {
+  background: var(--raised);
+  color: var(--text);
+}
+.sidebar-bottom {
+  padding-top: 16px;
+  flex-shrink: 0;
+  background: var(--bg-deep);
+}
+.sidebar-bottom > small {
+  padding-top: 8px;
+}
+.deck-counts .due {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.page-header {
+  margin-bottom: 24px;
+  align-items: center;
+}
+.page-header h1 {
+  font-size: 26px;
+}
+.page-header .eyebrow {
+  display: none;
+}
+.header-actions > button {
+  background: transparent;
+  border-color: transparent;
+}
+.header-actions > button:hover {
+  background: var(--raised);
+}
+
+/* Scope stays compact and separate from the format of a question. */
+.filters {
+  border: 0;
+  padding: 0;
+  margin-bottom: 28px;
+  gap: 14px;
+}
+.formats {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: linear-gradient(var(--sheen), transparent), var(--glass);
+  box-shadow: inset 0 1px var(--sheen);
+}
+.formats button {
+  flex: 1 1 auto;
+  border-color: transparent;
+  padding: 10px 14px;
+  border-radius: 12px;
+  white-space: nowrap;
+  gap: 8px;
+}
+.formats button.active {
+  background: var(--raised);
+  border-color: var(--border);
+  box-shadow:
+    inset 0 1px var(--sheen),
+    var(--shadow);
+}
+.formats button .count,
+.formats button.active .count {
+  background: transparent;
+  color: var(--faint);
+  padding: 0 0 0 4px;
+  font-size: 10px;
+}
+.formats button:hover {
+  background: var(--raised);
+}
+.scope-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.scope-controls > select {
+  max-width: min(340px, 100%);
+  flex: 0 1 auto;
+}
+.scope-controls select,
+.scope-popover > summary {
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 8px 26px 8px 10px;
+  font-size: 12px;
+}
+.scope-controls select:hover,
+.scope-popover > summary:hover {
+  background-color: var(--sunken);
+  border-color: var(--border);
+}
+.scope-popover {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+.scope-popover > summary {
+  cursor: pointer;
+  max-width: 330px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scope-popover-content {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 25;
+  width: 280px;
+  max-width: calc(100vw - 60px);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.scope-popover-content button {
+  text-align: left;
+  justify-content: flex-start;
+  background: transparent;
+  border-color: transparent;
+}
+.scope-popover-content button.active {
+  background: var(--accent-soft);
+}
+.scope-popover-content select {
+  width: 100%;
+  margin: 0;
+}
+.more-filters {
+  margin-left: auto;
+}
+.more-filters .scope-popover-content {
+  left: auto;
+  right: 0;
+}
+.session-card {
+  padding: 30px;
+  border-color: var(--border);
+  background: var(--card);
+  box-shadow:
+    inset 0 1px var(--sheen),
+    var(--shadow);
+  gap: 24px;
+}
+.session-card h2 {
+  font-size: 29px;
+  max-width: 480px;
+}
+.session-controls {
+  border-color: var(--border);
+  padding-left: 24px;
+}
+.session-count {
+  margin-top: 24px;
+}
+.session-count > strong {
+  font-size: 42px;
+}
+.session-today {
+  margin-top: 18px;
+}
+.paused {
+  background: var(--accent-soft);
+  border-color: var(--border);
+}
+.section-heading {
+  margin-top: 30px;
+}
+.card-row {
+  padding: 17px 8px;
+}
+.row-icon {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+.chip {
+  font-weight: 500;
+  font-size: 10px;
+}
+.chip.due {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+}
+
+/* One question, a shallow first answer, and optional deeper exploration. */
+.review-shell {
+  max-width: 960px;
+  margin: 0 auto;
+}
+.review-toolbar {
+  gap: 12px;
+  padding: 4px 0 10px;
+}
+.review-toolbar .scope {
+  text-align: left;
+}
+.review-toolbar .count {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.review-card {
+  padding: 36px 46px 30px;
+  border-color: var(--border);
+  box-shadow:
+    inset 0 1px var(--sheen),
+    var(--shadow);
+  animation: fade-in 0.18s var(--ease);
+}
+.card-meta {
+  font-size: 11px;
+  align-items: flex-start;
+}
+.badge {
+  border: 0;
+  border-radius: 6px;
+  background: var(--sunken);
+  white-space: nowrap;
+}
+.review-card h2 {
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.25;
+  margin: 30px 0 22px;
+  max-width: 850px;
+}
+.question-pane {
+  min-width: 0;
+}
+.question-prompt {
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+.reveal-zone {
+  border: 0;
+  padding: 28px 0 12px;
+  gap: 13px;
+}
+.reveal-zone .reveal {
+  min-width: 240px;
+  border-radius: 12px;
+  padding: 13px 22px;
+}
+.reveal-zone small {
+  text-align: center;
+}
+.answer {
+  padding-top: 28px;
+  margin-top: 24px;
+}
+.answer > .rich:first-of-type {
+  font-size: 16px;
+  line-height: 1.85;
+}
+.answer .rich h3 {
+  color: var(--text);
+  margin-top: 24px;
+  font: 500 16px var(--sans);
+}
+.answer .rich h4 {
+  color: var(--muted);
+  margin: 22px 0 8px;
+  font-size: 13px;
+}
+.rich details {
+  white-space: normal;
+}
+.rich summary {
+  cursor: pointer;
+  color: var(--accent);
+  padding: 12px 0;
+}
+.ratings {
+  padding-top: 22px;
+}
+.ratings > div {
+  gap: 8px;
+}
+.ratings button {
+  padding: 12px 30px;
+  border-radius: 12px;
+  background: transparent;
+}
+.ratings button.good {
+  color: var(--text);
+  background: var(--accent-soft);
+  border-color: var(--border-strong);
+}
+.ratings button.good:hover {
+  background: var(--raised);
+}
+.ratings kbd {
+  border: 0;
+  background: transparent;
+  font-size: 10px;
+}
+.ratings button small {
+  color: var(--muted);
+}
+.review-footer {
+  padding: 0 4px;
+}
+.review-footer .keys {
+  opacity: 0.8;
+  gap: 8px;
+}
+.math-work {
+  background: var(--sunken);
+  border-color: var(--border);
+  padding: 22px;
+}
+.math-reveal {
+  border-color: transparent;
+  padding-left: 0;
+}
+.check-result {
+  color: var(--text);
+}
+.diagram-viewer,
+.lab,
+.widget {
+  border-color: var(--border);
+}
+.explore summary,
+.original-notes summary {
+  max-width: 100%;
+  width: auto;
+}
+.bar-part.part-1 {
+  color: var(--text);
+}
+
+/* The code is beside the problem; the problem never pushes it below the fold. */
+.coding-view .main {
+  max-width: none;
+  padding: 24px 32px 70px;
+}
+.coding-view .review-shell {
+  max-width: 1800px;
+}
+.coding-view .page-header {
+  display: none;
+}
+.kind-code.review-card {
+  padding: 22px 0 24px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.kind-code .card-meta {
+  padding: 0 2px 18px;
+}
+.challenge-split {
+  display: grid;
+  grid-template-columns: minmax(0, var(--problem-share)) 18px minmax(0, 1fr);
+  align-items: start;
+}
+.challenge-split > .question-pane {
+  padding: 0 16px 12px 0;
+  max-height: max(500px, calc(100vh - 270px));
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.challenge-split h2 {
+  margin: 0 0 20px;
+  font-size: 29px;
+}
+.challenge-split .question-prompt {
+  font-size: 13px;
+  margin-top: 18px;
+}
+.challenge-split .rich {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.challenge-split .rich li {
+  padding: 3px 0;
+}
+.challenge-split .rich pre {
+  padding: 12px;
+}
+.challenge-split .rich table {
+  font-size: 11px;
+  width: 100%;
+}
+.challenge-split .rich td,
+.challenge-split .rich th {
+  padding: 6px;
+  overflow-wrap: anywhere;
+}
+.challenge-split .reveal-zone {
+  align-items: flex-start;
+  padding-top: 18px;
+}
+.challenge-split .reveal {
+  min-width: 0;
+  text-align: left;
+  font-size: 12px;
+}
+.challenge-split .reveal-zone small {
+  text-align: left;
+}
+.challenge-split .challenge-labels {
+  gap: 7px;
+  font-size: 11px;
+}
+.challenge-split .challenge-labels .badge {
+  white-space: normal;
+}
+.challenge-split .challenge-attribution {
+  font-size: 11.5px;
+  margin: 12px 0;
+}
+.challenge-split .challenge-provenance {
+  font-size: 12px;
+}
+.challenge-split .challenge-work {
+  margin: 18px 0;
+}
+.pane-divider {
+  align-self: stretch;
+  min-height: 500px;
+  cursor: col-resize;
+  touch-action: none;
+  position: relative;
+}
+.pane-divider::after {
+  content: "";
+  position: absolute;
+  top: 35%;
+  height: 36px;
+  left: 6px;
+  width: 3px;
+  background: var(--border);
+  border-radius: 4px;
+}
+.pane-divider:hover::after,
+.pane-divider:focus-visible::after {
+  background: var(--accent);
+}
+.editor-pane {
+  min-width: 0;
+  padding-left: 8px;
+  position: sticky;
+  top: calc(var(--titlebar) + 18px);
+}
+.code-workspace {
+  margin: 0;
+  background: var(--editor);
+  border-color: var(--border);
+  border-radius: 18px;
+  box-shadow: inset 0 1px var(--sheen);
+}
+.editor-bar {
+  background: var(--card);
+  padding: 12px 16px;
+  gap: 10px;
+  font: 11px var(--sans);
+}
+.editor-bar > span {
+  margin-right: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editor-bar > button {
+  background: transparent;
+  padding: 5px;
+  border-color: transparent;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.editor-bar select {
+  border: 0;
+  background-color: transparent;
+}
+.code-workspace .monaco-host,
+.expanded .monaco-host {
+  height: clamp(440px, calc(100vh - 365px), 780px);
+  min-height: 440px;
+}
+.run-bar {
+  flex-wrap: wrap;
+  padding: 13px 16px;
+}
+.run-bar small {
+  order: -1;
+  margin-right: auto;
+  margin-left: 0;
+  font-size: 10.5px;
+}
+.run-bar .primary {
+  padding: 9px 15px;
+  margin-left: auto;
+}
+.run-bar small {
+  color: var(--muted);
+}
+.reference .highlighted-reference {
+  background: var(--editor);
+}
+.challenge-personal-actions small {
+  width: 100%;
+}
+.kind-code > .answer {
+  max-width: 960px;
+  margin: 32px auto 0;
+  padding: 28px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.kind-code > .ratings {
+  max-width: 960px;
+  margin: 24px auto 0;
+}
+.challenge-notes,
+.challenge-attempts {
+  padding: 10px 0;
+}
+.catalog-tabs {
+  border-bottom-color: var(--border);
+}
+.catalog-intro {
+  background: var(--card);
+  box-shadow: inset 0 1px var(--sheen);
+}
+.catalog-tabs button[aria-selected="true"] {
+  color: var(--text);
+  border-color: var(--border);
+}
+.catalog-filters {
+  background: transparent;
+}
+.toast {
+  border-color: var(--border-strong);
+}
+.loading svg {
+  animation: none;
+}
+@media (prefers-color-scheme: light) {
+  select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235f7162' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  }
+}
+
+@media (min-width: 1360px) {
+  .filters {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .scope-controls {
+    justify-content: flex-end;
+  }
+  .scope-controls > select {
+    max-width: 250px;
+  }
+  .scope-popover > summary {
+    max-width: 170px;
+  }
+}
+@media (max-width: 1100px) {
+  .main {
+    padding: 26px 26px 80px;
+  }
+  .session-controls {
+    padding: 18px 0 0;
+  }
+  .formats button {
+    padding: 10px 12px;
+  }
+  .review-card {
+    padding: 28px;
+  }
+  .coding-view:not(.expanded) .challenge-split {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .coding-view:not(.expanded) .pane-divider {
+    display: none;
+  }
+  .coding-view:not(.expanded) .challenge-split > .question-pane {
+    max-height: 360px;
+    padding-right: 6px;
+  }
+  .coding-view:not(.expanded) .editor-pane {
+    position: static;
+    padding: 0;
+  }
+}
+@media (max-width: 820px) {
+  .main,
+  .coding-view .main {
+    padding: 22px 18px 80px;
+  }
+  .review-card {
+    padding: 24px;
+  }
+  .review-toolbar {
+    flex-wrap: wrap;
+  }
+  .review-toolbar .scope {
+    display: block;
+    order: 3;
+    flex-basis: 100%;
+    white-space: normal;
+  }
+  .review-toolbar .count {
+    margin-left: auto;
+  }
+  .formats {
+    width: 100%;
+  }
+  .formats button {
+    padding: 9px;
+    justify-content: center;
+  }
+  .more-filters {
+    margin-left: 0;
+  }
+  .more-filters .scope-popover-content {
+    left: 0;
+    right: auto;
+  }
+  .challenge-split {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .challenge-split > .question-pane {
+    max-height: 340px;
+    padding-right: 6px;
+  }
+  .pane-divider {
+    display: none;
+  }
+  .editor-pane {
+    padding: 0;
+    position: static;
+  }
+  .ratings button {
+    padding: 13px 18px;
+  }
+  .ratings button kbd {
+    display: none;
+  }
+  .ratings > span {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .run-bar small {
+    width: auto;
+  }
+}

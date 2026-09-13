@@ -1,0 +1,178 @@
+import React, { useEffect, useState } from "react";
+import { FolderOpen, DatabaseBackup, Download } from "lucide-react";
+import { useAppearance } from "./appearance";
+
+function Setting({ title, description, value, action }) {
+  return (
+    <div className="setting">
+      <div>
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </div>
+      <div className="setting-actions">{action || <small>{value}</small>}</div>
+    </div>
+  );
+}
+
+export function SettingsView({
+  folder,
+  version,
+  onOpenFolder,
+  onBackup,
+  onExport,
+}) {
+  const appearance = useAppearance();
+  return (
+    <>
+      <LearningSettings />
+      <section className="settings-group">
+        <span className="eyebrow">Appearance</span>
+        <Setting
+          title="Follow your Mac"
+          description="Recall switches automatically with macOS. Forest Glass at night, warm ivory and sage in the light. Your editor and diagrams follow along."
+          value={appearance === "dark" ? "System · Dark" : "System · Light"}
+        />
+      </section>
+      <section className="settings-group">
+        <span className="eyebrow">Your library</span>
+        <Setting
+          title="Local storage"
+          description={folder}
+          action={
+            <button onClick={onOpenFolder}>
+              <FolderOpen size={16} /> Open folder
+            </button>
+          }
+        />
+        <Setting
+          title="Backups & export"
+          description="A complete profile backup includes cards, photos, drafts, reviews, learning logs and configuration. External knowledge-base folders and installed language runtimes remain separate."
+          action={
+            <>
+              <button onClick={onBackup}>
+                <DatabaseBackup size={16} /> Back up now
+              </button>
+              <button onClick={onExport}>
+                <Download size={16} /> Export library
+              </button>
+            </>
+          }
+        />
+      </section>
+      <section className="settings-group">
+        <span className="eyebrow">How study works</span>
+        <Setting
+          title="Spaced repetition"
+          description="FSRS with a 90% desired retention target. Each card keeps its own memory history; difficulty labels describe the exercise, not your memory."
+          value="Active"
+        />
+        <Setting
+          title="Paper solution assessment"
+          description="Attach photos to a math card, compare with its worked solution, or export the assessment packet for Codex. Automatic grading and grade import are upcoming."
+          value="Self-review + export"
+        />
+        <Setting
+          title="Interactive widgets"
+          description="A card answer can include ```widget blocks and inline SVG figures. Widgets load only when you click, inside a sandboxed frame with no file, network or library access. Cards from imports keep widgets off until you edit the card and allow them."
+          value="Sandboxed"
+        />
+        <Setting
+          title="Coding workspace"
+          description="Python and C++17 run locally for validated exercises, only when you press Run. Tests, compiler errors, output, stop and time limits are active."
+          value="Native execution"
+        />
+        <Setting
+          title="Scientific Python"
+          description="Some quant challenges use NumPy in an optional local Python environment. Use recall doctor to check the configured Python runtime. No downloads happen when you open a card."
+          value="Optional local runtime"
+        />
+      </section>
+      <section className="settings-group">
+        <span className="eyebrow">About</span>
+        <Setting
+          title="Forest glass"
+          description="Quiet surfaces, sage accents and a matching Everforest-inspired editor."
+          value="Appearance"
+        />
+        <Setting
+          title="Keyboard"
+          description="During review: Space or Enter reveals, 1–4 rates, S skips, ⌘Z undoes, Esc pauses. In the library: ⌘F searches; in card details, ← and → move between cards."
+          value="Always on"
+        />
+        <Setting
+          title="Release"
+          description="Your concepts, math problems and coding challenges stay in one local library."
+          value={version}
+        />
+      </section>
+    </>
+  );
+}
+
+function LearningSettings() {
+  const [value, setValue] = useState(null),
+    [error, setError] = useState("");
+  useEffect(() => {
+    window.recall
+      .profileInfo()
+      .then(setValue)
+      .catch((e) => setError(e.message));
+  }, []);
+  const save = async () => {
+    try {
+      await window.recall.configureLearning(value);
+      setError("Saved. Captures keep their original learning dates.");
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+  return (
+    <section className="settings-group">
+      <span className="eyebrow">Learning connections</span>
+      {value && (
+        <>
+          <label>
+            <input
+              type="checkbox"
+              checked={value.captureEnabled}
+              onChange={(e) =>
+                setValue({ ...value, captureEnabled: e.target.checked })
+              }
+            />{" "}
+            Allow learning capture from my configured skills
+          </label>
+          <label>
+            Learning timezone{" "}
+            <input
+              aria-label="Learning timezone"
+              value={value.timeZone}
+              onChange={(e) => setValue({ ...value, timeZone: e.target.value })}
+            />
+          </label>
+          <button onClick={save}>Save learning settings</button>
+          <p>
+            {value.sources.length
+              ? value.sources
+                  .map(
+                    (s) =>
+                      s.id +
+                      " (" +
+                      s.type +
+                      ", " +
+                      (s.write ? "authoring" : "read only") +
+                      ")",
+                  )
+                  .join(" · ")
+              : "No knowledge sources configured. Use the setup guide and recall config to select a folder, Obsidian scope or Notion connection."}
+          </p>
+          <p>
+            Skills are optional. CLI setup does not change global agent
+            instructions. AI authoring uses your chosen agent/provider; study
+            and storage remain local.
+          </p>
+        </>
+      )}
+      {error && <p role="status">{error}</p>}
+    </section>
+  );
+}

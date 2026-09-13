@@ -1,0 +1,16 @@
+{
+  "demo:weighted-mean:code": {
+    "python": [
+      {
+        "name": "ignores weights",
+        "code": "def weighted_mean(values, weights):\n    if len(values) != len(weights) or not values or any(w < 0 for w in weights) or sum(weights) <= 0:\n        raise ValueError(\"invalid weights\")\n    return sum(values) / len(values)\n"
+      }
+    ],
+    "cpp": [
+      {
+        "name": "wrong denominator",
+        "code": "#include <vector>\n#include <stdexcept>\n#include <cmath>\n#include <cassert>\n#include <iostream>\ndouble weighted_mean(const std::vector<double>& values, const std::vector<double>& weights) {\n    if(values.empty() || values.size()!=weights.size()) throw std::invalid_argument(\"sizes\");\n    double total=0, sum=0;\n    for(size_t i=0;i<values.size();++i){if(weights[i]<0)throw std::invalid_argument(\"weight\");total+=weights[i];sum+=values[i]*weights[i];}\n    if(total<=0)throw std::invalid_argument(\"zero total\");return sum/values.size();\n}"
+      }
+    ]
+  }
+}

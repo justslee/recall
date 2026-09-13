@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "AssessmentEvidence",
+  "type": "object",
+  "required": ["id", "conceptId", "kind", "at"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "conceptId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "enum": ["discussed", "explained", "solved", "misconception"]
+    },
+    "context": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": true
+}
