@@ -1,3 +1,9 @@
+In the world of AI, we consume more text and move faster than ever. But how much do we actually learn and retain? Recall helps you continuously capture what you’re learning, log it, and test yourself—so more of it stays with you.
+
+> “All of learning is anti-forgetting.”
+>
+> — [Andrew Huberman, Huberman Lab](https://www.hubermanlab.com/episode/your-top-health-questions-answered)
+
 <div align="center">
 
 <img src="packaging/icon.png" width="88" alt="Recall's index-card icon">
@@ -22,8 +28,6 @@ Warm paper. Quiet cards. Your own knowledge.
 <sub>Original demo content. Appearance follows your Mac.</sub>
 
 </div>
-
-AI makes explanations abundant. Recall helps you find out what stayed with you. Explain an idea from memory, solve a relevant problem or implement it in code. Test yourself, understand the gaps, and return to them.
 
 **Learn → capture → self-test → revisit.**
 
