@@ -60,7 +60,7 @@ Coding supplements include imports/signatures, starter code, a reference solutio
 
 Ask your connected assistant:
 
-> Prepare today's Recall Self Test from actually captured learning, using my profile timezone. Inspect connection/capture status and each pending inbox item. Reuse ready unsuspended objectives; resolve real gaps with the installed card skills and their editorial, visual, math and code checks. Submit validated results through the inbox, regenerate the daily Markdown log, and report specific blocked gaps. Do not start or rate a test, change schedules, invent learning or infer mastery.
+> Prepare today's Recall Self Test from actually captured learning, using my profile timezone. Inspect connection/capture status and respect pause. If catch-up is enabled, scan supported local records within its saved date/project scope first; do not broaden it. Inspect each pending inbox item. Reuse ready unsuspended objectives; resolve real gaps with the installed card skills and their editorial, visual, math and code checks. Submit validated results through the inbox, regenerate the daily Markdown log, and report specific blocked gaps. Do not start or rate a test, change schedules, invent learning or infer mastery.
 
 **Prepare next** in Settings can prepare one previewed item with a supported, signed-in CLI. Its worker has tools disabled. For a missing visual, math or coding objective requiring browser/runtime checks, ask your normal assistant to complete the item directly using the inbox contract. Failed or incomplete checks remain blocked.
 

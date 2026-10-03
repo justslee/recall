@@ -4,13 +4,11 @@ From a clone on an Apple Silicon Mac running macOS 13 or later with Node 22.18 o
 
 Run the app once or `recall init`. The default Mac profile is `~/Library/Application Support/Recall`; pass `--data /absolute/profile` or set RECALL_DATA_DIR to isolate another profile. Existing profiles bypass the welcome demo. Quit the app before a direct CLI card import, backup or restore. Read-only card search and learning inbox capture/submission work while it is open.
 
-Create a configuration JSON (substitute your selected folder):
+Create a configuration JSON (substitute your selected folder). Omitted options keep their current values, including capture and timezone configured in Settings:
 
 ```json
 {
   "version": 1,
-  "timeZone": "Europe/London",
-  "captureEnabled": false,
   "sources": [
     {
       "id": "my-kb",
@@ -93,7 +91,7 @@ Build a packaged app with `npm run package` and launch it to register Mac card l
 
 `recall connections config FILE --apply` accepts `agent` (`codex` or `claude`) and `catchUp` with `enabled`, `allProjects`, `projects` (absolute paths), `exclude` (absolute paths) and `since` (ISO timestamp with timezone). Catch-up defaults off. Use local midnight with its actual UTC offset if selecting “today.” A scope change re-inspects eligible records; stable source identities prevent duplicate queue items. Excluding a project stops future inspection, but does not erase already captured/queued learning.
 
-The scanner supports Codex `sessions/**/*.jsonl` and Claude `projects/**/*.jsonl` under the connected assistant's default home. It retains byte checkpoints and incomplete turns, excludes tool payloads/subagent logs, and reports malformed, truncated or oversized records. Up to 100 changed files are read per scan; later scans continue. Session formats can change, and local files may be incomplete. Read errors never imply coverage.
+The scanner supports Codex `sessions/**/*.jsonl` and Claude `projects/**/*.jsonl` under the saved selected assistant home, including a custom Codex home chosen during connection. It retains byte checkpoints and incomplete turns, excludes tool payloads/subagent logs, and reports malformed, truncated or oversized records. Up to 100 changed files are read per scan; later scans continue. Session formats can change, and local files may be incomplete. Read errors never imply coverage.
 
 The inbox is under the profile's `learning-inbox/`; full backups include it and connection preferences. Global instruction backups live under `connections/backups/` and remain machine-local. After restoring on another machine or moving the app/repository, reconnect to refresh local paths. Source excerpts are retained locally for retry; protect the profile like your notes. Pattern redaction is best-effort, not a guarantee that transcripts contain no sensitive data.
 

@@ -52,6 +52,35 @@ Image embedding: `recall kb asset SOURCE NOTE_PATH RELATIVE_IMAGE` returns a bou
 
 Configure `{ "id":"notion-kb", "type":"notion", "scopeId":"your-selected-scope", "write":true, "propertyMap":{"title":"Your title property"} }`.
 
+If you know your selected Notion URL but not its scope ID or property names, ask your connected assistant:
+
+> Connect this selected Notion KB URL: [paste URL]. Use its live connector to verify access and resolve the page/database scope and actual title property. Also configure this existing Obsidian KB subfolder as an optional mirror: [paste absolute folder path]. Preserve my timezone, capture preferences and other sources. Preview the proposed configuration; start both sources read-only, then apply that scoped configuration and verify a real scoped search. Do not create or change any notes yet. If the connector is unavailable, report it rather than claiming a connection.
+
+The assistant's Notion connector must be enabled and granted access to the selected scope. Recall configuration does not perform that authentication. A copyable two-source configuration has this shape:
+
+```json
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "notion-kb",
+      "type": "notion",
+      "scopeId": "replace-with-selected-page-or-database-id",
+      "propertyMap": { "title": "replace-with-actual-title-property" },
+      "write": false
+    },
+    {
+      "id": "kb-mirror",
+      "type": "obsidian",
+      "root": "/absolute/path/to/selected/kb-subfolder",
+      "write": false
+    }
+  ]
+}
+```
+
+Resolve the placeholders before applying; omit the mirror if unwanted and retain any other existing sources in the array. Use the same preview/apply commands above. Doctor can confirm a Notion scope is configured; only an actual connector search confirms authenticated access. Enable write permission separately for any requested canonical/mirror authoring.
+
 The connected agent searches and reads the selected Notion scope, inspects the actual schema, then produces normalized fetched snapshots: `[{id, scopeId, title, body, revision, canonicalId?}]`. Save them with `recall kb ingest notion-kb snapshots.json --apply`. Never assume cached snapshots cover all pages: search the live scope before creation.
 
 `recall kb save notion-kb record.json --apply [--revision HASH]` creates a **pending request** under `knowledge/outbox`. It does not write Notion. The agent executes the authorized request through its connected tool, preserving unrelated properties and user sections. It then re-fetches the page and acknowledges the normalized result with `recall kb ack REQUEST_ID result.json --apply`. Verification binds scope, canonical identity, title, authored body and revision to the request. An uncertain create requires reconciliation before retrying. Missing connections are reported, never simulated.
