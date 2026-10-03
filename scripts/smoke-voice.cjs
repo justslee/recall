@@ -25,6 +25,12 @@ const fixtureSession = {
 };
 s.set("session", fixtureSession);
 s.close();
+// An old saved key must never be decrypted merely by opening the app/settings.
+const legacyKeyFile = path.join(folder, "credentials", "openai.enc");
+require("../electron/private-files.cjs").atomicText(
+  legacyKeyFile,
+  "synthetic-legacy-ciphertext",
+);
 const evidence = path.join(repo, "evidence");
 fs.mkdirSync(evidence, { recursive: true });
 (async () => {
@@ -45,7 +51,15 @@ fs.mkdirSync(evidence, { recursive: true });
   try {
     const p = await app.firstWindow();
     p.setDefaultTimeout(12000);
-    await app.evaluate(async ({ app }, repo) => {
+    await app.evaluate(async ({ app, safeStorage }, repo) => {
+      for (const method of [
+        "isEncryptionAvailable",
+        "encryptString",
+        "decryptString",
+      ])
+        safeStorage[method] = () => {
+          throw Error("Unexpected Keychain access");
+        };
       // Fake microphone via Chromium still exercises getUserMedia, permissions,
       // AudioContext, AudioWorklet, PCM IPC and start/stop resource ownership.
       app.commandLine.appendSwitch("use-fake-device-for-media-stream");
@@ -174,6 +188,13 @@ fs.mkdirSync(evidence, { recursive: true });
     await expect(
       p.getByRole("region", { name: "Voice & feedback", exact: true }),
     ).toBeFocused();
+    await expect(
+      p.getByText("Re-enter key once · local storage update", { exact: true }),
+    ).toBeVisible();
+    assert.equal(
+      fs.readFileSync(legacyKeyFile, "utf8"),
+      "synthetic-legacy-ciphertext",
+    );
     await p
       .getByLabel("OpenAI API key", { exact: true })
       .fill("sk-synthetic-test-only");
@@ -184,9 +205,10 @@ fs.mkdirSync(evidence, { recursive: true });
     await expect(p.getByLabel("OpenAI API key", { exact: true })).toHaveCount(
       0,
     );
-    const keyFile = path.join(folder, "credentials", "openai.enc");
+    const keyFile = path.join(folder, "credentials", "openai.key");
     assert.equal(fs.statSync(keyFile).mode & 0o777, 0o600);
-    assert.ok(!fs.readFileSync(keyFile, "utf8").includes("sk-synthetic"));
+    assert.equal(fs.statSync(path.dirname(keyFile)).mode & 0o777, 0o700);
+    assert.equal(fs.existsSync(legacyKeyFile), false);
     const savedStatus = await p.evaluate(() => window.recall.voiceStatus());
     assert.equal(savedStatus.source, "saved");
     assert.doesNotMatch(JSON.stringify(savedStatus), /synthetic/);
@@ -428,15 +450,22 @@ fs.mkdirSync(evidence, { recursive: true });
     await expect(p.getByLabel("OpenAI API key", { exact: true })).toHaveCount(
       0,
     );
-    // Decrypt only the synthetic fixture in the main process to prove restart usability.
+    // Read only the synthetic fixture in the main process to prove restart usability.
     const fixtureUnlocks = await restarted.evaluate(({ app, safeStorage }) => {
+      for (const method of [
+        "isEncryptionAvailable",
+        "encryptString",
+        "decryptString",
+      ])
+        safeStorage[method] = () => {
+          throw Error("Unexpected Keychain access");
+        };
       const req = process
         .getBuiltinModule("node:module")
         .createRequire(app.getAppPath() + "/package.json");
       const { VoiceService } = req("./electron/voice.cjs");
       const service = new VoiceService({
         folder: app.getPath("userData"),
-        safeStorage,
         env: {},
       });
       return service.key() === "sk-synthetic-test-only";

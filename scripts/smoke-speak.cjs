@@ -498,9 +498,9 @@ async function run() {
     await expect(
       page.getByText("Key saved on this Mac", { exact: true }),
     ).toBeVisible();
-    const keyFile = path.join(folder, "credentials", "openai.enc");
+    const keyFile = path.join(folder, "credentials", "openai.key");
     assert.equal(fs.statSync(keyFile).mode & 0o777, 0o600);
-    assert.ok(!fs.readFileSync(keyFile, "utf8").includes(fixtureKey));
+    assert.equal(fs.statSync(path.dirname(keyFile)).mode & 0o777, 0o700);
 
     await page.getByRole("button", { name: "Speak", exact: true }).click();
     await expect(

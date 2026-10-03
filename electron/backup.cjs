@@ -22,9 +22,17 @@ function backup(store, target) {
       ),
   );
   if (dir === store.folder) throw Error("Backup must have its own directory");
+
+  if (fs.existsSync(dir)) {
+    const stat = fs.lstatSync(dir);
+    if (!stat.isDirectory() || stat.isSymbolicLink())
+      throw Error("Unsafe private directory");
+
+    if (fs.readdirSync(dir).length)
+      throw Error("Backup destination must be an empty directory");
+  }
+
   require("./private-files.cjs").directory(dir);
-  if (fs.existsSync(path.join(dir, "manifest.json")))
-    throw Error("Backup already exists");
   const dbfile = path.join(dir, "recall.sqlite");
   store.db.exec(`VACUUM INTO '${dbfile.replaceAll("'", "''")}'`);
   for (const name of paths) {

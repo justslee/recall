@@ -37,9 +37,11 @@ The review started from a checkout whose recent features were uncommitted and wh
 | Canonical KB plus mirror                | Assistant-driven stable-ID/revision/receipt procedure                      | Selected canonical/mirror sources; no continuous two-way sync                  |
 | Daily Self Test                         | Local captures, inbox, linked questions and Markdown logs                  | Preparation and optional host automation/timezone                              |
 | Catch-up                                | Incremental supported local session scanning                               | Explicit date/project scope; app open for periodic scans                       |
-| Speak and answer feedback               | Transcription/evaluation UI and encrypted local key storage                | Their OpenAI API account, key, internet and billing                            |
+| Speak and answer feedback               | Transcription/evaluation UI and owner-only local plaintext key storage     | Their OpenAI API account, key, internet and billing                            |
 
 The restricted **Prepare next** worker cannot execute code/calculations or inspect a visual in a browser. Rich new objectives may need a normal assistant to finish independent checks and submit the validated inbox result. Missing checks remain blocked. An imported code report does not grant execution trust.
+
+The current OpenAI connection saves a user's key once in **Settings & backups → Voice & feedback**, then preserves it across restarts and updates. It stores plaintext in `credentials/openai.key` (`0600` file, `0700` credentials folder), never returns the saved key to the renderer, and excludes credentials from Recall exports/profile backups. Whole-machine backups may include them, and software running as the same OS account can read them. Recall does not use `safeStorage` or access macOS Keychain for this connection. Legacy `openai.enc` files are not automatically migrated or decrypted; they remain untouched until a replacement is successfully saved or the user explicitly removes the key. Earlier verification below is dated evidence for the reviewed build; current credential-change verification is recorded separately in [Implementation](IMPLEMENTATION.md).
 
 ## Verification
 

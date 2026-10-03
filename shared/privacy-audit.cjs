@@ -20,7 +20,7 @@ function privateArtifact(name) {
     /\.(?:sqlite(?:3)?(?:-wal|-shm)?|db(?:-wal|-shm)?|apkg|anki|log|enc|bak|backup|zip|tar|tgz|gz|bz2|xz|7z|rar)$/i.test(
       normalized,
     ) ||
-    /(?:^|\/)\.env(?:\.[^/]*)?$|(?:^|\/)(?:auth\.json|\.credentials\.json|config\.local\.json|learning-connections\.json|presentations\.json|legacy-trust\.json|seed\.json)$/i.test(
+    /(?:^|\/)\.env(?:\.[^/]*)?$|(?:^|\/)(?:auth\.json|\.credentials\.json|openai\.key|config\.local\.json|learning-connections\.json|presentations\.json|legacy-trust\.json|seed\.json)$/i.test(
       normalized,
     )
   );

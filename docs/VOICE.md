@@ -2,7 +2,9 @@
 
 Connect your OpenAI API key once in **Settings & backups → Voice & feedback**. A card’s **Set up voice** button opens that section; **Back to your answer** returns to the same card without recording a review. Once saved, the compact Answer Strip shows **Speak** and **Type**. Allow the microphone when macOS asks. No key is required for ordinary study, typed local drafts, coding or local storage.
 
-Settings shows **Key saved on this Mac** across restarts. Use **Replace key** or **Remove key** there; the saved secret is never displayed. Saving confirms local storage, not authenticated API access. Privacy and billing details stay in Settings, with a brief audio notice beside the card’s recording controls.
+Settings shows **Key saved on this Mac** across restarts and updates. Use **Replace key** or **Remove key** there; the saved secret is never displayed. Someone setting up their own clone/profile saves their own key once. Saving confirms local storage, not authenticated API access. Privacy and billing details stay in Settings, with a brief audio notice beside the card’s recording controls.
+
+If an older profile has only `credentials/openai.enc`, re-enter your key once in this section. Recall does not automatically migrate or decrypt that legacy file and does not access macOS Keychain. The old file remains untouched until a replacement key is successfully saved or you explicitly remove the key.
 
 1. Choose **Speak** to dictate, or **Type** to open a small response editor. The editor starts collapsed, including when a previous draft exists. **Your answer · draft** reopens it.
 2. **Stop recording**, then correct any words, numbers or symbols. You can also type the whole response, or continue dictating to append more.
@@ -18,7 +20,8 @@ The current answer and up to four follow-up rounds are kept in the card’s loca
 - Text assessment uses `gpt-6-luna` through Responses with a strict feedback schema, no tools, and `store: false`. API availability depends on your project’s access and billing; a ChatGPT subscription does not supply API credits.
 - Audio streams only after you start dictation. Recall does not write audio to disk. Stop, cancel, switching cards, closing the window, or leaving the visible app stops recording. Recordings are limited to three minutes.
 - Evaluation sends the current question and text reference, your corrected answer, and any follow-up context for that attempt. It excludes the rest of the library, attachments, source URLs and interactive-widget code. Image-only answers need a text reference before assessment.
-- The key is encrypted with Electron `safeStorage` (macOS Keychain-backed), in the profile’s private `credentials/openai.enc`. It is never returned to the renderer after saving and is excluded from Recall’s backups and exports. Set it again on a new Mac. An `OPENAI_API_KEY` environment variable is also supported when launching from that environment.
+- The key is stored in the profile's local plaintext `credentials/openai.key` file. The file uses owner-only `0600` permissions inside a `0700` credentials folder; this is file permission protection, without separate encryption. Software running as your OS account can read it. Recall does not use Electron `safeStorage` or access macOS Keychain for this connection.
+- The saved key is never returned to the renderer. Recall's library exports and profile backups exclude credentials; whole-machine backups may include them. Set your own key once on a new profile or Mac. An `OPENAI_API_KEY` environment variable is also supported when launching from that environment.
 - Local transcripts and feedback are included in normal profile backups. OpenAI processes transmitted content under your API project’s [data controls](https://developers.openai.com/api/docs/guides/your-data). No claim of zero server retention is implied by Recall storing no audio.
 
 ## Troubleshooting

@@ -8,7 +8,6 @@ const {
   shell,
   clipboard,
   nativeTheme,
-  safeStorage,
 } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -94,7 +93,6 @@ app.whenReady().then(() => {
   const { VoiceService, allowsMicrophone } = require("./voice.cjs");
   voice = new VoiceService({
     folder: store.folder,
-    safeStorage,
     card: (id) =>
       presentationFor(JSON.parse(store.card(id).content), store.presentations),
     emit: (event) => {

@@ -39,14 +39,8 @@ function setup(t, options = {}) {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), "recall-voice-test-"));
   let socket;
   const events = [];
-  const safeStorage = {
-    isEncryptionAvailable: () => true,
-    encryptString: (s) => Buffer.from("test-encrypted:" + s),
-    decryptString: (b) => b.toString().replace("test-encrypted:", ""),
-  };
   const service = new VoiceService({
     folder,
-    safeStorage,
     card: () => card,
     emit: (e) => events.push(e),
     env: { OPENAI_API_KEY: "sk-test-key-not-real" },
@@ -169,19 +163,92 @@ test("microphone permissions require an armed trusted main frame and audio only"
   ])
     assert.equal(allowsMicrophone({ ...good, ...overrides }), false);
 });
-test("key settings expose no secret and fail closed without encryption", (t) => {
+test("key settings persist locally without Keychain and never expose the saved secret", (t) => {
   const f = setup(t, { env: {} });
   f.service.configure("sk-fixture-test-only");
   assert.equal(f.service.status().source, "saved");
-  assert.doesNotMatch(JSON.stringify(f.service.status()), /valid-looking/);
+  assert.doesNotMatch(
+    JSON.stringify(f.service.status()),
+    /sk-fixture-test-only/,
+  );
   assert.equal(fs.statSync(f.service.keyFile).mode & 0o777, 0o600);
+  assert.equal(
+    fs.statSync(path.dirname(f.service.keyFile)).mode & 0o777,
+    0o700,
+  );
   assert.equal(f.service.key(), "sk-fixture-test-only");
+  const restarted = new VoiceService({ folder: f.folder, env: {} });
+  assert.equal(restarted.key(), "sk-fixture-test-only");
+  assert.equal(restarted.status().storage, "local-file");
   f.service.configure("");
   assert.equal(f.service.status().configured, false);
-  f.service.safeStorage.isEncryptionAvailable = () => false;
+  assert.throws(() => restarted.key(), /Add an OpenAI/);
+});
+test("legacy keys stay untouched until successful re-entry, with no automatic decrypt", (t) => {
+  const f = setup(t, { env: {} });
+  const { legacyFile } = f.service.credentials;
+  fs.mkdirSync(path.dirname(legacyFile));
+  fs.writeFileSync(legacyFile, "synthetic-legacy-ciphertext");
+  assert.equal(f.service.status().configured, false);
+  assert.equal(f.service.status().needsKeyReentry, true);
+  assert.throws(() => f.service.key(), /Re-enter.*once/);
+  assert.equal(
+    fs.readFileSync(legacyFile, "utf8"),
+    "synthetic-legacy-ciphertext",
+  );
+  assert.throws(() => f.service.configure("invalid"), /valid OpenAI/);
+  assert.equal(fs.existsSync(legacyFile), true);
+  f.service.configure("sk-fixture-test-only");
+  assert.equal(fs.existsSync(legacyFile), false);
+  assert.equal(f.service.status().needsKeyReentry, false);
+  assert.equal(f.service.key(), "sk-fixture-test-only");
+});
+test("removing a legacy key is explicit; environment keys remain unsaved", (t) => {
+  const f = setup(t);
+  const { legacyFile } = f.service.credentials;
+  fs.mkdirSync(path.dirname(legacyFile));
+  fs.writeFileSync(legacyFile, "synthetic-legacy-ciphertext");
+  assert.equal(f.service.status().source, "environment");
+  assert.equal(f.service.status().needsKeyReentry, false);
+  f.service.configure("");
+  assert.equal(fs.existsSync(legacyFile), false);
+  assert.equal(fs.existsSync(f.service.keyFile), false);
+  assert.equal(f.service.status().source, "environment");
+});
+test("a legacy cleanup failure does not misreport or roll back a successful local save", (t) => {
+  const f = setup(t, { env: {} });
+  fs.mkdirSync(f.service.credentials.legacyFile, { recursive: true });
+  const status = f.service.configure("sk-fixture-test-only");
+  assert.equal(status.configured, true);
+  assert.equal(status.needsKeyReentry, false);
+  assert.equal(status.legacyCleanupPending, true);
+  assert.equal(f.service.key(), "sk-fixture-test-only");
+  assert.doesNotMatch(JSON.stringify(status), /sk-fixture-test-only/);
+});
+test("unreadable or unsafe local credentials fail without revealing file contents", (t) => {
+  const f = setup(t, { env: {} });
+  f.service.configure("sk-fixture-test-only");
+  fs.chmodSync(f.service.keyFile, 0o644);
+  assert.equal(f.service.key(), "sk-fixture-test-only");
+  assert.equal(fs.statSync(f.service.keyFile).mode & 0o777, 0o600);
+  fs.writeFileSync(f.service.keyFile, "sk-fixture-test-only\ncorrupt");
+  assert.throws(() => f.service.key(), /cannot be read/);
+  fs.rmSync(f.service.keyFile);
+  const outside = path.join(f.folder, "outside");
+  fs.writeFileSync(outside, "untouched");
+  fs.symlinkSync(outside, f.service.keyFile);
+  assert.throws(() => f.service.status(), /cannot be accessed/);
   assert.throws(
     () => f.service.configure("sk-fixture-test-only"),
-    /Secure key storage/,
+    /cannot be accessed/,
+  );
+  assert.equal(fs.readFileSync(outside, "utf8"), "untouched");
+  fs.rmSync(path.dirname(f.service.keyFile), { recursive: true });
+  fs.symlinkSync(f.folder, path.dirname(f.service.keyFile));
+  assert.throws(() => f.service.status(), /cannot be accessed/);
+  assert.throws(
+    () => f.service.configure("sk-fixture-test-only"),
+    /cannot be accessed/,
   );
 });
 test("assessment sends only this card's text and validated history, preserving library and schedules", async (t) => {

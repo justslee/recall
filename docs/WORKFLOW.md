@@ -80,7 +80,9 @@ It reads supported local Codex/Claude session records, excludes tool payloads an
 
 ## 7. Add spoken practice when ready
 
-Save your own OpenAI API key under **Settings & backups → Voice & feedback**. The key persists encrypted on your Mac; it is excluded from exports/backups. No key is needed for typed local drafts or ordinary study.
+Save your own OpenAI API key once under **Settings & backups → Voice & feedback**. The key persists across restarts and updates in the local plaintext `credentials/openai.key` file, with owner-only `0600` file permissions inside a `0700` folder. Recall does not use `safeStorage` or access macOS Keychain for this connection. Software running as your OS account can read it. It is never returned to the renderer after saving and is excluded from Recall's exports/profile backups; whole-machine backups may include it. Someone setting up their own clone/profile saves their own key once. No key is needed for typed local drafts or ordinary study.
+
+If a profile has only a legacy `credentials/openai.enc`, re-enter the key once in this section. Recall does not automatically migrate or decrypt it. The old file remains untouched until a replacement key is successfully saved or you explicitly remove the key.
 
 Use the card's **Speak / Type** strip for a quick answer. Use **Speak → Your own topic** for an explanation or presentation, with an audience and optional reference. Record, correct the transcript and request feedback. Factual accuracy requires a reference; pause measurements are estimates. These API requests need internet and separately billed API access. See [Voice](VOICE.md) and [Speak](SPEAK.md).
 
@@ -92,4 +94,4 @@ Use the card's **Speak / Type** strip for a quick answer. Use **Speak → Your o
 4. Return to scheduled cards in Study Desk. Use Speak to practise explaining a larger idea.
 5. Back up the profile periodically. Keep backups, session excerpts and private exports out of public repositories.
 
-Updates to this checkout do not replace your library. After moving the app or restoring on another Mac, reconnect assistants and re-enter optional credentials; external KB folders and runtimes are separate from the profile backup.
+Updates to this checkout do not replace your library or saved key. After moving the app, reconnect assistants from its final location. After restoring a profile backup on another Mac, re-enter optional credentials; external KB folders and runtimes are separate from the profile backup.

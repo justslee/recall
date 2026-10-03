@@ -65,6 +65,7 @@ test("private database, credential and export artifacts fail even with harmless 
     "examples/library.db",
     "examples/library.db-shm",
     "examples/openai.enc",
+    "examples/openai.key",
     "examples/profile-backup.zip",
     "examples/export.tar.gz",
     "examples/auth.json",

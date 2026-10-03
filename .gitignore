@@ -7,6 +7,8 @@ evidence/
 *.db-wal
 *.db-shm
 *.enc
+credentials/
+openai.key
 *.app/
 *.log
 .env*

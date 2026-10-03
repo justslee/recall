@@ -125,7 +125,7 @@ Concept and math cards have a compact **Speak / Type** strip. The editor opens w
 
 In **Speak**, choose a card, a configured KB note or **Your own topic**. Explain it to a chosen audience, from a short definition to a 15-minute presentation. Feedback covers communication, observed fillers, pace and approximate pauses. Factual accuracy is assessed only when you supply a reference. Speak practice does not change card schedules.
 
-Both use the same optional [OpenAI API connection](https://platform.openai.com/api-keys). Internet and separate API billing are required; a ChatGPT subscription does not cover it. Recording sends audio to OpenAI; evaluation sends the selected reference and your response. Recall saves no audio, keeps drafts locally and encrypts the key using macOS secure storage. [Voice](docs/VOICE.md) · [Speak](docs/SPEAK.md) · [Privacy](docs/PRIVACY.md).
+Both use the same optional [OpenAI API connection](https://platform.openai.com/api-keys). Internet and separate API billing are required; a ChatGPT subscription does not cover it. Recording sends audio to OpenAI; evaluation sends the selected reference and your response. Recall saves no audio and keeps drafts locally. Save your own key once in **Settings & backups → Voice & feedback**; it persists across restarts and updates in a local plaintext `credentials/openai.key` file with owner-only permissions. Recall does not access macOS Keychain for this connection. [Voice](docs/VOICE.md) · [Speak](docs/SPEAK.md) · [Privacy](docs/PRIVACY.md).
 
 ## What is included—and what you connect
 
@@ -139,7 +139,7 @@ Capture follows assistant instructions and optional local records. It cannot gua
 
 Cards, review history, photos, drafts and learning logs stay in the local profile. Study needs no account, hosted database or telemetry service. Optional AI features send selected context to the chosen provider.
 
-Sharing this source does not share your library. **Profile backups and library exports can contain private learning material**; keep them private. The encrypted OpenAI key is excluded from exports and profile backups. Public screenshots and examples use only original demo content.
+Sharing this source does not share your library. **Profile backups and library exports can contain private learning material**; keep them private. The OpenAI key is excluded from Recall's exports and profile backups; whole-machine backups may include it. It is plaintext on disk, so software running as your OS account can read it despite owner-only permissions. Public screenshots and examples use only original demo content.
 
 Interactive widgets load on request in a sandbox with no network or privileged app access. Reviewed Python/C++ exercises run only on **Run**, inside the supported macOS sandbox. [Privacy and execution](docs/PRIVACY.md) · [Security](SECURITY.md).
 

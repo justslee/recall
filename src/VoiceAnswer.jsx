@@ -72,7 +72,10 @@ export function VoiceSettings({
       setEditing(false);
       setStatus(next);
       setNotice(
-        remove ? "Saved key removed." : "Key saved securely on this Mac.",
+        (remove ? "Saved key removed." : "Key saved on this Mac.") +
+          (next.legacyCleanupPending
+            ? " The old encrypted copy could not be removed. Recall will not use it."
+            : ""),
       );
     } catch (e) {
       setNotice(message(e));
@@ -111,20 +114,24 @@ export function VoiceSettings({
                 ? status.source === "environment"
                   ? "Using a key from this app’s environment"
                   : "Key saved on this Mac"
-                : "Not set up · optional"}
+                : status.needsKeyReentry
+                  ? "Re-enter key once · local storage update"
+                  : "Not set up · optional"}
           </p>
         </div>
-        {status?.configured && !editing && (
+        {(status?.configured || status?.hasLegacyKey) && !editing && (
           <div className="voice-key-actions">
-            <button
-              onClick={() => {
-                setEditing(true);
-                setNotice("");
-              }}
-            >
-              Replace key
-            </button>
-            {status.source === "saved" && (
+            {status.configured && (
+              <button
+                onClick={() => {
+                  setEditing(true);
+                  setNotice("");
+                }}
+              >
+                Replace key
+              </button>
+            )}
+            {(status.source === "saved" || status.hasLegacyKey) && (
               <button disabled={busy} onClick={() => save(true)}>
                 Remove key
               </button>
@@ -132,6 +139,13 @@ export function VoiceSettings({
           </div>
         )}
       </div>
+      {status?.needsKeyReentry && (
+        <p className="voice-privacy" role="status">
+          Recall now saves keys locally without Keychain prompts. Re-enter your
+          key once below. Your old encrypted copy stays untouched until the new
+          key is saved.
+        </p>
+      )}
       {status && (!status.configured || editing) && (
         <form
           onSubmit={(e) => {
@@ -176,7 +190,7 @@ export function VoiceSettings({
       <p className="voice-privacy">
         {status?.source === "environment"
           ? "Provided at launch through OPENAI_API_KEY; Recall has not saved this key."
-          : "Encrypted with macOS secure storage. Kept across restarts; excluded from backups and exports."}
+          : "Saved only on this device. Kept across restarts; excluded from Recall backups and exports. No Keychain prompts."}
       </p>
       <details className="voice-disclosure">
         <summary>Privacy & billing</summary>
@@ -191,10 +205,16 @@ export function VoiceSettings({
           subscription is separate. Saving a key does not verify API access or
           incur a charge.
         </p>
+        <p>
+          The key is stored in a private local file accessible to your macOS
+          account, without separate encryption. Software running as your account
+          can read it. Recall never displays the saved key or sends it to a card
+          or diagram.
+        </p>
       </details>
       {status && !status.canSave && (
         <p role="alert">
-          Secure storage is unavailable. A key cannot be saved on this device.
+          Local storage is unavailable. A key cannot be saved on this device.
         </p>
       )}
       {notice && <p role="status">{notice}</p>}

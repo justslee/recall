@@ -1,7 +1,5 @@
-const fs = require("node:fs");
-const path = require("node:path");
 const Ajv = require("ajv");
-const privateFiles = require("./private-files.cjs");
+const { LocalCredentials } = require("./local-credentials.cjs");
 
 const TRANSCRIPTION_MODEL = "gpt-live-transcribe";
 const ASSESSMENT_MODEL = "gpt-6-luna";
@@ -82,69 +80,53 @@ function allowsMicrophone({
 class VoiceService {
   constructor({
     folder,
-    safeStorage,
     card,
     emit,
     fetchImpl = globalThis.fetch,
     socketFactory,
     env = process.env,
   }) {
-    Object.assign(this, { folder, safeStorage, card, emit, fetchImpl, env });
+    Object.assign(this, { folder, card, emit, fetchImpl, env });
     this.socketFactory =
       socketFactory || ((url, options) => new (require("ws"))(url, options));
-    this.keyFile = path.join(folder, "credentials", "openai.enc");
+    this.credentials = new LocalCredentials(folder);
+    this.keyFile = this.credentials.file;
     this.active = null;
     this.assessment = null;
     this.micUntil = 0;
   }
   status() {
+    const { saved, legacy } = this.credentials.state();
     return {
-      configured: fs.existsSync(this.keyFile) || !!this.env.OPENAI_API_KEY,
-      source: fs.existsSync(this.keyFile)
-        ? "saved"
-        : this.env.OPENAI_API_KEY
-          ? "environment"
-          : null,
-      canSave: this.safeStorage.isEncryptionAvailable(),
+      configured: saved || !!this.env.OPENAI_API_KEY,
+      source: saved ? "saved" : this.env.OPENAI_API_KEY ? "environment" : null,
+      canSave: true,
+      needsKeyReentry: legacy && !saved && !this.env.OPENAI_API_KEY,
+      hasLegacyKey: legacy,
+      storage: "local-file",
       transcriptionModel: TRANSCRIPTION_MODEL,
       assessmentModel: ASSESSMENT_MODEL,
       maxSeconds: MAX_SECONDS,
     };
   }
   key() {
-    if (fs.existsSync(this.keyFile)) {
-      try {
-        if (!this.safeStorage.isEncryptionAvailable()) throw Error();
-        return this.safeStorage.decryptString(
-          Buffer.from(privateFiles.read(this.keyFile, 12000), "base64"),
-        );
-      } catch {
-        throw Error(
-          "The saved OpenAI key cannot be unlocked. Save it again in Voice settings.",
-        );
-      }
-    }
+    const { saved, legacy } = this.credentials.state();
+    if (saved) return this.credentials.read();
+
     if (this.env.OPENAI_API_KEY) return this.env.OPENAI_API_KEY;
+    if (legacy)
+      throw Error(
+        "Re-enter your OpenAI key once in Voice settings to switch to local storage without Keychain prompts.",
+      );
+
     throw Error(
       "Add an OpenAI API key in Voice settings to use dictation and feedback.",
     );
   }
   configure(key) {
-    if (typeof key !== "string" || key.length > 2048)
-      throw Error("Invalid API key.");
     this.cancel();
-    if (!key.trim()) fs.rmSync(this.keyFile, { force: true });
-    else {
-      if (!/^sk-[A-Za-z0-9_-]{10,}$/.test(key.trim()))
-        throw Error("Enter a valid OpenAI API key.");
-      if (!this.safeStorage.isEncryptionAvailable())
-        throw Error("Secure key storage is unavailable on this Mac.");
-      privateFiles.atomicText(
-        this.keyFile,
-        this.safeStorage.encryptString(key.trim()).toString("base64"),
-      );
-    }
-    return this.status();
+    const cleanup = this.credentials.save(key);
+    return { ...this.status(), ...cleanup };
   }
   checkedCard(id) {
     if (typeof id !== "string" || id.length > 512) throw Error("Invalid card.");
