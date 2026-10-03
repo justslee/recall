@@ -1336,7 +1336,7 @@ kbd {
   background: var(--sunken);
   overflow: auto;
 }
-.diagram svg {
+.diagram svg, .diagram img {
   max-width: 100%;
   height: auto;
 }

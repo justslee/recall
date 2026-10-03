@@ -3,6 +3,10 @@ dist/
 release/
 evidence/
 *.sqlite*
+*.db
+*.db-wal
+*.db-shm
+*.enc
 *.app/
 *.log
 .env*
@@ -11,3 +15,10 @@ private/
 tasks/
 .DS_Store
 test-results/
+auth.json
+.credentials.json
+presentations.json
+learning-connections.json
+learning-inbox/
+self-tests/
+backups/

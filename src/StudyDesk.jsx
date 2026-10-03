@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { ArrowRight } from "lucide-react";
-import { matches, formatLabel, scopeText } from "./model";
+import { matches, formatLabel, scopeText, queue } from "./model";
 import { iconFor, CardRow, Progress } from "./ui";
 
 export function TopicOptions({ selection, changeSelection, topics }) {
@@ -37,7 +37,13 @@ export function TopicOptions({ selection, changeSelection, topics }) {
 }
 
 /** Deck-scoped topic, format and difficulty filters shared by Study and Library. */
-export function Filters({ data, selection, changeSelection, topics }) {
+export function Filters({
+  data,
+  selection,
+  changeSelection,
+  topics,
+  study = false,
+}) {
   const root = useRef();
   useEffect(() => {
     const close = (event) => {
@@ -62,31 +68,35 @@ export function Filters({ data, selection, changeSelection, topics }) {
     };
   }, []);
   return (
-    <section ref={root} className="filters" aria-label="Filters">
-      <div className="formats" role="group" aria-label="Question format">
-        {Object.keys(formatLabel).map((f) => {
-          const Icon = iconFor[f];
-          const n = data.cards.filter(
-            (c) =>
-              matches(c, selection, true) &&
-              (f === "all" || c.kind === f) &&
-              c.status === "ready" &&
-              !c.suspended,
-          ).length;
-          return (
-            <button
-              key={f}
-              className={selection.format === f ? "active" : ""}
-              aria-pressed={selection.format === f}
-              onClick={() => changeSelection({ format: f })}
-            >
-              <Icon size={16} />
-              <span>{formatLabel[f]}</span>
-              <span className="count">{n}</span>
-            </button>
-          );
-        })}
-      </div>
+    <section
+      ref={root}
+      className={"filters " + (study ? "session-composer" : "library-filters")}
+      aria-label="Filters"
+    >
+      {study && (
+        <div className="composer-heading">
+          <h2>What fits your moment?</h2>
+          <p>Choose how you want to practice.</p>
+        </div>
+      )}
+      <FormatPicker
+        value={selection.format}
+        onChange={(format) => changeSelection({ format })}
+        counts={Object.fromEntries(
+          Object.keys(formatLabel).map((format) => [
+            format,
+            study
+              ? queue(data.cards, { ...selection, format }).length
+              : data.cards.filter(
+                  (c) =>
+                    matches(c, { ...selection, format }) &&
+                    c.status === "ready" &&
+                    !c.suspended,
+                ).length,
+          ]),
+        )}
+        expanded={study}
+      />
       <div className="scope-controls">
         <select
           aria-label="Collection"
@@ -135,13 +145,55 @@ export function Filters({ data, selection, changeSelection, topics }) {
           </div>
         </details>
       </div>
+      {study && (
+        <p className="composer-note">
+          {selection.format === "all"
+            ? "Concepts, math, and coding together."
+            : `Only ${selection.format === "concept" ? "concept" : formatLabel[selection.format].toLowerCase()} questions in this session.`}{" "}
+          Other formats will be here when you’re ready.
+        </p>
+      )}
     </section>
+  );
+}
+
+export function FormatPicker({ value, onChange, counts, expanded = true }) {
+  const hints = {
+    concept: "Think, write, or speak.",
+    math: "Room to work it out.",
+    code: "Hands on the keyboard.",
+    all: "A little of everything.",
+  };
+  return (
+    <div
+      className={"formats " + (expanded ? "session-formats" : "")}
+      role="group"
+      aria-label="Question format"
+    >
+      {["concept", "math", "code", "all"].map((kind) => {
+        const Icon = iconFor[kind];
+        return (
+          <button
+            key={kind}
+            className={value === kind ? "active" : ""}
+            aria-pressed={value === kind}
+            onClick={() => onChange(kind)}
+          >
+            <Icon size={17} />
+            <span className="format-name">{formatLabel[kind]}</span>
+            <span className="count">{counts?.[kind] ?? 0}</span>
+            {expanded && <small>{hints[kind]}</small>}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
 export function StudyDesk({
   selection,
   changeSelection,
+  selfTest,
   eligible,
   matching,
   activeSession,
@@ -177,78 +229,81 @@ export function StudyDesk({
           </button>
         </div>
       )}
-      <section className="session-card">
-        <div>
-          <span className="eyebrow">Your next session</span>
-          <h2>
-            {eligible.length
-              ? selection.format === "code"
-                ? "A little deeper in the code."
-                : selection.format === "math"
-                  ? "Work it through, one step at a time."
-                  : "Make a little room for recall."
-              : "Nothing due in this selection."}
-          </h2>
-          <p className="scope">{scopeText(selection)}</p>
-          <div className="session-count">
-            <strong>{eligible.length}</strong>
-            <span>
-              {eligible.length === 1 ? "card" : "cards"} in this session
-              <small>
-                {eligible.length - newCount} review · {newCount} new
-              </small>
-            </span>
+      <div className="desk-spread">
+        <section className="session-card">
+          <div>
+            <span className="eyebrow">Your next session</span>
+            <h2>
+              {eligible.length
+                ? selection.format === "code"
+                  ? "A little deeper in the code."
+                  : selection.format === "math"
+                    ? "Work it through, one step at a time."
+                    : "Make a little room for recall."
+                : "Nothing due in this selection."}
+            </h2>
+            <p className="scope">{scopeText(selection)}</p>
+            <div className="session-count">
+              <strong>{eligible.length}</strong>
+              <span>
+                {eligible.length === 1 ? "card" : "cards"} in this session
+                <small>
+                  {eligible.length - newCount} review · {newCount} new
+                </small>
+              </span>
+            </div>
+            <p className="session-today">
+              {reviewedToday
+                ? `${reviewedToday} ${reviewedToday === 1 ? "review" : "reviews"} recorded today.`
+                : "No reviews recorded yet today."}
+            </p>
           </div>
-          <p className="session-today">
-            {reviewedToday
-              ? `${reviewedToday} ${reviewedToday === 1 ? "review" : "reviews"} recorded today.`
-              : "No reviews recorded yet today."}
-          </p>
-        </div>
-        <div className="session-controls">
-          <label>
-            Study queue
-            <select
-              value={selection.practice ? "practice" : "review"}
-              onChange={(e) =>
-                changeSelection({ practice: e.target.value === "practice" })
-              }
+          <div className="session-controls">
+            <label>
+              Study queue
+              <select
+                value={selection.practice ? "practice" : "review"}
+                onChange={(e) =>
+                  changeSelection({ practice: e.target.value === "practice" })
+                }
+              >
+                <option value="review">Due + new cards</option>
+                <option value="practice">Practice without rescheduling</option>
+              </select>
+            </label>
+            <label>
+              Session size
+              <select
+                value={selection.limit}
+                onChange={(e) =>
+                  changeSelection({ limit: Number(e.target.value) })
+                }
+              >
+                {[5, 10, 20, 50].map((n) => (
+                  <option value={n} key={n}>
+                    Up to {n} cards
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              className="primary"
+              disabled={!eligible.length || busy}
+              onClick={onStart}
             >
-              <option value="review">Due + new cards</option>
-              <option value="practice">Practice without rescheduling</option>
-            </select>
-          </label>
-          <label>
-            Session size
-            <select
-              value={selection.limit}
-              onChange={(e) =>
-                changeSelection({ limit: Number(e.target.value) })
-              }
-            >
-              {[5, 10, 20, 50].map((n) => (
-                <option value={n} key={n}>
-                  Up to {n} cards
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            className="primary"
-            disabled={!eligible.length || busy}
-            onClick={onStart}
-          >
-            {selection.practice ? "Start practice" : "Start review"}
-            <ArrowRight size={17} />
-          </button>
-        </div>
-        {!eligible.length && (
-          <p className="empty-note">
-            Try another topic, broaden the deck, or choose Practice to review
-            cards before they are due. Draft and suspended cards are excluded.
-          </p>
-        )}
-      </section>
+              {selection.practice ? "Start practice" : "Start review"}
+              <ArrowRight size={17} />
+            </button>
+          </div>
+          {!eligible.length && (
+            <p className="empty-note">
+              Try another topic, broaden the deck, or choose Practice to review
+              cards before they are due. Draft and suspended cards are excluded.
+            </p>
+          )}
+        </section>
+        {selfTest}
+      </div>
       <div className="section-heading">
         <span className="eyebrow">In this selection</span>
         <button className="text-button" onClick={onLibrary}>

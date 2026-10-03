@@ -1,4 +1,4 @@
-const { spawn } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -6,6 +6,34 @@ class Runner {
   constructor(options = {}) {
     this.scientificPython = options.scientificPython;
     this.active = null;
+    this.tools = {};
+  }
+  tool(name) {
+    if (this.tools[name]) return this.tools[name];
+    const r = spawnSync("/usr/bin/xcrun", ["--find", name], {
+      encoding: "utf8",
+      timeout: 10000,
+      env: { PATH: "/usr/bin:/bin", LANG: "en_US.UTF-8" },
+    });
+    const value = r.stdout?.trim();
+    if (
+      r.status !== 0 ||
+      !value ||
+      !path.isAbsolute(value) ||
+      !fs.existsSync(value)
+    )
+      throw Error("Install Apple's Command Line Tools to run this exercise");
+    return (this.tools[name] = value);
+  }
+  sdk() {
+    const r = spawnSync("/usr/bin/xcrun", ["--show-sdk-path"], {
+      encoding: "utf8",
+      timeout: 10000,
+      env: { PATH: "/usr/bin:/bin" },
+    });
+    if (r.status !== 0 || !path.isAbsolute(r.stdout.trim()))
+      throw Error("The macOS SDK is unavailable");
+    return r.stdout.trim();
   }
   cancel() {
     if (this.active) {
@@ -17,15 +45,48 @@ class Runner {
     try {
       process.kill(-child.pid, "SIGKILL");
     } catch {
-      child.kill("SIGKILL");
+      child?.kill("SIGKILL");
     }
   }
-  process(command, args, cwd, job, timeout = 8000) {
+  process(command, args, cwd, job, { timeout = 8000, fork = false } = {}) {
     return new Promise((resolve) => {
       let output = "",
         timedOut = false,
         truncated = false;
-      const child = spawn(command, args, {
+      // Only the selected interpreter/compiler toolchain and the scratch
+      // output may execute; system utilities such as open or pbpaste may not.
+      const invocation = require("./process-sandbox.cjs").command(
+        command,
+        args,
+        {
+          directory: cwd,
+          fork,
+          executionDirectories: [
+            "/Library/Developer",
+            "/Applications/Xcode.app/Contents/Developer",
+            ...Object.values(this.tools).map((t) =>
+              path.dirname(path.dirname(path.dirname(t))),
+            ),
+          ],
+          readDirectories: [
+            "/Applications/Xcode.app/Contents/Developer",
+            ...Object.values(this.tools).map((t) =>
+              path.dirname(path.dirname(path.dirname(t))),
+            ),
+            ...(this.scientificPython && fs.existsSync(this.scientificPython)
+              ? [
+                  path.dirname(path.dirname(this.scientificPython)),
+                  path.dirname(
+                    path.dirname(fs.realpathSync(this.scientificPython)),
+                  ),
+                  "/opt/homebrew/Cellar",
+                  "/opt/homebrew/lib",
+                ]
+              : []),
+          ],
+        },
+      );
+      const child = spawn(invocation.binary, invocation.args, {
         cwd,
         detached: true,
         env: {
@@ -100,7 +161,7 @@ class Runner {
         return await this.process(
           config.runtime === "scientific-python"
             ? this.scientificPythonPath()
-            : "/usr/bin/python3",
+            : this.tool("python3"),
           ["-I", "exercise.py"],
           folder,
           job,
@@ -112,8 +173,10 @@ class Runner {
         code + "\n\n" + config.harness,
       );
       const compile = await this.process(
-        "/usr/bin/clang++",
+        this.tool("clang++"),
         [
+          "-isysroot",
+          this.sdk(),
           "-std=c++17",
           "-O1",
           "-Wall",
@@ -126,7 +189,7 @@ class Runner {
         ],
         folder,
         job,
-        15000,
+        { timeout: 15000, fork: true },
       );
       if (compile.status !== "passed") return { ...compile, phase: "compile" };
       if (job.cancelled) return { status: "cancelled", output: "Stopped." };

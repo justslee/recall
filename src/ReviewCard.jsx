@@ -1,4 +1,11 @@
-import React, { useEffect, useState, Suspense, lazy } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  Suspense,
+  lazy,
+} from "react";
 import {
   ArrowRight,
   ImagePlus,
@@ -6,6 +13,8 @@ import {
   CircleAlert,
   Eye,
   EyeOff,
+  Rotate3D,
+  Undo2,
 } from "lucide-react";
 import { RichContent, Diagram, CarryLab } from "./RichContent";
 import { InteractiveLab } from "./InteractiveLab";
@@ -13,6 +22,7 @@ import { SplitWorkspace } from "./SplitWorkspace";
 import { plain, formatLabel, spanLabel } from "./model";
 import { Kbd } from "./ui";
 import { ChallengeContext, ChallengeWork } from "./ChallengeDetail";
+import { VoiceAnswer } from "./VoiceAnswer";
 const CodeWorkspace = lazy(() => import("./CodeWorkspace"));
 const api = window.recall;
 
@@ -139,7 +149,37 @@ export function ReviewCard({
   onChallengeState,
   intervals = {},
   onExport,
+  onOpenVoiceSettings,
+  onVoiceBusyChange,
 }) {
+  const cardElement = useRef(null);
+  const previousSide = useRef(revealed);
+  const flips = card.kind !== "code";
+  useLayoutEffect(() => {
+    if (previousSide.current === revealed) return;
+
+    previousSide.current = revealed;
+    if (flips && cardElement.current?.getBoundingClientRect().top < 0)
+      cardElement.current.scrollIntoView({
+        block: "start",
+        behavior: "instant",
+      });
+
+    if (!flips || matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
+
+    const turn = cardElement.current?.animate(
+      [
+        {
+          transform: `perspective(1400px) rotateY(${revealed ? -85 : 85}deg)`,
+          opacity: 0.25,
+        },
+        { transform: "perspective(1400px) rotateY(0deg)", opacity: 1 },
+      ],
+      { duration: 240, easing: "cubic-bezier(.2,.7,.2,1)" },
+    );
+    return () => turn?.cancel();
+  }, [revealed, flips]);
   const revealLabel =
     card.kind === "math"
       ? "Reveal worked solution"
@@ -154,6 +194,72 @@ export function ReviewCard({
           card.id === "recall-yen-quote-v1"
         ? "fx"
         : null);
+  const flipControl = (
+    <>
+      {!revealed && (
+        <div className={flips ? "card-flip-actions" : "reveal-zone"}>
+          {flips && (
+            <small>
+              <Kbd>Space</Kbd> to flip
+            </small>
+          )}
+          <button
+            className="primary reveal"
+            aria-label={revealLabel}
+            aria-expanded={false}
+            aria-controls={card.kind === "math" ? "worked-solution" : undefined}
+            disabled={busy}
+            onClick={() => reveal(true)}
+          >
+            {flips ? "Flip card" : revealLabel}
+            {flips ? (
+              <Rotate3D size={16} />
+            ) : browsing ? (
+              <ArrowRight size={16} />
+            ) : (
+              <Kbd>Space</Kbd>
+            )}
+          </button>
+          {!flips && (
+            <small>
+              {card.catalog?.answerMode === "explanation"
+                ? "Write your reasoning, then compare it with the rubric."
+                : card.kind === "code"
+                  ? "Run your tests first, then compare with the reference."
+                  : card.kind === "math"
+                    ? "Work it through before you look."
+                    : "Say it in your own words first."}
+            </small>
+          )}
+        </div>
+      )}
+      {revealed && (
+        <button
+          className={flips ? "card-back-toggle text-button" : "math-reveal"}
+          aria-label={
+            card.kind === "math"
+              ? "Hide worked solution"
+              : card.kind === "concept"
+                ? "Hide answer"
+                : "Hide reference & explanation"
+          }
+          aria-expanded={true}
+          aria-controls={card.kind === "math" ? "worked-solution" : undefined}
+          disabled={busy}
+          onClick={() => reveal(false)}
+        >
+          {flips ? <Undo2 size={15} /> : <EyeOff size={15} />}{" "}
+          {flips
+            ? "Question"
+            : card.kind === "math"
+              ? "Hide worked solution"
+              : card.kind === "concept"
+                ? "Hide answer"
+                : "Hide reference & explanation"}
+        </button>
+      )}
+    </>
+  );
   const problem = (
     <div className="question-pane">
       <h2>{plain(card.title)}</h2>
@@ -180,107 +286,104 @@ export function ReviewCard({
           fail={fail}
         />
       )}
-      {!revealed && (
-        <div className="reveal-zone">
-          <button
-            className="primary reveal"
-            aria-expanded={false}
-            aria-controls={card.kind === "math" ? "worked-solution" : undefined}
-            onClick={() => reveal(true)}
-          >
-            {revealLabel}
-            {browsing ? <ArrowRight size={16} /> : <Kbd>Space</Kbd>}
-          </button>
-          <small>
-            {card.catalog?.answerMode === "explanation"
-              ? "Write your reasoning, then compare it with the rubric."
-              : card.kind === "code"
-                ? "Run your tests first, then compare with the reference."
-                : card.kind === "math"
-                  ? "Work it through before you look."
-                  : "Say it in your own words first."}
-          </small>
-        </div>
-      )}
-      {revealed && (
-        <button
-          className="math-reveal"
-          aria-expanded={true}
-          aria-controls={card.kind === "math" ? "worked-solution" : undefined}
-          onClick={() => reveal(false)}
-        >
-          <EyeOff size={15} />{" "}
-          {card.kind === "math"
-            ? "Hide worked solution"
-            : card.kind === "concept"
-              ? "Hide answer"
-              : "Hide reference & explanation"}
-        </button>
-      )}
+      {!flips && flipControl}
     </div>
   );
   return (
-    <article className={"review-card kind-" + card.kind}>
-      <div className="card-meta">
-        <span>
-          {card.topic} <span className="meta-divider">/</span>{" "}
-          {formatLabel[card.kind]}
-        </span>
-        <span className="badge">{card.difficulty}</span>
-      </div>
-      {card.kind === "code" && card.code ? (
-        <SplitWorkspace
-          problem={problem}
-          editor={
-            <Suspense fallback={<p className="muted">Opening editor…</p>}>
-              <CodeWorkspace card={card} revealed={revealed} onError={fail} />
-            </Suspense>
-          }
-        />
-      ) : (
-        problem
-      )}
-      {revealed && (
-        <section
-          className="answer"
-          id={card.kind === "math" ? "worked-solution" : undefined}
-        >
-          <span className="eyebrow">
-            {card.kind === "math" ? "Worked solution" : "The answer"}
+    <>
+      <article
+        ref={cardElement}
+        className={
+          "review-card kind-" +
+          card.kind +
+          (revealed ? " is-revealed" : "") +
+          (flips ? " flip-card" : "")
+        }
+      >
+        <div className="card-meta">
+          <span>
+            {card.topic} <span className="meta-divider">/</span>{" "}
+            {formatLabel[card.kind]}
           </span>
-          <RichContent
-            html={card.presentation?.answer ?? card.answer}
-            cardId={card.id}
-            widgetsAllowed={card.widgetsAllowed === true}
-            revision={card.revision || 0}
-          />
-          {card.presentation && (
-            <section className="visual-explanation">
-              <span className="eyebrow">
-                {card.presentation.label === "Answer diagram"
-                  ? "Answer diagram"
-                  : "Concept map"}
+          <div className="card-side-meta">
+            <span className="badge">{card.difficulty}</span>
+            {flips && (
+              <span className="card-side-label" aria-live="polite">
+                {revealed ? "Back" : "Front"}
               </span>
-              <p className="visual-caption">{plain(card.presentation.label)}</p>
-              <Diagram source={card.presentation.source} />
-            </section>
-          )}
-          {card.mermaid && <Diagram source={card.mermaid} />}
-          {card.lab === "carry" && (
-            <details className="explore">
-              <summary>Explore the mechanism · exchange-rate risk</summary>
-              <CarryLab />
-            </details>
-          )}
-          <InteractiveLab type={labType} />
-          {card.presentation?.originalNotes && (
-            <details className="original-notes">
-              <summary>Original source notes</summary>
-              <RichContent html={card.presentation.originalNotes} />
-            </details>
-          )}
-        </section>
-      )}
+            )}
+          </div>
+        </div>
+        {card.kind === "code" && card.code ? (
+          <SplitWorkspace
+            problem={problem}
+            editor={
+              <Suspense fallback={<p className="muted">Opening editor…</p>}>
+                <CodeWorkspace card={card} revealed={revealed} onError={fail} />
+              </Suspense>
+            }
+          />
+        ) : (
+          <div className="card-front" hidden={flips && revealed}>
+            {problem}
+          </div>
+        )}
+        {revealed && (
+          <section
+            className="answer"
+            id={card.kind === "math" ? "worked-solution" : undefined}
+          >
+            {flips && <p className="card-back-context">{plain(card.title)}</p>}
+            <span className="eyebrow">
+              {card.kind === "math" ? "Worked solution" : "The answer"}
+            </span>
+            <RichContent
+              html={card.presentation?.answer ?? card.answer}
+              cardId={card.id}
+              widgetsAllowed={card.widgetsAllowed === true}
+              revision={card.revision || 0}
+            />
+            {card.presentation && (
+              <section className="visual-explanation">
+                <span className="eyebrow">
+                  {card.presentation.label === "Answer diagram"
+                    ? "Answer diagram"
+                    : "Concept map"}
+                </span>
+                <p className="visual-caption">
+                  {plain(card.presentation.label)}
+                </p>
+                <Diagram source={card.presentation.source} />
+              </section>
+            )}
+            {card.mermaid && <Diagram source={card.mermaid} />}
+            {card.lab === "carry" && (
+              <details className="explore">
+                <summary>Explore the mechanism · exchange-rate risk</summary>
+                <CarryLab />
+              </details>
+            )}
+            <InteractiveLab type={labType} />
+            {card.presentation?.originalNotes && (
+              <details className="original-notes">
+                <summary>Original source notes</summary>
+                <RichContent html={card.presentation.originalNotes} />
+              </details>
+            )}
+          </section>
+        )}
+        {flips && (
+          <VoiceAnswer
+            key={card.id}
+            card={card}
+            revealed={revealed}
+            onOpenSettings={onOpenVoiceSettings}
+            onEvaluated={() => reveal(true)}
+            onBusyChange={onVoiceBusyChange}
+          />
+        )}
+      </article>
+      {flips && flipControl}
       {revealed && !browsing && (
         <div className="ratings">
           <span>
@@ -312,6 +415,6 @@ export function ReviewCard({
           </div>
         </div>
       )}
-    </article>
+    </>
   );
 }

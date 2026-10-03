@@ -1,0 +1,61 @@
+# Public-readiness review
+
+Reviewed October 3, 2026. This is a source-build beta for Apple Silicon macOS, with a portable learning toolkit and user-configured integrations.
+
+## Verdict
+
+The application and learning workflow can be reproduced with another person's knowledge. A clean candidate installation reaches a working study session, and the reusable skills/integration infrastructure are included. Reproducing the full workflow still requires the user's own KB scope, assistant connection, optional API key and daily schedule.
+
+No credentials, private card collection, personal KB export, workspace/page identity or personal screenshot was detected in the reviewed candidate or reachable history. Public examples and screenshots contain original demo material. Pattern checks and manual review reduce risk; they are not a security certification.
+
+The review started from a checkout whose recent features were uncommitted and which had no Git remote. A clone of the earlier commit would miss the current app. The complete candidate must be committed and tested from that commit before publication. Local verification does not establish what is on GitHub.
+
+## Findings and changes
+
+| Finding                                                                | Result                                                                                                                                                                                                            |
+| :--------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Recent app/integration files were absent from the committed snapshot   | Prepare a complete reviewed local commit and verify its clean clone before publishing.                                                                                                                            |
+| README screenshots/navigation/voice instructions lagged behind the app | Updated demo-only screenshots, current Settings paths, four study formats and Answer Strip instructions. Added a complete [workflow guide](WORKFLOW.md).                                                          |
+| First launch could silently download Electron after no-launch setup    | Setup explicitly installs the locked Electron runtime before building. Download failures stop setup; later launch uses the installed runtime.                                                                     |
+| Unsupported older macOS passed prerequisite checks                     | Setup checks macOS 13 or later, matching the bundled Electron minimum.                                                                                                                                            |
+| Runtime diagnosis differed from execution                              | Doctor resolves the actual `xcrun` tools and reports the selected scientific interpreter separately.                                                                                                              |
+| Scientific Python validation ignored the selected profile              | Validator supports `--data` and `RECALL_DATA_DIR`; documentation includes an explicit optional venv/NumPy recipe.                                                                                                 |
+| Custom Codex homes could receive the wrong installation/scan           | Installer, scanner and preparation use the selected/saved Codex home.                                                                                                                                             |
+| A stale profile could disconnect another profile's active bridge       | Connection status/disconnect bind to profile identity, with legacy compatibility.                                                                                                                                 |
+| Public implementation notes included exact personal study counts       | Generalised preservation evidence without exposing library/review/draft/attempt or paused-queue counts.                                                                                                           |
+| Privacy scans missed some databases, encrypted files and archives      | Shared source/package checks cover broader private artifact types, SQLite signatures, common credentials and unsupported first-party binaries; history failures fail closed. Added synthetic regression fixtures. |
+| CI omitted voice/Speak desktop flows                                   | Added isolated synthetic checks for source and packaged builds. Hosted execution is still unverified.                                                                                                             |
+
+## What another user configures
+
+| Workflow                                | Included                                                                   | User supplies                                                                  |
+| :-------------------------------------- | :------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
+| Study concepts, math, code or a mixture | Local app, renderer, editor, scheduler, demo and imports                   | Their own content; optional Apple coding tools                                 |
+| Author rich cards and supplements       | Shared concept/card/visual/math/code/audit skills and validation contracts | A capable assistant and actually completed checks                              |
+| Learn across projects                   | Global Codex/Claude bridge installer and profile launcher                  | Capture opt-in and a fresh assistant session                                   |
+| Reference or maintain a KB              | Scoped local adapters and Notion snapshot/outbox workflow                  | Folder or Notion scope, connector authentication and optional write permission |
+| Canonical KB plus mirror                | Assistant-driven stable-ID/revision/receipt procedure                      | Selected canonical/mirror sources; no continuous two-way sync                  |
+| Daily Self Test                         | Local captures, inbox, linked questions and Markdown logs                  | Preparation and optional host automation/timezone                              |
+| Catch-up                                | Incremental supported local session scanning                               | Explicit date/project scope; app open for periodic scans                       |
+| Speak and answer feedback               | Transcription/evaluation UI and encrypted local key storage                | Their OpenAI API account, key, internet and billing                            |
+
+The restricted **Prepare next** worker cannot execute code/calculations or inspect a visual in a browser. Rich new objectives may need a normal assistant to finish independent checks and submit the validated inbox result. Missing checks remain blocked. An imported code report does not grant execution trust.
+
+## Verification
+
+The clean-install trial used a candidate copy with no initial dependencies/build and an isolated home/profile. Real `npm ci`, explicit Electron installation and production build passed. The desktop trial covered an empty library, the three original demo cards, both themes, widget input/isolation, hidden math and rendered steps, Monaco, actual sandboxed Python execution, manual advance and capture opt-in. Later launch was checked with npm offline mode.
+
+The full regression suite passes, including runtime selection, custom assistant homes, profile ownership and stronger source/history/archive privacy checks. Dependency auditing reported zero advisories at review time. That is a dated registry result, not a guarantee against future advisories.
+
+Connection checks use isolated temporary homes/profiles. Voice/Speak checks use synthetic microphones and mocked provider responses; they do not verify real microphone quality, live API model access, billing or factual assessment quality. Screenshots were visually checked and use only original demo content.
+
+Source/history checks cover first-party files and reachable commits. Package checks inspect the actual first-party archive contents. Dependency source, arbitrary image pixels and public identity attribution require separate review; commit identity counts are reported without printing names/emails. A passing audit does not establish correctness of every authored card.
+
+## Remaining before broad distribution
+
+1. Publish the reviewed commit to the intended GitHub remote and confirm the hosted workflow. Enable a real private vulnerability reporting channel.
+2. Provide a signed, notarized Mac download to remove Node/source-build setup for nontechnical users.
+3. Perform a real first-user acceptance trial with authenticated Codex and Claude, a live scoped Notion KB/mirror, and actual voice evaluation. Only the permitted local/synthetic boundaries were tested here.
+4. Add an in-app knowledge-source wizard to replace manual JSON scope configuration.
+
+See [Launch](LAUNCH.md), [Privacy](PRIVACY.md) and [Troubleshooting](TROUBLESHOOTING.md). Profile backups remain private and must never be used as public seed content.

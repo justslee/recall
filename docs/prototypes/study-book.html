@@ -1,0 +1,1718 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Recall — The Study Book</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --desk: #e5e6dd;
+        --paper: #faf9f2;
+        --paper2: #f2f2e8;
+        --ink: #273e34;
+        --muted: #697467;
+        --line: #d7dbce;
+        --green: #355642;
+        --on-green: #fbfcf4;
+        --wash: #e8eddf;
+        --glass: #fafbf580;
+        --gold: #9e7c44;
+        --shadow: #35432a17;
+        --code: #edf0e6;
+        --serif: Georgia, "Times New Roman", serif;
+        --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --mono: "SFMono-Regular", Consolas, monospace;
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --desk: #111b17;
+        --paper: #202c25;
+        --paper2: #253128;
+        --ink: #e3e7d9;
+        --muted: #a6b09e;
+        --line: #3a483b;
+        --green: #b5c8a3;
+        --on-green: #1e2d21;
+        --wash: #303f30;
+        --glass: #26382b88;
+        --gold: #c6aa75;
+        --shadow: #00000035;
+        --code: #1b271f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--desk);
+        color: var(--ink);
+        font: 14px/1.55 var(--sans);
+        min-height: 100vh;
+        background-image:
+          radial-gradient(ellipse at 85% 0%, #9da98a20, transparent 60%),
+          radial-gradient(ellipse at 5% 90%, #99907715, transparent 50%);
+      }
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button {
+        border: 0;
+        background: none;
+      }
+      button:disabled {
+        opacity: 0.42;
+        cursor: default;
+      }
+      button,
+      input,
+      textarea,
+      select,
+      a {
+        outline-offset: 5px;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      textarea:focus-visible,
+      select:focus-visible,
+      a:focus-visible {
+        outline: 2px solid var(--green);
+      }
+      svg {
+        vertical-align: middle;
+        flex-shrink: 0;
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+      h1,
+      h2,
+      h3 {
+        font-weight: 400;
+      }
+      h1,
+      h2,
+      h3,
+      .serif {
+        font-family: var(--serif);
+      }
+      .caps {
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .topbar {
+        height: 94px;
+        max-width: 1510px;
+        margin: auto;
+        padding: 0 45px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+      }
+      .brand-mark {
+        width: 37px;
+        height: 41px;
+        background: var(--green);
+        color: var(--on-green);
+        display: grid;
+        place-content: center;
+        border-radius: 4px 11px 11px 4px;
+        box-shadow: inset 4px 0 #ffffff15;
+      }
+      .brand-name {
+        font: 27px var(--serif);
+        letter-spacing: -1px;
+      }
+      .brand small {
+        display: block;
+        font-size: 9px;
+        letter-spacing: 0.17em;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .glass {
+        background: var(--glass);
+        backdrop-filter: blur(22px) saturate(130%);
+        border: 1px solid #ffffff35;
+        box-shadow:
+          inset 0 1px #ffffff25,
+          0 6px 25px var(--shadow);
+      }
+      .nav {
+        padding: 5px;
+        border-radius: 100px;
+        display: flex;
+        gap: 3px;
+      }
+      .nav button {
+        border-radius: 100px;
+        padding: 9px 22px;
+        color: var(--muted);
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .nav button.active {
+        background: var(--paper);
+        color: var(--ink);
+        box-shadow: 0 2px 8px var(--shadow);
+      }
+      .top-right {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+      .prototype {
+        font-size: 9px;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .theme {
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+      }
+      .workspace {
+        max-width: 1510px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 245px minmax(0, 1fr);
+        gap: 30px;
+        padding: 5px 45px 30px;
+      }
+      .sidebar {
+        padding: 30px 12px 0 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 780px;
+      }
+      .volume {
+        font: italic 16px var(--serif);
+        color: var(--muted);
+        margin-bottom: 27px;
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+      .volume:after {
+        content: "";
+        height: 1px;
+        background: var(--line);
+        flex: 1;
+      }
+      .side-label {
+        display: block;
+        color: var(--muted);
+        margin: 0 0 12px 14px;
+      }
+      .side-link {
+        width: 100%;
+        text-align: left;
+        border-radius: 9px;
+        padding: 13px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .side-link.active {
+        background: var(--glass);
+        color: var(--ink);
+        box-shadow: inset 0 0 0 1px var(--line);
+      }
+      .side-link .number {
+        font: 12px var(--mono);
+        opacity: 0.7;
+      }
+      .side-link .count {
+        margin-left: auto;
+        font-size: 11px;
+      }
+      .side-divider {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 22px 14px;
+      }
+      .collection-select {
+        width: calc(100% - 28px);
+        margin: 0 14px;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        background: transparent;
+        padding: 10px 0;
+      }
+      .daily-link {
+        margin: 28px 10px 0;
+        padding: 18px 14px;
+        background: var(--wash);
+        border-radius: 10px;
+        text-align: left;
+        line-height: 1.5;
+      }
+      .daily-link strong {
+        display: block;
+        font: 19px var(--serif);
+        margin: 8px 0;
+      }
+      .daily-link .caps {
+        font-size: 9px;
+      }
+      .daily-link small {
+        color: var(--muted);
+      }
+      .side-bottom {
+        margin-top: auto;
+        padding: 38px 14px 5px;
+      }
+      .side-bottom p {
+        font: italic 17px/1.65 var(--serif);
+        max-width: 155px;
+        margin-bottom: 18px;
+      }
+      .side-bottom small {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .book {
+        position: relative;
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 6px 17px 17px 6px;
+        background: var(--paper);
+        box-shadow:
+          0 25px 60px -25px #25332135,
+          5px 5px 0 -1px var(--paper2),
+          5px 5px 0 0 var(--line),
+          9px 9px 0 -1px var(--paper2),
+          9px 9px 0 0 var(--line);
+        min-height: 810px;
+      }
+      .book:before {
+        content: "";
+        position: absolute;
+        left: 17px;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--line);
+        opacity: 0.5;
+      }
+      .folio {
+        padding: 36px 45px 23px 49px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .folio span:first-child {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .bookmark {
+        position: absolute;
+        top: -1px;
+        right: 38px;
+        width: 27px;
+        height: 30px;
+        background: var(--green);
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 79%, 0 100%);
+      }
+      .page {
+        padding: 38px 44px 0 49px;
+        min-height: 640px;
+        animation: arrive 0.35s ease;
+      }
+      .chapter-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 29px;
+      }
+      .chapter-line .caps {
+        color: var(--gold);
+      }
+      .formats {
+        display: flex;
+        gap: 14px;
+      }
+      .formats button {
+        font-size: 11px;
+        color: var(--muted);
+        padding: 5px 0;
+        border-bottom: 1px solid transparent;
+      }
+      .formats button.active {
+        color: var(--ink);
+        border-color: var(--green);
+      }
+      .study-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 168px;
+        gap: 39px;
+      }
+      .question {
+        font-size: clamp(32px, 3.05vw, 47px);
+        line-height: 1.15;
+        letter-spacing: -1.6px;
+        margin-bottom: 22px;
+        max-width: 560px;
+      }
+      .question em {
+        color: var(--green);
+        font-weight: 400;
+      }
+      .lede {
+        font-size: 14px;
+        line-height: 1.85;
+        max-width: 530px;
+        color: var(--muted);
+      }
+      .prompt-line {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 24px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .margin {
+        padding: 9px 0 0 21px;
+        border-left: 1px solid var(--line);
+        font-size: 12px;
+      }
+      .margin .caps {
+        font-size: 9px;
+        color: var(--muted);
+      }
+      .margin h3 {
+        font-size: 21px;
+        line-height: 1.35;
+        margin: 15px 0 10px;
+      }
+      .margin p {
+        font: italic 15px/1.65 var(--serif);
+        color: var(--muted);
+      }
+      .margin-rule {
+        width: 26px;
+        height: 1px;
+        background: var(--gold);
+        margin: 25px 0 14px;
+      }
+      .note {
+        width: 100%;
+        resize: vertical;
+        min-height: 86px;
+        max-height: 220px;
+        border: 0;
+        border-radius: 0;
+        padding: 4px 0;
+        background: repeating-linear-gradient(
+          transparent 0,
+          transparent 25px,
+          var(--line) 25px,
+          var(--line) 26px
+        );
+        font: italic 14px/26px var(--serif);
+        color: var(--ink);
+      }
+      .note::placeholder {
+        color: var(--muted);
+        opacity: 0.85;
+      }
+      .note-save {
+        font-size: 9px;
+        color: var(--muted);
+        margin-top: 6px;
+        display: block;
+      }
+      .recall-space {
+        margin: 27px 0 23px;
+        border-top: 1px solid var(--line);
+        padding-top: 21px;
+      }
+      .recall-space label {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        display: block;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .scratch {
+        width: 100%;
+        min-height: 84px;
+        resize: vertical;
+        background: transparent;
+        border: 0;
+        font: 18px/1.85 var(--serif);
+        padding: 0;
+      }
+      .scratch::placeholder {
+        color: var(--muted);
+        opacity: 0.6;
+      }
+      .reveal {
+        border-radius: 10px;
+        padding: 12px 18px;
+        background: var(--green);
+        color: var(--on-green);
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 12px;
+        box-shadow: 0 3px 8px var(--shadow);
+      }
+      .reveal kbd {
+        border: 1px solid #ffffff45;
+        font: 10px var(--mono);
+        padding: 1px 5px;
+        border-radius: 4px;
+        opacity: 0.8;
+      }
+      .answer {
+        border-top: 1px solid var(--line);
+        padding-top: 22px;
+        margin-top: 24px;
+        animation: arrive 0.3s ease;
+      }
+      .answer .caps {
+        font-size: 9px;
+        color: var(--gold);
+      }
+      .answer h3 {
+        font-size: 26px;
+        margin: 9px 0 12px;
+      }
+      .answer p {
+        line-height: 1.8;
+        font-size: 13px;
+      }
+      .lab {
+        background: var(--paper2);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 18px;
+        margin-top: 20px;
+      }
+      .lab-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font: italic 17px var(--serif);
+      }
+      .lab label {
+        font-size: 11px;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 18px;
+      }
+      .lab input {
+        accent-color: var(--green);
+        width: 100%;
+        margin: 12px 0;
+      }
+      .lab svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .lab-caption {
+        font-size: 11px !important;
+        color: var(--muted);
+        margin: 9px 0 0;
+        line-height: 1.6 !important;
+      }
+      .book-foot {
+        margin: 30px 44px 0 49px;
+        padding: 21px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid var(--line);
+        gap: 15px;
+      }
+      .page-counter {
+        font: italic 13px var(--serif);
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .ratings {
+        display: flex;
+        gap: 5px;
+      }
+      .ratings button {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 13px;
+        background: var(--glass);
+        font-size: 11px;
+      }
+      .ratings button:hover:not(:disabled) {
+        background: var(--wash);
+        border-color: var(--green);
+      }
+      .ratings button small {
+        display: block;
+        font-size: 9px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .footer-note {
+        max-width: 1510px;
+        margin: auto;
+        padding: 0 45px 20px 320px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .progress {
+        height: 2px;
+        background: var(--line);
+        margin-top: 28px;
+      }
+      .progress i {
+        display: block;
+        height: 2px;
+        background: var(--green);
+        width: 33.33%;
+        transition: width 0.4s;
+      }
+      .math-box {
+        background: var(--paper2);
+        padding: 24px;
+        margin: 24px 0;
+        border-left: 2px solid var(--gold);
+      }
+      .math-given {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+      .math-given strong {
+        font: 25px var(--serif);
+        display: block;
+      }
+      .math-given small {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .math-input {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin: 22px 0;
+      }
+      .math-input input {
+        min-width: 0;
+        width: 155px;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid var(--ink);
+        padding: 8px 0;
+        font: 28px var(--serif);
+      }
+      .math-input button,
+      .secondary {
+        border: 1px solid var(--line);
+        background: var(--glass);
+        padding: 9px 13px;
+        border-radius: 7px;
+        font-size: 11px;
+      }
+      .feedback {
+        font-size: 12px;
+        color: var(--green);
+        min-height: 19px;
+      }
+      .steps {
+        counter-reset: steps;
+        list-style: none;
+        padding: 0;
+      }
+      .steps li {
+        counter-increment: steps;
+        display: flex;
+        gap: 15px;
+        margin: 15px 0;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .steps li:before {
+        content: "0" counter(steps);
+        color: var(--gold);
+        font: 12px var(--mono);
+        padding-top: 4px;
+      }
+      .math-expression {
+        font: 24px var(--serif);
+        letter-spacing: 0.02em;
+        padding: 10px 0;
+      }
+      .photo {
+        display: none;
+        max-height: 130px;
+        max-width: 100%;
+        margin: 10px 0;
+        border-radius: 5px;
+      }
+      .upload {
+        font-size: 11px;
+        color: var(--muted);
+        display: inline-flex;
+        gap: 8px;
+        cursor: pointer;
+      }
+      .coding .study-layout {
+        display: block;
+      }
+      .coding .margin {
+        display: none;
+      }
+      .coding .question {
+        font-size: 36px;
+        max-width: none;
+      }
+      .coding .lede {
+        max-width: 720px;
+      }
+      .editor-shell {
+        background: var(--code);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 23px;
+      }
+      .editor-head {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        font: 11px var(--mono);
+        color: var(--muted);
+      }
+      .editor-head span:first-child {
+        color: var(--ink);
+      }
+      .editor {
+        position: relative;
+        min-height: 250px;
+      }
+      .editor pre,
+      .editor textarea {
+        tab-size: 4;
+        white-space: pre;
+        overflow: auto;
+        margin: 0;
+        padding: 20px 20px 20px 49px;
+        font: 12px/1.85 var(--mono);
+        width: 100%;
+        min-height: 250px;
+        border: 0;
+        background: transparent;
+      }
+      .editor pre {
+        pointer-events: none;
+      }
+      .editor textarea {
+        position: absolute;
+        inset: 0;
+        color: transparent;
+        caret-color: var(--ink);
+        resize: vertical;
+        outline-offset: -3px;
+        -webkit-text-fill-color: transparent;
+      }
+      .editor textarea::selection {
+        background: #9bab8640;
+      }
+      .ln {
+        position: absolute;
+        left: 13px;
+        top: 20px;
+        font: 11px/2.02 var(--mono);
+        color: var(--muted);
+        opacity: 0.6;
+        text-align: right;
+      }
+      .kw {
+        color: var(--gold);
+      }
+      .comment {
+        color: var(--muted);
+        font-style: italic;
+      }
+      .editor-bottom {
+        padding: 11px 16px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .console {
+        padding: 15px 18px;
+        font: 11px/1.8 var(--mono);
+        border-top: 1px solid var(--line);
+      }
+      .console small {
+        font: 11px var(--sans);
+        color: var(--muted);
+        display: block;
+        margin-bottom: 8px;
+      }
+      .large-title {
+        font-size: 44px;
+        line-height: 1.2;
+        letter-spacing: -1.2px;
+        margin: 7px 0 17px;
+      }
+      .index-row {
+        width: 100%;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: 38px 1fr auto;
+        gap: 14px;
+        align-items: center;
+        padding: 23px 0;
+        text-align: left;
+      }
+      .index-row:hover {
+        background: var(--wash);
+      }
+      .index-row .roman {
+        font: italic 19px var(--serif);
+        color: var(--gold);
+      }
+      .index-row h3 {
+        font-size: 23px;
+        margin-bottom: 5px;
+      }
+      .index-row small {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .pill {
+        display: inline-flex;
+        border: 1px solid var(--line);
+        background: var(--wash);
+        font-size: 10px;
+        border-radius: 100px;
+        padding: 5px 10px;
+        align-items: center;
+        gap: 6px;
+      }
+      .index-search {
+        width: 100%;
+        padding: 12px 0;
+        margin: 15px 0 5px;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        background: transparent;
+      }
+      .day-tabs {
+        display: flex;
+        gap: 8px;
+        margin: 24px 0;
+      }
+      .day-tabs button {
+        padding: 11px 17px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        font-size: 11px;
+      }
+      .day-tabs button.active {
+        background: var(--green);
+        color: var(--on-green);
+        border-color: var(--green);
+      }
+      .day-summary {
+        background: var(--paper2);
+        padding: 27px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        margin: 24px 0;
+      }
+      .day-summary h3 {
+        font-size: 28px;
+        margin-bottom: 12px;
+      }
+      .day-stats {
+        display: flex;
+        gap: 45px;
+        margin: 22px 0;
+      }
+      .day-stats strong {
+        display: block;
+        font: 29px var(--serif);
+      }
+      .day-stats small {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .day-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .day-summary p {
+        font-size: 12px;
+        color: var(--muted);
+        max-width: 520px;
+      }
+      .list-heading {
+        display: flex;
+        justify-content: space-between;
+        padding: 19px 0 8px;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .done {
+        text-align: center;
+        padding: 65px 20px 90px;
+      }
+      .done h2 {
+        font-size: 47px;
+        letter-spacing: -1.2px;
+      }
+      .done .caps {
+        color: var(--gold);
+      }
+      .done p {
+        max-width: 390px;
+        margin: 20px auto;
+        color: var(--muted);
+      }
+      .done .seal {
+        width: 70px;
+        height: 70px;
+        margin: 0 auto 30px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+      }
+      .toast {
+        position: fixed;
+        bottom: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 100px;
+        padding: 12px 23px;
+        background: var(--green);
+        color: var(--on-green);
+        font-size: 12px;
+        box-shadow: 0 7px 30px var(--shadow);
+        z-index: 9;
+        max-width: 90vw;
+        text-align: center;
+      }
+      .hidden,
+      [hidden] {
+        display: none !important;
+      }
+      @keyframes arrive {
+        from {
+          opacity: 0;
+          transform: translateY(7px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *:before {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+      @media (min-width: 1500px) {
+        .page {
+          padding-top: 47px;
+        }
+        .book {
+          min-height: 850px;
+        }
+      }
+      @media (max-width: 1080px) {
+        .workspace {
+          grid-template-columns: 190px 1fr;
+          gap: 20px;
+          padding: 5px 25px 30px;
+        }
+        .topbar {
+          padding: 0 25px;
+        }
+        .study-layout {
+          grid-template-columns: 1fr;
+        }
+        .margin {
+          display: none;
+        }
+        .page {
+          padding: 30px 32px 0 38px;
+        }
+        .folio {
+          padding: 30px 32px 22px 38px;
+        }
+        .book-foot {
+          margin-left: 38px;
+          margin-right: 32px;
+        }
+        .footer-note {
+          padding-left: 235px;
+          padding-right: 25px;
+        }
+        .top-right .prototype {
+          display: none;
+        }
+        .sidebar {
+          min-height: 780px;
+        }
+      }
+      @media (max-width: 740px) {
+        .topbar {
+          height: auto;
+          padding: 20px;
+          flex-wrap: wrap;
+        }
+        .nav {
+          order: 3;
+          flex: 1;
+          justify-content: center;
+        }
+        .nav button {
+          flex: 1;
+          justify-content: center;
+        }
+        .workspace {
+          display: block;
+          padding: 0 14px 25px;
+        }
+        .sidebar {
+          min-height: 0;
+          display: block;
+          padding: 0 6px 18px;
+        }
+        .volume,
+        .side-label,
+        .side-divider,
+        .collection-select,
+        .daily-link,
+        .side-bottom {
+          display: none;
+        }
+        .topic-links {
+          display: flex;
+          gap: 5px;
+        }
+        .side-link {
+          padding: 9px;
+          justify-content: center;
+          font-size: 10px;
+          margin: 0;
+        }
+        .side-link .number,
+        .side-link .count {
+          display: none;
+        }
+        .book {
+          min-height: 710px;
+        }
+        .page {
+          padding: 24px 22px 0 28px;
+          min-height: 530px;
+        }
+        .folio {
+          padding: 25px 22px 19px 28px;
+          font-size: 8px;
+          letter-spacing: 0.08em;
+        }
+        .bookmark {
+          right: 18px;
+          width: 19px;
+          height: 20px;
+        }
+        .chapter-line {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .question {
+          font-size: 35px;
+        }
+        .book-foot {
+          margin: 24px 22px 0 28px;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 12px;
+        }
+        .ratings button {
+          flex: 1;
+          padding: 9px 5px;
+        }
+        .page-counter {
+          text-align: center;
+        }
+        .footer-note {
+          padding: 0 22px 22px;
+          gap: 15px;
+        }
+        .footer-note span:last-child {
+          display: none;
+        }
+        .large-title {
+          font-size: 35px;
+        }
+        .index-row {
+          grid-template-columns: 25px 1fr;
+          gap: 8px;
+        }
+        .index-row .pill {
+          grid-column: 2;
+          justify-self: start;
+        }
+        .math-given {
+          gap: 8px;
+        }
+        .math-given strong {
+          font-size: 23px;
+        }
+        .math-box {
+          padding: 18px;
+        }
+        .coding .question {
+          font-size: 31px;
+        }
+        .editor pre,
+        .editor textarea {
+          font-size: 11px;
+        }
+        .editor-bottom {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .day-summary {
+          padding: 20px;
+        }
+        .day-stats {
+          gap: 30px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"
+          ><svg
+            width="23"
+            height="23"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.3"
+          >
+            <path
+              d="M4 4h7a3 3 0 0 1 3 3v14a4 4 0 0 0-4-3H4zM14 7h6v14h-6M7 8h4M7 11h4"
+            /></svg
+        ></span>
+        <div>
+          <div class="brand-name">Recall</div>
+          <small>A PERSONAL STUDY COMPANION</small>
+        </div>
+      </div>
+      <nav class="nav glass" aria-label="Main navigation">
+        <button data-view="study" class="active">Study book</button
+        ><button data-view="library">Library</button
+        ><button data-view="daybook">Daybook</button>
+      </nav>
+      <div class="top-right">
+        <span class="prototype">Design study · 01</span
+        ><button
+          class="theme glass"
+          id="theme"
+          aria-label="Change appearance"
+          title="Appearance follows your device; click to preview the other theme"
+        >
+          <svg
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          >
+            <circle cx="12" cy="12" r="8" />
+            <path d="M12 4v16" />
+            <path d="M12 4a8 8 0 0 1 0 16" fill="currentColor" />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="volume">Your commonplace book</div>
+        <span class="side-label caps">Contents</span>
+        <div class="topic-links">
+          <button class="side-link active" data-topic="all">
+            <span class="number">§</span>All subjects<span class="count"
+              >03</span
+            ></button
+          ><button class="side-link" data-topic="concept">
+            <span class="number">01</span>Computer systems<span class="count"
+              >01</span
+            ></button
+          ><button class="side-link" data-topic="math">
+            <span class="number">02</span>Applied mathematics<span class="count"
+              >01</span
+            ></button
+          ><button class="side-link" data-topic="code">
+            <span class="number">03</span>Programming<span class="count"
+              >01</span
+            >
+          </button>
+        </div>
+        <hr class="side-divider" />
+        <label class="side-label caps" for="collection">Collection</label
+        ><select id="collection" class="collection-select">
+          <option value="all">The example notebook</option>
+          <option value="systems">Systems & computation</option></select
+        ><button class="daily-link" data-view="daybook">
+          <span class="caps">From your last session</span
+          ><strong>A second look.</strong
+          ><small
+            >2 questions to revisit <span aria-hidden="true">↗</span></small
+          >
+        </button>
+        <div class="side-bottom">
+          <p>“What we remember becomes part of how we think.”</p>
+          <small>One question. A little more understood.</small>
+        </div>
+      </aside>
+      <main class="book">
+        <span class="bookmark" aria-hidden="true"></span>
+        <header class="folio">
+          <span id="folio-title"
+            >THE STUDY BOOK <span aria-hidden="true">/</span> VOL. I</span
+          ><span>Practice, then return.</span>
+        </header>
+        <div id="page" class="page"></div>
+        <footer class="book-foot" id="book-foot"></footer>
+      </main>
+    </div>
+    <footer class="footer-note">
+      <span
+        >Interactive prototype · example cards only · nothing saved to
+        Recall</span
+      ><span>Made for the pleasure of understanding.</span>
+    </footer>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <script>
+      const $ = (s) => document.querySelector(s),
+        $$ = (s) => [...document.querySelectorAll(s)];
+      const cards = [
+        {
+          kind: "concept",
+          subject: "Computer systems",
+          chapter: "01",
+          title: "When does a queue<br>become a <em>bottleneck?</em>",
+          plain: "When does a queue become a bottleneck?",
+          level: "Concept · Foundation",
+          prompt:
+            "A producer keeps adding work. A consumer keeps taking it away. Explain what happens when their rates stop keeping up with each other.",
+          margin: "Close the book.<br>Find your own words.",
+          aside:
+            "Try a definition first, then a concrete example. The explanation will still be here.",
+          note: "What made it click?",
+          answerTitle: "The gap between arriving and finishing.",
+          answer:
+            "A queue holds work waiting to be processed. If work arrives faster than it can be completed over a sustained period, the backlog grows. A finite buffer buys time; it cannot fix a lasting rate mismatch. The bottleneck is the stage limiting throughput, while the queue is where unfinished work accumulates.",
+        },
+        {
+          kind: "math",
+          subject: "Applied mathematics",
+          chapter: "02",
+          title: "How much room<br>does the <em>buffer need?</em>",
+          plain: "How much room does the buffer need?",
+          level: "Math · Application",
+          prompt:
+            "An empty queue receives 120 items per second. During a temporary slowdown, its consumer handles 100 items per second for 90 seconds. What minimum capacity absorbs the backlog?",
+          margin: "Work it out.<br>Keep the units.",
+          aside:
+            "Paper is welcome. Commit to an answer before looking at the worked solution.",
+          note: "Where did I get stuck?",
+        },
+        {
+          kind: "code",
+          subject: "Programming",
+          chapter: "03",
+          title: "Give the queue<br>a little <em>room to breathe.</em>",
+          plain: "Compute a queue’s peak backlog",
+          level: "Coding · Application",
+          prompt:
+            "Implement peak_backlog. Each number is the arrivals during one second. Add arrivals, serve up to capacity, then record the largest end-of-second backlog. Assume nonnegative integer inputs.",
+          margin: "",
+          aside: "",
+          note: "",
+        },
+      ];
+      let state = {
+        view: "study",
+        topic: "all",
+        index: 0,
+        revealed: false,
+        completed: false,
+        session: [],
+        day: "yesterday",
+        notes: {},
+        drafts: {},
+        code: 'def peak_backlog(arrivals: list[int], capacity: int) -> int:\n    """Return the largest end-of-second backlog."""\n    backlog = 0\n    peak = 0\n\n    for count in arrivals:\n        # Update the queue and track its highest level.\n        pass\n\n    return peak\n',
+      };
+      let themeOverride = null;
+      const media = matchMedia("(prefers-color-scheme: dark)");
+      function theme() {
+        document.documentElement.dataset.theme =
+          themeOverride || (media.matches ? "dark" : "light");
+      }
+      theme();
+      media.addEventListener("change", theme);
+      $("#theme").onclick = () => {
+        themeOverride =
+          document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+        theme();
+        $("#theme").title =
+          "Previewing " +
+          themeOverride +
+          " appearance. Reload to follow your device.";
+      };
+      function toast(text) {
+        $("#toast").textContent = text;
+        $("#toast").hidden = false;
+        clearTimeout(window.toastTimer);
+        window.toastTimer = setTimeout(() => ($("#toast").hidden = true), 3500);
+      }
+      function esc(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+      function allowed() {
+        return cards.filter(
+          (c) =>
+            (state.topic === "all" || c.kind === state.topic) &&
+            ($("#collection").value !== "systems" || c.kind !== "math"),
+        );
+      }
+      function active() {
+        return allowed()[state.index] || allowed()[0];
+      }
+      function nav(view) {
+        state.view = view;
+        state.completed = false;
+        render();
+      }
+      $$("[data-view]").forEach((b) => (b.onclick = () => nav(b.dataset.view)));
+      $$("[data-topic]").forEach(
+        (b) =>
+          (b.onclick = () => {
+            state.topic = b.dataset.topic;
+            if ($("#collection").value === "systems" && state.topic === "math")
+              $("#collection").value = "all";
+            state.index = 0;
+            state.revealed = false;
+            state.completed = false;
+            state.view = "study";
+            render();
+          }),
+      );
+      $("#collection").onchange = () => {
+        state.topic = "all";
+        state.index = 0;
+        state.revealed = false;
+        render();
+      };
+      function render() {
+        $$("nav [data-view]").forEach((b) => {
+          b.classList.toggle("active", b.dataset.view === state.view);
+          b.setAttribute(
+            "aria-current",
+            b.dataset.view === state.view ? "page" : "false",
+          );
+        });
+        $$("[data-topic]").forEach((b) =>
+          b.classList.toggle("active", b.dataset.topic === state.topic),
+        );
+        $("#page").className = "page";
+        $("#folio-title").innerHTML =
+          state.view === "study"
+            ? 'THE STUDY BOOK <span aria-hidden="true">/</span> VOL. I'
+            : state.view === "library"
+              ? 'THE LIBRARY <span aria-hidden="true">/</span> SUBJECT INDEX'
+              : 'THE DAYBOOK <span aria-hidden="true">/</span> LEARNING JOURNAL';
+        if (state.view === "study") study();
+        if (state.view === "library") library();
+        if (state.view === "daybook") daybook();
+      }
+      function foot(left, right = "") {
+        $("#book-foot").innerHTML =
+          '<span class="page-counter">' + left + "</span>" + right;
+      }
+      function study() {
+        if (state.completed) {
+          done();
+          return;
+        }
+        const c = active();
+        $("#page").classList.toggle("coding", c.kind === "code");
+        $("#page").innerHTML =
+          `<div class="chapter-line"><span class="caps">Chapter ${c.chapter} &nbsp; / &nbsp; ${c.subject}</span><div class="formats" aria-label="Example format">${cards.map((x) => `<button data-kind="${x.kind}" class="${x.kind === c.kind ? "active" : ""}">${x.kind === "code" ? "Coding" : x.kind === "math" ? "Math" : "Concept"}</button>`).join("")}</div></div><div class="study-layout"><article><div class="caps muted" style="font-size:9px;margin-bottom:16px">${c.level}</div><h1 class="question">${c.title}</h1><p class="lede">${c.prompt}</p><div id="exercise"></div><div id="answer" class="answer" hidden></div></article><aside class="margin"><span class="caps">In the margin</span><h3>${c.margin}</h3><p>${c.aside}</p><div class="margin-rule"></div><label class="caps" for="note">A note to yourself</label><textarea id="note" class="note" placeholder="${c.note}">${esc(state.notes[c.kind] || "")}</textarea><span class="note-save">Kept while this prototype is open</span></aside></div><div class="progress"><i style="width:${((state.index + 1) / allowed().length) * 100}%"></i></div>`;
+        $$("[data-kind]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              state.topic = "all";
+              $("#collection").value = "all";
+              state.index = cards.findIndex((x) => x.kind === b.dataset.kind);
+              state.revealed = false;
+              state.completed = false;
+              render();
+            }),
+        );
+        if ($("#note"))
+          $("#note").oninput = (e) => (state.notes[c.kind] = e.target.value);
+        if (c.kind === "concept")
+          $("#exercise").innerHTML =
+            `<div class="recall-space"><label for="scratch">Your recollection</label><textarea class="scratch" id="scratch" placeholder="In my own words…">${esc(state.drafts.concept || "")}</textarea></div><button class="reveal" id="reveal">Turn to the explanation <span aria-hidden="true">↗</span><kbd>↵</kbd></button>`;
+        if (c.kind === "math")
+          $("#exercise").innerHTML =
+            `<div class="math-box"><div class="math-given"><div><strong>120</strong><small>items / sec arriving</small></div><div><strong>100</strong><small>items / sec served</small></div><div><strong>90</strong><small>seconds of slowdown</small></div></div></div><label class="caps muted" for="result">Your answer</label><div class="math-input"><input id="result" type="number" min="0" placeholder="—" value="${esc(state.drafts.math || "")}"><span class="muted">items</span><button id="check">Check answer</button></div><p class="feedback" id="feedback" role="status"></p><label class="upload">＋ Attach paper work <input id="photo" type="file" accept="image/*" hidden></label><img id="photo-preview" class="photo" alt="Your handwritten work"><p style="font-size:10px;color:var(--muted);margin-top:7px">Local preview only; handwriting is not graded.</p><button class="reveal" id="reveal" style="margin-top:15px">Reveal worked solution <span aria-hidden="true">↗</span></button>`;
+        if (c.kind === "code") {
+          $("#exercise").innerHTML =
+            `<div class="editor-shell"><div class="editor-head"><span>◦ &nbsp; exercise.py</span><span>Python &nbsp; · &nbsp; Study edition</span></div><div class="editor"><div class="ln" aria-hidden="true">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10</div><pre id="highlight" aria-hidden="true"></pre><textarea id="code" aria-label="Python editor" spellcheck="false" wrap="off">${esc(state.code)}</textarea></div><div class="editor-bottom"><span>Interface preview · Python runtime not connected</span><button class="secondary" id="tests">▷ &nbsp; Preview test cases</button></div><div class="console" id="console" hidden><small>Expected outcomes, not execution results.</small>[120, 120, 80], capacity 100 → 40<br>[5, 5, 5], capacity 10 → 0<br>[], capacity 10 → 0</div></div><button class="secondary" id="reveal" style="margin-top:18px">Show reference solution</button>`;
+          highlight();
+          $("#code").oninput = (e) => {
+            state.code = e.target.value;
+            highlight();
+          };
+          $("#code").onscroll = (e) => {
+            $("#highlight").scrollTop = e.target.scrollTop;
+            $("#highlight").scrollLeft = e.target.scrollLeft;
+          };
+          $("#code").onkeydown = (e) => {
+            if (e.key === "Tab") {
+              e.preventDefault();
+              const t = e.target,
+                a = t.selectionStart,
+                b = t.selectionEnd;
+              t.value = t.value.slice(0, a) + "    " + t.value.slice(b);
+              t.selectionStart = t.selectionEnd = a + 4;
+              state.code = t.value;
+              highlight();
+            }
+          };
+          $("#tests").onclick = () =>
+            ($("#console").hidden = !$("#console").hidden);
+        }
+        if ($("#scratch"))
+          $("#scratch").oninput = (e) =>
+            (state.drafts.concept = e.target.value);
+        if ($("#result")) {
+          $("#result").oninput = (e) => (state.drafts.math = e.target.value);
+          $("#check").onclick = () =>
+            ($("#feedback").textContent =
+              $("#result").value === ""
+                ? "Write an answer first."
+                : Number($("#result").value) === 1800
+                  ? "Correct. Now explain why the queue grows at that rate."
+                  : "Not quite. Compare how much arrives with how much leaves each second.");
+          $("#photo").onchange = (e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            if (f.size > 12000000) {
+              toast("Choose an image smaller than 12 MB.");
+              return;
+            }
+            const r = new FileReader();
+            r.onload = () => {
+              $("#photo-preview").src = r.result;
+              $("#photo-preview").style.display = "block";
+            };
+            r.readAsDataURL(f);
+          };
+        }
+        $("#reveal").onclick = reveal;
+        foot(
+          "Question " +
+            String(state.index + 1).padStart(2, "0") +
+            " of " +
+            String(allowed().length).padStart(2, "0"),
+          `<div class="ratings" aria-label="Rate recall">${["Again", "Hard", "Good", "Easy"].map((x, i) => `<button data-rating="${x}" disabled>${x}<small>${["revisit", "effortful", "recalled", "effortless"][i]}</small></button>`).join("")}</div>`,
+        );
+        $$("[data-rating]").forEach(
+          (b) => (b.onclick = () => next(b.dataset.rating)),
+        );
+        if (state.revealed) showAnswer(false);
+      }
+      function highlight() {
+        $("#highlight").innerHTML =
+          esc(state.code)
+            .split("\n")
+            .map((l) =>
+              l.trim().startsWith("#")
+                ? '<span class="comment">' + l + "</span>"
+                : l.replace(
+                    /\b(def|for|in|return|pass)\b/g,
+                    '<span class="kw">$1</span>',
+                  ),
+            )
+            .join("\n") + "\n";
+      }
+      function reveal() {
+        state.revealed = !state.revealed;
+        showAnswer(true);
+      }
+      function showAnswer(scroll) {
+        const c = active(),
+          a = $("#answer");
+        a.hidden = !state.revealed;
+        $("#reveal").textContent = state.revealed
+          ? "Hide explanation"
+          : c.kind === "math"
+            ? "Reveal worked solution"
+            : c.kind === "code"
+              ? "Show reference solution"
+              : "Turn to the explanation ↗";
+        $$("[data-rating]").forEach((b) => (b.disabled = !state.revealed));
+        if (!state.revealed) return;
+        if (c.kind === "concept") {
+          a.innerHTML = `<span class="caps">The explanation</span><h3>${c.answerTitle}</h3><p>${c.answer}</p><div class="lab"><div class="lab-head"><span>A small experiment</span><span>Fig. 01</span></div><label for="arrival">Arrival rate <output id="arrival-value"></output></label><input id="arrival" type="range" min="50" max="150" value="120" step="10"><svg id="chart" viewBox="0 0 420 158" role="img" aria-label="Queue backlog over ten seconds"></svg><p class="lab-caption" id="lab-note"></p></div>`;
+          $("#arrival").oninput = draw;
+          draw();
+        }
+        if (c.kind === "math")
+          a.innerHTML = `<span class="caps">A worked solution</span><h3>Count what stays behind.</h3><ol class="steps"><li><div>Find the net accumulation rate.<div class="math-expression">120 − 100 = 20 <small>items/s</small></div></div></li><li><div>Accumulate it over the slowdown.<div class="math-expression">20 × 90 = 1,800 <small>items</small></div></div></li><li><div>The initially empty buffer needs at least <strong>1,800 items</strong> of capacity in this constant-rate model. Real systems may need extra headroom for bursts and processing overhead.</div></li></ol>`;
+        if (c.kind === "code")
+          a.innerHTML = `<span class="caps">Reference solution</span><h3>Carry the unfinished work forward.</h3><pre style="font:12px/1.9 var(--mono);overflow:auto;background:var(--code);padding:18px;border-radius:8px">def peak_backlog(arrivals, capacity):\n    backlog = peak = 0\n    for count in arrivals:\n        backlog = max(0, backlog + count - capacity)\n        peak = max(peak, backlog)\n    return peak</pre><p>Clamp the queue at zero: unused capacity cannot be saved for the next second. Track the peak separately because the final backlog may be smaller.</p>`;
+        if (scroll)
+          a.scrollIntoView({
+            behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "instant"
+              : "smooth",
+            block: "nearest",
+          });
+      }
+      function draw() {
+        const rate = Number($("#arrival").value),
+          net = Math.max(0, rate - 100);
+        $("#arrival-value").textContent = rate + " items / sec";
+        let svg =
+          '<path d="M28 12V123H395" stroke="var(--line)" fill="none"/><text x="28" y="149" font-size="10" fill="var(--muted)">0 sec</text><text x="365" y="149" font-size="10" fill="var(--muted)">10 sec</text>';
+        for (let i = 0; i <= 10; i++) {
+          const h = ((net * i) / 500) * 100;
+          svg +=
+            '<rect x="' +
+            (35 + i * 32) +
+            '" y="' +
+            (122 - h) +
+            '" width="19" height="' +
+            Math.max(h, 1) +
+            '" rx="2" fill="var(--green)" opacity="' +
+            (0.4 + i * 0.06) +
+            '"/>';
+        }
+        svg +=
+          '<text x="395" y="18" text-anchor="end" font-size="12" fill="var(--ink)">' +
+          net * 10 +
+          " items waiting</text>";
+        $("#chart").innerHTML = svg;
+        $("#lab-note").textContent =
+          rate > 100
+            ? "With service fixed at 100 items/s, " +
+              (rate - 100) +
+              " items remain each second. The queue reaches " +
+              net * 10 +
+              " after ten seconds."
+            : "With service fixed at 100 items/s, this initially empty queue has no accumulating backlog. This is a simplified constant-rate model.";
+      }
+      function next(rating) {
+        state.session.push({ kind: active().kind, rating });
+        state.revealed = false;
+        if (state.index + 1 >= allowed().length) {
+          state.completed = true;
+        } else state.index++;
+        render();
+        $(".book").scrollIntoView({ block: "start", behavior: "smooth" });
+      }
+      function done() {
+        const weak = state.session.filter((x) =>
+          ["Again", "Hard"].includes(x.rating),
+        ).length;
+        $("#page").innerHTML =
+          `<div class="done"><div class="seal"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M5 4h6a3 3 0 0 1 3 3v13a5 5 0 0 0-4-2H5zM14 7h6v13h-6"/></svg></div><p class="caps">A page turned, not a finish line</p><h2>Leave a little wiser.</h2><p>${weak ? weak + " question" + (weak === 1 ? "" : "s") + " could use another look. A completed pass is a checkpoint, not a claim of mastery." : "You have made a first pass. Returning later is part of the practice."}</p><button class="reveal" id="again">Revisit these pages ↗</button><p style="font-size:11px">Prototype ratings are temporary. Your Recall history is unchanged.</p></div>`;
+        $("#again").onclick = () => {
+          state.index = 0;
+          state.completed = false;
+          state.session = [];
+          render();
+        };
+        foot(
+          "End of this pass",
+          '<button class="secondary" id="to-daybook">Open daybook</button>',
+        );
+        $("#to-daybook").onclick = () => nav("daybook");
+      }
+      function openCard(kind) {
+        state.view = "study";
+        state.topic = "all";
+        $("#collection").value = "all";
+        state.index = cards.findIndex((c) => c.kind === kind);
+        state.revealed = false;
+        state.completed = false;
+        render();
+      }
+      function library() {
+        $("#page").innerHTML =
+          `<div class="caps" style="color:var(--gold)">Collected for the return</div><h1 class="large-title">A shelf of understanding.</h1><p class="lede">The ideas you want to carry with you. Browse a subject, open a question, and make it your own.</p><input class="index-search" id="search" placeholder="Find an idea…" aria-label="Search example cards"><div class="list-heading"><span>The example notebook</span><span>Three ways to learn</span></div><div id="index"></div><p class="muted" style="font:italic 18px var(--serif);margin-top:40px">A library is only the beginning. The learning happens when you return.</p>`;
+        function rows() {
+          const q = $("#search").value.toLowerCase();
+          const list = allowed().filter(
+            (c) =>
+              c.plain.toLowerCase().includes(q) ||
+              c.subject.toLowerCase().includes(q),
+          );
+          $("#index").innerHTML = list.length
+            ? list
+                .map(
+                  (c) =>
+                    `<button class="index-row" data-open="${c.kind}"><span class="roman">${c.chapter}</span><span><h3>${c.plain}</h3><small>${c.subject}</small></span><span class="pill">${c.kind === "code" ? "Coding" : c.kind === "math" ? "Math" : "Concept"} &nbsp; ↗</span></button>`,
+                )
+                .join("")
+            : '<p class="muted" style="padding:25px 0">No matching example. Try “queue” or “buffer”.</p>';
+          $$("[data-open]").forEach(
+            (b) => (b.onclick = () => openCard(b.dataset.open)),
+          );
+        }
+        rows();
+        $("#search").oninput = rows;
+        foot(
+          "Index / Vol. I",
+          '<span class="caps muted" style="font-size:9px">3 original example cards</span>',
+        );
+      }
+      function daybook() {
+        $("#page").innerHTML =
+          `<div class="caps" style="color:var(--gold)">Learning leaves a trace</div><h1 class="large-title">Return to a day.<br>Remember a little more.</h1><p class="lede">A record of what you touched on, and an invitation to try again.</p><div class="day-tabs" aria-label="Example learning days"><button data-day="today" class="${state.day === "today" ? "active" : ""}">Today</button><button data-day="yesterday" class="${state.day === "yesterday" ? "active" : ""}">Yesterday</button><button data-day="earlier" class="${state.day === "earlier" ? "active" : ""}">Earlier this week</button></div><div class="day-summary"><span class="caps muted">${state.day === "today" ? "Today’s notes" : state.day === "yesterday" ? "Yesterday’s notes" : "An earlier page"} · Example session</span><h3 style="margin-top:12px">${state.day === "today" ? "A first encounter." : "Attempted. Still worth practicing."}</h3><p>${state.day === "today" ? "Three questions from the ideas you explored today. Begin with what you can recall." : "These questions stay with their original collection. You can revisit this day without starting your learning history over."}</p><div class="day-stats"><div><strong>${state.day === "today" ? "0" : "3"}</strong><small>attempted</small></div><div><strong>${state.day === "today" ? "0" : "2"}</strong><small>need practice</small></div><div><strong>3</strong><small>questions saved</small></div></div><div class="day-actions"><button class="reveal" id="day-review">${state.day === "today" ? "Start this day’s self test" : "Review needs practice"} ↗</button><button class="secondary" id="day-all">Review all cards</button></div><p style="margin:16px 0 0;font-size:10px">In Recall, your ratings update the same cards’ schedules. This prototype only demonstrates the interaction.</p></div><div class="list-heading"><span>What you touched on</span><span>Systems & computation</span></div>${cards.map((c) => `<button class="index-row" data-open="${c.kind}"><span class="roman">${c.chapter}</span><span><h3>${c.plain}</h3><small>${c.level}</small></span><span class="pill">${state.day === "today" ? "Not attempted" : c.kind === "code" ? "Recalled this time" : "Needs practice"}</span></button>`).join("")}`;
+        $$("[data-day]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              state.day = b.dataset.day;
+              render();
+            }),
+        );
+        $$("[data-open]").forEach(
+          (b) => (b.onclick = () => openCard(b.dataset.open)),
+        );
+        $("#day-review").onclick = () =>
+          startDay(state.day === "today" ? "all" : "weak");
+        $("#day-all").onclick = () => startDay("all");
+        foot(
+          "The daybook / " +
+            (state.day === "today"
+              ? "Today"
+              : state.day === "yesterday"
+                ? "Yesterday"
+                : "Earlier this week"),
+        );
+      }
+      let daySubset = null;
+      const baseAllowed = allowed;
+      allowed = function () {
+        return daySubset && state.view === "study"
+          ? cards.filter((c) => daySubset.includes(c.kind))
+          : baseAllowed();
+      };
+      function startDay(mode) {
+        state.topic = "all";
+        $("#collection").value = "all";
+        daySubset = mode === "weak" ? ["concept", "math"] : null;
+        state.index = 0;
+        state.session = [];
+        state.revealed = false;
+        state.completed = false;
+        state.view = "study";
+        render();
+        toast("Example review opened. No changes to your real cards.");
+      }
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (
+            e.target.closest("[data-kind],[data-topic],[data-view],[data-open]")
+          )
+            daySubset = null;
+        },
+        true,
+      );
+      document.addEventListener("keydown", (e) => {
+        if (
+          ["INPUT", "TEXTAREA", "SELECT"].includes(
+            document.activeElement.tagName,
+          )
+        )
+          return;
+        if (e.key === "Enter" && state.view === "study" && !state.completed) {
+          e.preventDefault();
+          reveal();
+        }
+      });
+      render();
+    </script>
+  </body>
+</html>

@@ -10,6 +10,8 @@ import {
   Plus,
   HardDrive,
   Search,
+  ChartNoAxesCombined,
+  Mic,
 } from "lucide-react";
 import {
   defaultSelection,
@@ -34,12 +36,17 @@ import {
   Completion,
 } from "./ReviewSession";
 import { HistoryView } from "./HistoryView";
+import { ProgressView } from "./ProgressView";
+import { SpeakView } from "./SpeakView";
 import { SettingsView } from "./SettingsView";
 import { AuthorForm, NewDeck } from "./AuthorForm";
 import "./styles.css";
 import { CatalogView } from "./CatalogView";
 import "./catalog.css";
 import "./forest.css";
+import "./study-index.css";
+import { StudyShelf } from "./StudyShelf";
+import { useAppearance } from "./appearance";
 import { catalogDefaults, catalogInfo, displayCatalog } from "./catalog-model";
 
 const api = window.recall;
@@ -50,6 +57,8 @@ const eyebrows = {
   selftest: "Daily learning",
   library: "Your knowledge",
   history: "Your progress",
+  progress: "Your learning journal",
+  speak: "Speaking practice",
   settings: "On this Mac",
   author: "Authoring",
   newDeck: "Authoring",
@@ -58,6 +67,8 @@ const eyebrows = {
 };
 
 function App() {
+  const appearance = useAppearance();
+  const [historyDay, setHistoryDay] = useState(null);
   const [data, setData] = useState(null),
     [selection, setSelection] = useState(defaultSelection),
     [view, setView] = useState("study"),
@@ -72,6 +83,8 @@ function App() {
     [wide, setWide] = useState(null),
     [editing, setEditing] = useState(null),
     [intervals, setIntervals] = useState({});
+  const [voiceReturn, setVoiceReturn] = useState(null);
+  const [answerBusy, setAnswerBusy] = useState(false);
   const [learning, setLearning] = useState(null);
   useEffect(() => {
     if (!api) return;
@@ -92,10 +105,15 @@ function App() {
       window.removeEventListener("focus", load);
     };
   }, [view]);
-  const startSelfTest = async (day, replace) => {
+  const startSelfTest = async (
+    day,
+    replace,
+    mode = "untested",
+    format = selection.format,
+  ) => {
     setBusy(true);
     try {
-      const session = await api.startSelfTest({ day, replace });
+      const session = await api.startSelfTest({ day, replace, mode, format });
       setActiveSession(session);
       setView("review");
       setWide(null);
@@ -191,6 +209,7 @@ function App() {
         )
       : detail;
   const go = (where) => {
+    setVoiceReturn(null);
     if (where === "catalog") refresh().catch(fail);
     if (where === "review" && activeSession) {
       const card = data.cards.find(
@@ -209,6 +228,19 @@ function App() {
     setToast((t) => (t?.action ? null : t));
     window.scrollTo(0, 0);
   };
+  const openVoiceSettings = () => {
+    const origin = { view, detail, wide, scroll: window.scrollY };
+    go("settings");
+    setVoiceReturn(origin);
+  };
+  const returnFromVoiceSettings = () => {
+    if (!voiceReturn) return;
+    setView(voiceReturn.view);
+    setDetail(voiceReturn.detail);
+    setWide(voiceReturn.wide);
+    window.requestAnimationFrame(() => window.scrollTo(0, voiceReturn.scroll));
+    setVoiceReturn(null);
+  };
   const browse = (card, ids = null) => {
     setWide(null);
     setDetailIds(ids);
@@ -217,6 +249,40 @@ function App() {
     setView("detail");
     window.scrollTo(0, 0);
   };
+  const cardLinkSequence = useRef(0);
+  useEffect(() => {
+    if (!data || !api?.onCardLink) return;
+    let live = true;
+    const openLink = async () => {
+      try {
+        const link = await api.consumeCardLink();
+        if (!link || !live) return;
+        const sequence = ++cardLinkSequence.current;
+        if (link.error) return fail(new Error(link.error));
+        const next = await api.snapshot();
+        if (!live || sequence !== cardLinkSequence.current) return;
+        const card = next.cards.find((c) => c.id === link.id);
+        if (!card)
+          return fail(
+            new Error(
+              "This card isn't in this Recall library. Search the library or ask for an updated link.",
+            ),
+          );
+        setData(next);
+        setActiveSession(next.session);
+        setToast(null);
+        browse(card);
+      } catch (error) {
+        if (live) fail(error);
+      }
+    };
+    const unsubscribe = api.onCardLink(openLink);
+    openLink();
+    return () => {
+      live = false;
+      unsubscribe();
+    };
+  }, [!!data]);
   const author = (card = null) => {
     setEditing(card);
     setView("author");
@@ -271,6 +337,15 @@ function App() {
       fail(e);
     }
   };
+  const openDeck = (deck) => {
+    changeSelection({ deck });
+    const info = catalogInfo(data.cards.filter((c) => c.decks.includes(deck)));
+    if (info) {
+      setActiveCatalog(info.id);
+      setCatalogFilters({ ...catalogDefaults, tab: "all" });
+    }
+    go(info ? "catalog" : "study");
+  };
   // ----- sessions -----
   const saveSession = async (next) => {
     await api.setting("session", next);
@@ -308,7 +383,7 @@ function App() {
       (r) => (r ? "Last rating undone." : "Nothing to undo in this session."),
     );
   const rate = async (rating) => {
-    if (busy || !activeSession) return;
+    if (busy || answerBusy || !activeSession) return;
     const id = activeSession.ids[activeSession.index];
     const practice = !!activeSession.selection.practice;
     const next = intervals[rating];
@@ -400,7 +475,7 @@ function App() {
     if (view === "review" && activeSession && current) {
       if (mod && !e.shiftKey && e.key.toLowerCase() === "z" && !inField) {
         e.preventDefault();
-        if (!busy) undo();
+        if (!busy && !answerBusy) undo();
         return;
       }
       if (e.key === "Escape") {
@@ -409,11 +484,14 @@ function App() {
         e.preventDefault();
         return go("study");
       }
-      if (inField || mod || e.altKey || e.repeat) return;
-      if ((e.key === " " || e.key === "Enter") && !activeSession.revealed) {
+      if (inField || mod || e.altKey || e.repeat || answerBusy) return;
+      if (
+        (e.key === " " || e.key === "Enter") &&
+        (!activeSession.revealed || current.kind !== "code")
+      ) {
         if (onControl) return;
         e.preventDefault();
-        return reveal(true);
+        return reveal(!activeSession.revealed);
       }
       if (activeSession.revealed && ratingKeys[e.key]) {
         e.preventDefault();
@@ -432,12 +510,12 @@ function App() {
       if (e.key === "Escape") return go(detailIds ? "catalog" : "library");
       if (
         (e.key === " " || e.key === "Enter") &&
-        detail.kind !== "concept" &&
-        !detailRevealed &&
+        (!detailRevealed || detail.kind !== "code") &&
+        !answerBusy &&
         !onControl
       ) {
         e.preventDefault();
-        setDetailRevealed(true);
+        setDetailRevealed(!detailRevealed);
       }
     }
   };
@@ -485,13 +563,15 @@ function App() {
   const title =
     view === "study"
       ? selection.deck === "all"
-        ? "Your study desk"
+        ? "Make a little room to remember."
         : selection.deck
       : {
           selftest: "Your self test",
-          library: "Your card library",
+          library: "A library that stays with you.",
           catalog: catalogTitle,
-          history: "Review history",
+          history: "Every attempt has a place.",
+          progress: "What’s staying with you?",
+          speak: "Know it. Say it. Make it clear.",
           settings: "Make it yours.",
           author: editing ? "Edit card" : "Create a card",
           newDeck: "A new collection",
@@ -501,7 +581,9 @@ function App() {
   return (
     <div
       className={
-        "app " +
+        "app study-index view-" +
+        view +
+        " " +
         (expanded ? "expanded" : "") +
         (["review", "detail"].includes(view) && current?.kind === "code"
           ? " coding-view"
@@ -517,94 +599,52 @@ function App() {
           <HardDrive size={13} /> On your Mac
         </span>
       </div>
-      <aside className="sidebar">
-        <nav className="nav-primary" aria-label="Main">
+      <header className="index-header">
+        <button
+          className="index-brand"
+          onClick={() => go("study")}
+          aria-label="Recall study desk"
+        >
+          <span>r.</span> recall
+        </button>
+        <nav className="index-nav" aria-label="Main">
           {[
-            ["study", BookOpen, "Study desk"],
-            ["selftest", CalendarCheck, "Self test"],
-            ["library", Library, "Library"],
-            ["history", History, "Review history"],
-          ].map(([id, Icon, label]) => (
+            ["study", "Study desk", BookOpen],
+            ["library", "Library", Library],
+            ["selftest", "Self test", CalendarCheck],
+            ["speak", "Speak", Mic],
+            ["progress", "Progress", ChartNoAxesCombined],
+            ["history", "Review history", History],
+          ].map(([id, label, Icon]) => (
             <button
               key={id}
               className={
                 view === id ||
                 (id === "study" && view === "review") ||
-                (id === "library" && ["detail", "author"].includes(view))
+                (id === "library" &&
+                  ["detail", "author", "catalog", "newDeck"].includes(view))
                   ? "selected"
                   : ""
               }
               aria-current={view === id ? "page" : undefined}
               onClick={() => go(id)}
             >
-              <Icon size={17} />
-              {label}
+              <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
+              <span>{label}</span>
             </button>
           ))}
         </nav>
-        <div className="sidebar-library">
-          <div className="nav-label">Topics</div>
-          <div className="topic-list sidebar-topics" aria-label="Topics">
-            <TopicOptions
-              selection={selection}
-              topics={topics}
-              changeSelection={(patch) => {
-                changeSelection(patch);
-                if (!["study", "library"].includes(view)) go("study");
-              }}
-            />
-          </div>
-          <div className="nav-label">Collections</div>
-          {["all", ...data.decks].map((deck) => {
-            const total = data.cards.filter((c) => inDeck(c, deck)).length;
-            const due = data.cards.filter(
-              (c) => inDeck(c, deck) && isDue(c, now),
-            ).length;
-            return (
-              <button
-                key={deck}
-                className={
-                  "deck " + (selection.deck === deck ? "selected" : "")
-                }
-                onClick={() => {
-                  changeSelection({ deck });
-                  const info = catalogInfo(
-                    data.cards.filter((c) => c.decks.includes(deck)),
-                  );
-                  if (info) {
-                    setActiveCatalog(info.id);
-                    setCatalogFilters({ ...catalogDefaults, tab: "all" });
-                  }
-                  go(info ? "catalog" : "study");
-                }}
-              >
-                <span>{deck === "all" ? "All collections" : deck}</span>
-                <span className="deck-counts">
-                  {due > 0 && (
-                    <em className="due" title={`${due} due for review`}>
-                      {due}
-                    </em>
-                  )}
-                  <small>{total}</small>
-                </span>
-              </button>
-            );
-          })}
-          <button className="subtle" onClick={() => go("newDeck")}>
-            <Plus size={14} /> New collection
-          </button>
-        </div>
-        <div className="sidebar-bottom">
-          <p>A little more understood.</p>
+        <div className="index-tools">
+          <span className="system-appearance">System · {appearance}</span>
           <button
-            className={view === "settings" ? "selected" : ""}
+            className="ghost"
+            aria-label="Settings & backups"
             onClick={() => go("settings")}
           >
-            <Settings size={17} /> Settings & backups
+            <Settings size={18} />
           </button>
-          <small>Recall {VERSION} · on your Mac</small>
         </div>
-      </aside>
+      </header>
       <main className="main">
         {view !== "review" && (
           <header className="page-header">
@@ -635,20 +675,25 @@ function App() {
             selection={selection}
             changeSelection={changeSelection}
             topics={topics}
+            study={view === "study"}
           />
         )}
         {view === "selftest" && (
           <SelfTest
             data={learning}
+            format={selection.format}
+            onFormat={(format) => changeSelection({ format })}
             activeSession={activeSession}
             busy={busy}
             onStart={startSelfTest}
+            onBrowse={(id) => {
+              const card = data.cards.find((c) => c.id === id);
+              if (card) browse(card);
+            }}
             onResume={() => go("review")}
+            onStudy={() => go("study")}
             onFolder={() => api.showLearningLog().catch(fail)}
           />
-        )}
-        {view === "study" && (
-          <SelfTestTile data={learning} onOpen={() => go("selftest")} />
         )}
         {view === "study" && data.cards.length === 0 && (
           <section className="self-test-hero">
@@ -673,6 +718,9 @@ function App() {
         )}
         {view === "study" && (
           <StudyDesk
+            selfTest={
+              <SelfTestTile data={learning} onOpen={() => go("selftest")} />
+            }
             selection={selection}
             changeSelection={changeSelection}
             eligible={eligible}
@@ -685,6 +733,23 @@ function App() {
             onResume={() => go("review")}
             onBrowse={browse}
             onLibrary={() => go("library")}
+          />
+        )}
+        {view === "study" && (
+          <StudyShelf
+            data={data}
+            topics={selection.topics}
+            compact
+            onDeck={openDeck}
+            onNewDeck={() => go("newDeck")}
+          />
+        )}
+        {view === "library" && !search && selection.deck === "all" && (
+          <StudyShelf
+            data={data}
+            topics={selection.topics}
+            onDeck={openDeck}
+            onNewDeck={() => go("newDeck")}
           />
         )}
         {view === "catalog" && (
@@ -724,6 +789,7 @@ function App() {
             busy={busy}
             onBack={() => go("study")}
             onUndo={undo}
+            onSelfTest={() => go("selftest")}
           />
         )}
         {view === "review" && current && (
@@ -735,31 +801,82 @@ function App() {
               onPause={() => go("study")}
               onToggleWide={() => setWide(!expanded)}
             />
-            <ReviewCard
-              key={"review:" + current.id}
-              card={current}
-              revealed={activeSession.revealed}
-              reveal={reveal}
-              browsing={false}
-              rate={rate}
-              busy={busy}
-              fail={fail}
-              challengeState={data.challengeStates?.[current.id]}
-              onChallengeState={updateChallengeState}
-              practice={activeSession.selection.practice}
-              intervals={intervals}
-              onExport={(id) =>
-                mutate(
-                  () => api.exportAttempt(id),
-                  (r) =>
-                    r
-                      ? "Assessment packet saved. Open it with Codex to review your paper solution."
-                      : "Export cancelled",
-                )
+            <div
+              className={
+                "review-layout " +
+                (current.kind === "code" ? "code-layout" : "")
               }
-            />
+            >
+              <div className="review-leaf">
+                <ReviewCard
+                  key={"review:" + current.id}
+                  card={current}
+                  revealed={activeSession.revealed}
+                  reveal={reveal}
+                  browsing={false}
+                  rate={rate}
+                  busy={busy || answerBusy}
+                  onVoiceBusyChange={setAnswerBusy}
+                  fail={fail}
+                  onOpenVoiceSettings={openVoiceSettings}
+                  challengeState={data.challengeStates?.[current.id]}
+                  onChallengeState={updateChallengeState}
+                  practice={activeSession.selection.practice}
+                  intervals={intervals}
+                  onExport={(id) =>
+                    mutate(
+                      () => api.exportAttempt(id),
+                      (r) =>
+                        r
+                          ? "Assessment packet saved. Open it with Codex to review your paper solution."
+                          : "Export cancelled",
+                    )
+                  }
+                />
+              </div>
+              {current.kind !== "code" && (
+                <aside className="session-index">
+                  <span className="eyebrow">This session</span>
+                  <ol>
+                    {activeSession.ids.map((id, index) => {
+                      const card = data.cards.find((c) => c.id === id);
+                      return (
+                        <li
+                          key={id}
+                          className={
+                            index === activeSession.index
+                              ? "current"
+                              : index < activeSession.index
+                                ? "done"
+                                : ""
+                          }
+                        >
+                          <span>
+                            {index < activeSession.index
+                              ? "✓"
+                              : String(index + 1).padStart(2, "0")}
+                          </span>
+                          <div>
+                            <strong>
+                              {card ? plain(card.title) : "Unavailable card"}
+                            </strong>
+                            <small>
+                              {card?.kind === "code"
+                                ? "Coding"
+                                : card?.kind === "math"
+                                  ? "Math"
+                                  : "Concept"}
+                            </small>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </aside>
+              )}
+            </div>
             <ReviewFooter
-              busy={busy}
+              busy={busy || answerBusy}
               onUndo={undo}
               onSkip={() => rate("Skip")}
             />
@@ -781,12 +898,14 @@ function App() {
             <ReviewCard
               key={"detail:" + current.id}
               card={current}
-              revealed={current.kind === "concept" || detailRevealed}
+              revealed={detailRevealed}
               reveal={reveal}
               browsing={true}
               rate={rate}
-              busy={busy}
+              busy={busy || answerBusy}
+              onVoiceBusyChange={setAnswerBusy}
               fail={fail}
+              onOpenVoiceSettings={openVoiceSettings}
               challengeState={data.challengeStates?.[current.id]}
               onChallengeState={updateChallengeState}
               onExport={(id) =>
@@ -801,6 +920,12 @@ function App() {
             />
             <DetailFooter
               card={current}
+              onCopyLink={() =>
+                api
+                  .copyCardLink(current.id)
+                  .then(() => notify("Card link copied."))
+                  .catch(fail)
+              }
               onEdit={() => author(current)}
               onSuspend={() =>
                 mutate(
@@ -811,9 +936,29 @@ function App() {
             />
           </div>
         )}
+        {view === "speak" && <SpeakView onSettings={openVoiceSettings} />}
+        {view === "progress" && (
+          <ProgressView
+            onStudy={() => go("study")}
+            onHistory={(day = null) => {
+              setHistoryDay(day);
+              go("history");
+            }}
+            onOpen={(id) => {
+              const card = data.cards.find((c) => c.id === id);
+              if (card) browse(card);
+            }}
+            onTopic={(topic) => {
+              changeSelection({ ...defaultSelection, topics: [topic] });
+              go("study");
+            }}
+          />
+        )}
         {view === "history" && (
           <HistoryView
             history={data.history}
+            initialDay={historyDay}
+            timeZone={learning?.timeZone}
             cards={data.cards}
             now={new Date(now)}
             onOpen={browse}
@@ -822,6 +967,11 @@ function App() {
         )}
         {view === "settings" && (
           <SettingsView
+            voiceFocus={!!voiceReturn}
+            voiceBackLabel={
+              voiceReturn?.view === "speak" ? "Back to Speak" : undefined
+            }
+            onBackToAnswer={voiceReturn ? returnFromVoiceSettings : undefined}
             folder={data.folder}
             version={VERSION}
             onOpenFolder={() => api.showData()}
@@ -871,6 +1021,12 @@ function App() {
             onCancel={() => go("study")}
           />
         )}
+        <footer className="index-footer">
+          <span>Recall · A little practice, every day.</span>
+          <span>
+            {data.cards.length} cards · On your Mac · {VERSION}
+          </span>
+        </footer>
       </main>
       <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>

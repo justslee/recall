@@ -33,6 +33,15 @@ const fs = require("node:fs"),
       (await page.evaluate(() => window.recall.snapshot())).cards.length,
       3,
     );
+    fs.mkdirSync(path.join(__dirname, "../evidence"), { recursive: true });
+    await page.setViewportSize({ width: 1320, height: 880 });
+    for (const theme of ["dark", "light"]) {
+      await page.emulateMedia({ colorScheme: theme });
+      await page.screenshot({
+        path: path.join(__dirname, `../evidence/study-desk-${theme}.png`),
+        animations: "disabled",
+      });
+    }
     await page
       .locator(".formats button")
       .filter({ hasText: "Concepts" })
@@ -117,10 +126,12 @@ const fs = require("node:fs"),
     await page
       .getByRole("button", { name: "Settings & backups", exact: true })
       .click();
-    await expect(
-      page.getByText("Learning connections", { exact: true }),
-    ).toBeVisible();
-    await page.getByRole("checkbox").check();
+    await page
+      .getByRole("button", { name: "Learning connections", exact: true })
+      .click();
+    await page
+      .getByLabel("Allow learning capture from my configured skills")
+      .check();
     await page
       .getByRole("button", { name: "Save learning settings", exact: true })
       .click();

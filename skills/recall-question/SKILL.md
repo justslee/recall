@@ -5,4 +5,6 @@ description: "Answer a quick learning question and capture the useful insight in
 
 # Question
 
-Keep the answer proportional to the question. Read ../recall-source/references/quality.md and knowledge.md. Search for the concept; enrich a matching note instead of creating one per question. Preserve the exact context that makes the insight useful. Record a misconception only if demonstrated. If capture is enabled, log the testable objective through recall-self-test. Do not invoke both this and recall-concept to capture the same turn twice.
+For opted-in active reading, follow ../recall-source/references/active-reading.md and recall-self-test before the response ends. Search/reuse or fill the actual objective, assess useful math/coding supplements even for existing concepts, and return verified card links. Report KB and Recall outcomes separately.
+
+Keep the answer proportional to the question. Read ../recall-source/references/quality.md and ../recall-source/references/knowledge.md. Search for the concept; enrich a matching note instead of creating one per question. Preserve the exact context that makes the insight useful. Record a misconception only if demonstrated. If capture is enabled, log the testable objective through recall-self-test. Do not invoke both this and recall-concept to capture the same turn twice.

@@ -13,34 +13,34 @@ for (const [name, dark, palette] of [
     "forest-dark",
     true,
     {
-      bg: "#18231e",
-      text: "#e8eee6",
-      comment: "#8c9e8f",
-      keyword: "#d699b6",
-      string: "#dbbc7f",
-      number: "#e6ae81",
-      type: "#a7c080",
-      line: "#223128",
-      selection: "#405841",
-      cursor: "#b6d2aa",
-      border: "#536957",
+      bg: "#202b29",
+      text: "#e0e8dc",
+      comment: "#91a294",
+      keyword: "#e1ab94",
+      string: "#bdcda0",
+      number: "#e1ba81",
+      type: "#a5cbdc",
+      line: "#2c3832",
+      selection: "#405344",
+      cursor: "#c7d7ac",
+      border: "#77866c",
     },
   ],
   [
     "forest-light",
     false,
     {
-      bg: "#f7f8ef",
-      text: "#26382d",
-      comment: "#60735f",
-      keyword: "#97547d",
-      string: "#82611b",
-      number: "#a45c2a",
-      type: "#48743c",
-      line: "#edf1e5",
-      selection: "#d3e2c8",
-      cursor: "#446a43",
-      border: "#8da184",
+      bg: "#f4f2ed",
+      text: "#34473f",
+      comment: "#687562",
+      keyword: "#9b594d",
+      string: "#637548",
+      number: "#986825",
+      type: "#3e6582",
+      line: "#eaece3",
+      selection: "#d3e0cb",
+      cursor: "#355242",
+      border: "#9aa58c",
     },
   ],
 ]) {
@@ -122,10 +122,24 @@ export default function CodeWorkspace({ card, revealed, onError }) {
     ),
     [result, setResult] = useState(null),
     [running, setRunning] = useState(false),
+    [trusted, setTrusted] = useState(false),
     [copied, setCopied] = useState("");
   const container = useRef(),
     editor = useRef();
   const revision = useRef(0);
+  useEffect(() => {
+    let active = true;
+    setTrusted(false);
+    window.recall
+      .codeTrust(card.id)
+      .then((value) => {
+        if (active) setTrusted(value);
+      })
+      .catch(onError);
+    return () => {
+      active = false;
+    };
+  }, [card.id]);
   useEffect(() => {
     let disposed = false;
     const key = "draft:" + card.id + ":" + language;
@@ -231,7 +245,11 @@ export default function CodeWorkspace({ card, revealed, onError }) {
       </div>
       <div ref={container} className="monaco-host" />
       <div className="run-bar">
-        <button className="primary" onClick={run} disabled={running}>
+        <button
+          className="primary"
+          onClick={run}
+          disabled={running || !trusted}
+        >
           <Play size={14} /> {running ? "Running…" : "Run tests"}
         </button>
         {running && (
@@ -240,10 +258,17 @@ export default function CodeWorkspace({ card, revealed, onError }) {
           </button>
         )}
         <small>
-          Everforest · {appearance === "dark" ? "Forest" : "Sage"} · runs on
+          Study Index · {appearance === "dark" ? "Night" : "Paper"} · runs on
           your Mac
         </small>
       </div>
+      {!trusted && (
+        <p className="muted" role="status">
+          This exercise is available to study. Running it requires local review
+          of its code and tests. Use the Recall coding skill to review and
+          validate it; an AI-generated report alone cannot unlock Run.
+        </p>
+      )}
       {result && (
         <div className={"run-result " + result.status} role="status">
           <strong>

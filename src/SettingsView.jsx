@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { FolderOpen, DatabaseBackup, Download } from "lucide-react";
+import { LearningConnections } from "./LearningConnections";
 import { useAppearance } from "./appearance";
+import { VoiceSettings } from "./VoiceAnswer";
 
 function Setting({ title, description, value, action }) {
   return (
@@ -20,91 +22,130 @@ export function SettingsView({
   onOpenFolder,
   onBackup,
   onExport,
+  voiceFocus = false,
+  onBackToAnswer,
+  voiceBackLabel,
 }) {
   const appearance = useAppearance();
+  const [section, setSection] = useState(voiceFocus ? "voice" : "general");
+  useEffect(() => {
+    if (voiceFocus) setSection("voice");
+  }, [voiceFocus]);
   return (
     <>
-      <LearningSettings />
-      <section className="settings-group">
-        <span className="eyebrow">Appearance</span>
-        <Setting
-          title="Follow your Mac"
-          description="Recall switches automatically with macOS. Forest Glass at night, warm ivory and sage in the light. Your editor and diagrams follow along."
-          value={appearance === "dark" ? "System · Dark" : "System · Light"}
+      <nav className="settings-tabs" aria-label="Settings sections">
+        {[
+          ["general", "General"],
+          ["voice", "Voice & feedback"],
+          ["connections", "Learning connections"],
+          ["library", "Library & backups"],
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            aria-pressed={section === id}
+            onClick={() => setSection(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+      <div hidden={section !== "voice"}>
+        <VoiceSettings
+          focus={voiceFocus}
+          onBack={onBackToAnswer}
+          backLabel={voiceBackLabel}
         />
-      </section>
-      <section className="settings-group">
-        <span className="eyebrow">Your library</span>
-        <Setting
-          title="Local storage"
-          description={folder}
-          action={
-            <button onClick={onOpenFolder}>
-              <FolderOpen size={16} /> Open folder
-            </button>
-          }
-        />
-        <Setting
-          title="Backups & export"
-          description="A complete profile backup includes cards, photos, drafts, reviews, learning logs and configuration. External knowledge-base folders and installed language runtimes remain separate."
-          action={
-            <>
-              <button onClick={onBackup}>
-                <DatabaseBackup size={16} /> Back up now
+      </div>
+      <div hidden={section !== "connections"}>
+        <LearningSettings />
+        <LearningConnections />
+      </div>
+      <div hidden={section !== "general"}>
+        <section className="settings-group">
+          <span className="eyebrow">Appearance</span>
+          <Setting
+            title="Follow your Mac"
+            description="Recall switches automatically with macOS. Dark reading surfaces at night, warm paper and sage in the light. Your editor and diagrams follow along."
+            value={appearance === "dark" ? "System · Dark" : "System · Light"}
+          />
+        </section>
+      </div>
+      <div hidden={section !== "library"}>
+        <section className="settings-group">
+          <span className="eyebrow">Your library</span>
+          <Setting
+            title="Local storage"
+            description={folder}
+            action={
+              <button onClick={onOpenFolder}>
+                <FolderOpen size={16} /> Open folder
               </button>
-              <button onClick={onExport}>
-                <Download size={16} /> Export library
-              </button>
-            </>
-          }
-        />
-      </section>
-      <section className="settings-group">
-        <span className="eyebrow">How study works</span>
-        <Setting
-          title="Spaced repetition"
-          description="FSRS with a 90% desired retention target. Each card keeps its own memory history; difficulty labels describe the exercise, not your memory."
-          value="Active"
-        />
-        <Setting
-          title="Paper solution assessment"
-          description="Attach photos to a math card, compare with its worked solution, or export the assessment packet for Codex. Automatic grading and grade import are upcoming."
-          value="Self-review + export"
-        />
-        <Setting
-          title="Interactive widgets"
-          description="A card answer can include ```widget blocks and inline SVG figures. Widgets load only when you click, inside a sandboxed frame with no file, network or library access. Cards from imports keep widgets off until you edit the card and allow them."
-          value="Sandboxed"
-        />
-        <Setting
-          title="Coding workspace"
-          description="Python and C++17 run locally for validated exercises, only when you press Run. Tests, compiler errors, output, stop and time limits are active."
-          value="Native execution"
-        />
-        <Setting
-          title="Scientific Python"
-          description="Some quant challenges use NumPy in an optional local Python environment. Use recall doctor to check the configured Python runtime. No downloads happen when you open a card."
-          value="Optional local runtime"
-        />
-      </section>
-      <section className="settings-group">
-        <span className="eyebrow">About</span>
-        <Setting
-          title="Forest glass"
-          description="Quiet surfaces, sage accents and a matching Everforest-inspired editor."
-          value="Appearance"
-        />
-        <Setting
-          title="Keyboard"
-          description="During review: Space or Enter reveals, 1–4 rates, S skips, ⌘Z undoes, Esc pauses. In the library: ⌘F searches; in card details, ← and → move between cards."
-          value="Always on"
-        />
-        <Setting
-          title="Release"
-          description="Your concepts, math problems and coding challenges stay in one local library."
-          value={version}
-        />
-      </section>
+            }
+          />
+          <Setting
+            title="Backups & export"
+            description="A complete profile backup includes cards, photos, drafts, reviews, learning logs and configuration. External knowledge-base folders and installed language runtimes remain separate."
+            action={
+              <>
+                <button onClick={onBackup}>
+                  <DatabaseBackup size={16} /> Back up now
+                </button>
+                <button onClick={onExport}>
+                  <Download size={16} /> Export library
+                </button>
+              </>
+            }
+          />
+        </section>
+      </div>
+      <div hidden={section !== "general"}>
+        <section className="settings-group">
+          <span className="eyebrow">How study works</span>
+          <Setting
+            title="Spaced repetition"
+            description="FSRS with a 90% desired retention target. Each card keeps its own memory history; difficulty labels describe the exercise, not your memory."
+            value="Active"
+          />
+          <Setting
+            title="Paper solution assessment"
+            description="Attach photos to a math card, compare with its worked solution, or export the assessment packet for Codex. Automatic grading and grade import are upcoming."
+            value="Self-review + export"
+          />
+          <Setting
+            title="Interactive widgets"
+            description="A card answer can include ```widget blocks and inline SVG figures. Widgets load only when you click, inside a sandboxed frame with no file, network or library access. Cards from imports keep widgets off until you edit the card and allow them."
+            value="Sandboxed"
+          />
+          <Setting
+            title="Coding workspace"
+            description="Python and C++17 run locally for validated exercises, only when you press Run. Tests, compiler errors, output, stop and time limits are active."
+            value="Native execution"
+          />
+          <Setting
+            title="Scientific Python"
+            description="Some quant challenges use NumPy in an optional local Python environment. Use recall doctor to check the configured Python runtime. No downloads happen when you open a card."
+            value="Optional local runtime"
+          />
+        </section>
+        <section className="settings-group">
+          <span className="eyebrow">About</span>
+          <Setting
+            title="Study Index"
+            description="Warm paper, quiet book covers, layered index cards and a matching editor."
+            value="Appearance"
+          />
+          <Setting
+            title="Keyboard"
+            description="During review: Space or Enter reveals, 1–4 rates, S skips, ⌘Z undoes, Esc pauses. In the library: ⌘F searches; in card details, ← and → move between cards."
+            value="Always on"
+          />
+          <Setting
+            title="Release"
+            description="Your concepts, math problems and coding challenges stay in one local library."
+            value={version}
+          />
+        </section>
+      </div>
     </>
   );
 }
@@ -166,9 +207,9 @@ function LearningSettings() {
               : "No knowledge sources configured. Use the setup guide and recall config to select a folder, Obsidian scope or Notion connection."}
           </p>
           <p>
-            Skills are optional. CLI setup does not change global agent
-            instructions. AI authoring uses your chosen agent/provider; study
-            and storage remain local.
+            Connecting below adds a managed global instruction and bridge skill.
+            AI preparation uses your chosen assistant account; study and storage
+            remain local.
           </p>
         </>
       )}

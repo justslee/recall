@@ -47,10 +47,10 @@ function validate(entry) {
   };
 }
 function publish(file, value) {
-  fs.mkdirSync(path.dirname(file), { recursive: true });
+  require("./private-files.cjs").directory(path.dirname(file));
   const text = JSON.stringify(value, null, 2) + "\n";
   const temp = file + "." + crypto.randomUUID() + ".tmp";
-  fs.writeFileSync(temp, text, { flag: "wx" });
+  require("./private-files.cjs").write(temp, text);
   try {
     fs.linkSync(temp, file);
     return true;
@@ -154,15 +154,14 @@ function prepare(folder) {
         .filter((e) => (e.day || dayOf(e.at, config(folder).timeZone)) === day)
         .map(
           (e) =>
-            `## ${e.title}\n\n- Objective: ${e.objective}\n- Context: ${e.context}\n- Evidence: ${e.evidence}\n- Session: ${e.sessionId}\n- Source: ${e.source || "Current learning session"}\n- KB: ${e.kbUrl || "Not linked"}\n- Cards: ${e.cardIds.join(", ") || "Needs a card"}\n- Capture ID: ${e.id}\n`,
+            `## ${e.title}\n\n- Objective: ${e.objective}\n- Context: ${e.context}\n- Evidence: ${e.evidence}\n- Session: ${e.sessionId}\n- Source: ${e.source || "Current learning session"}\n- KB: ${e.kbUrl || "Not linked"}\n- Cards: ${e.cardIds.map((id, i) => `[Open card ${i + 1}](${require("./card-links.cjs").cardLink(id)})`).join(", ") || "Needs a card"}\n- Capture ID: ${e.id}\n`,
         )
         .join("\n");
     const dir = path.join(root(folder), "days");
-    fs.mkdirSync(dir, { recursive: true });
-    const file = path.join(dir, day + ".md"),
-      temp = file + "." + crypto.randomUUID() + ".tmp";
-    fs.writeFileSync(temp, text);
-    fs.renameSync(temp, file);
+    require("./private-files.cjs").atomicText(
+      path.join(dir, day + ".md"),
+      text,
+    );
   }
   return { days, entries: entries.length, issues };
 }
@@ -210,6 +209,11 @@ function snapshot(store, now = new Date()) {
           available: !!card && card.status === "ready" && !card.suspended,
           tested: !!review,
           rating: review?.rating,
+          due: card?.schedule?.due,
+          dueNow:
+            !!card &&
+            card.schedule.state !== 0 &&
+            new Date(card.schedule.due) <= new Date(now),
         };
       });
       return {
@@ -225,7 +229,15 @@ function snapshot(store, now = new Date()) {
     });
   return { today, timeZone: config(store.folder).timeZone, days, issues };
 }
-function start(store, { day, replace = false }, now = new Date()) {
+function start(
+  store,
+  { day, replace = false, mode = "untested", format = "all" },
+  now = new Date(),
+) {
+  if (!["untested", "needs-practice", "all"].includes(mode))
+    throw Error("Unknown self test review mode.");
+  if (!["all", "concept", "math", "code"].includes(format))
+    throw Error("Unknown self test card format.");
   return store.transaction(() => {
     const current = store.get("session");
     if (current && current.index < current.ids.length && !replace)
@@ -234,12 +246,19 @@ function start(store, { day, replace = false }, now = new Date()) {
       );
     const data = snapshot(store, now),
       target = data.days.find((d) => d.day === day);
-    if (!target || !target.pending.length)
-      throw Error("No untested cards are ready for this day.");
+    const selected = target?.cards.filter(
+      (c) =>
+        c.available &&
+        (format === "all" || c.kind === format) &&
+        (mode === "all" ||
+          (mode === "needs-practice"
+            ? c.tested && ["Again", "Hard"].includes(c.rating)
+            : target.pending.includes(c.id))),
+    );
+    if (!selected?.length)
+      throw Error("No available cards match this day's review selection.");
     const groups = new Map();
-    for (const card of target.cards.filter((c) =>
-      target.pending.includes(c.id),
-    )) {
+    for (const card of selected) {
       if (!groups.has(card.conceptId)) groups.set(card.conceptId, []);
       groups.get(card.conceptId).push(card.id);
     }
@@ -254,11 +273,12 @@ function start(store, { day, replace = false }, now = new Date()) {
       selection: {
         deck: "all",
         topics: [],
-        format: "all",
+        format,
         difficulty: "all",
         practice: false,
         limit: ids.length,
         selfTestDay: day,
+        selfTestMode: mode,
       },
       revealed: false,
       rated: 0,
@@ -267,4 +287,14 @@ function start(store, { day, replace = false }, now = new Date()) {
     });
   });
 }
-module.exports = { capture, read, link, prepare, snapshot, start, dayOf, root };
+module.exports = {
+  validate,
+  capture,
+  read,
+  link,
+  prepare,
+  snapshot,
+  start,
+  dayOf,
+  root,
+};

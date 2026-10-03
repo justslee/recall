@@ -8,6 +8,7 @@ const {
   shell,
   clipboard,
   nativeTheme,
+  safeStorage,
 } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -18,6 +19,7 @@ const { readAnki } = require("./importer.cjs");
 
 const { presentationFor } = require("./presentation.cjs");
 const { widgetsOf, widgetDocument, WIDGET_CSP } = require("./widgets.cjs");
+const { cardLink, parseCardLink } = require("./card-links.cjs");
 app.setName("Recall");
 app.setPath(
   "userData",
@@ -38,11 +40,35 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
 }
-let store, win;
+let store, win, pendingCardLink, voice, speak;
+function acceptCardLink(url) {
+  try {
+    pendingCardLink = { id: parseCardLink(url) };
+  } catch {
+    pendingCardLink = {
+      error: "This Recall link is invalid. Open the card from your library.",
+    };
+  }
+  if (win && !win.isDestroyed()) {
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+    win.webContents.send("recall:card-link");
+  }
+}
+// macOS can deliver a URL before ready or before the renderer subscribes.
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  acceptCardLink(url);
+});
+const launchLink = process.argv.find((arg) => arg.startsWith("recall://"));
+if (launchLink) acceptCardLink(launchLink);
 const runner = new Runner({
   scientificPython: path.join(app.getPath("userData"), "python/bin/python3"),
 });
-app.on("second-instance", () => {
+app.on("second-instance", (_event, argv) => {
+  const url = argv?.find((arg) => arg.startsWith("recall://"));
+  if (url) acceptCardLink(url);
   if (win) {
     if (win.isMinimized()) win.restore();
     win.focus();
@@ -58,17 +84,74 @@ const handle = (name, fn) =>
     return fn(...args);
   });
 app.whenReady().then(() => {
+  // Packaged builds carry the icon in the bundle; `npm start` needs it set.
+  if (process.platform === "darwin" && !app.isPackaged)
+    app.dock?.setIcon(path.join(__dirname, "../packaging/icon.png"));
+  // Isolated test profiles and development builds must not steal the OS handler.
+  if (app.isPackaged && !process.env.RECALL_DATA_DIR)
+    app.setAsDefaultProtocolClient("recall");
   store = new Store(app.getPath("userData"));
+  const { VoiceService, allowsMicrophone } = require("./voice.cjs");
+  voice = new VoiceService({
+    folder: store.folder,
+    safeStorage,
+    card: (id) =>
+      presentationFor(JSON.parse(store.card(id).content), store.presentations),
+    emit: (event) => {
+      if (win && !win.isDestroyed())
+        win.webContents.send("recall:voice-event", event);
+    },
+  });
+  const { SpeakService } = require("./speak.cjs");
+  speak = new SpeakService({ store, voice });
+  handle("speakSources", (query) => speak.sources(query));
+  handle("speakPreview", (config) => speak.preview(config));
+  handle("speakDraft", () => speak.draft());
+  handle("speakSaveDraft", (draft) => speak.saveDraft(draft));
+  handle("speakPrepare", (config) => speak.prepare(config));
+  handle("speakStart", (config, token) => speak.start(config, token));
+  handle("speakEvaluate", (input, token) => speak.evaluate(input, token));
+  handle("speakHistory", () => speak.history());
+  handle("speakAttempt", (id) => speak.attempt(id));
+  handle("speakDelete", (id) => speak.delete(id));
+  handle("voiceStatus", () => voice.status());
+  handle("voiceConfigure", (key) => {
+    speak.cancel();
+    return voice.configure(key);
+  });
+  handle("voicePrepare", (id) => voice.prepare(id));
+  handle("voiceStart", (id, token) => {
+    if (speak.assessment)
+      throw Error("An explanation evaluation is already running.");
+    return voice.start(id, token);
+  });
+  handle("voiceAudio", (token, bytes) => voice.append(token, bytes));
+  handle("voiceFinish", (token) => voice.finish(token));
+  handle("voiceCancel", (token) => {
+    speak.cancel(token);
+    return voice.cancel(token);
+  });
+  handle("voiceEvaluate", (id, text, history, token) => {
+    if (speak.assessment || voice.active?.id === "speak")
+      throw Error(
+        "Finish the current explanation recording or evaluation first.",
+      );
+    return voice.evaluate(id, text, history, token);
+  });
+  handle("consumeCardLink", () => {
+    const link = pendingCardLink;
+    pendingCardLink = null;
+    return link || null;
+  });
+  handle("copyCardLink", (id) => {
+    store.card(id);
+    const url = cardLink(id);
+    clipboard.writeText(url);
+    return url;
+  });
   if (!store.get("seeded")) store.set("seeded", true);
-  const legacyFile = path.join(store.folder, "legacy-trust.json");
-  if (fs.existsSync(legacyFile)) {
-    for (const [id, sha256] of Object.entries(
-      JSON.parse(fs.readFileSync(legacyFile, "utf8")),
-    )) {
-      if (!store.get("validated-code:" + id))
-        store.set("validated-code:" + id, { sha256 });
-    }
-  }
+  // Execution trust is never imported from a profile file; it is granted only
+  // by a local review (`recall cards trust --apply`) or the bundled demo.
   store.backup();
   protocol.handle("recall", (request) => {
     try {
@@ -136,7 +219,25 @@ app.whenReady().then(() => {
     });
   }
   session.defaultSession.setPermissionRequestHandler(
-    (_wc, _permission, callback) => callback(false),
+    (wc, permission, callback, details) =>
+      callback(
+        allowsMicrophone({
+          trustedWindow: wc === win?.webContents,
+          armed: voice.micArmed,
+          permission,
+          details,
+        }),
+      ),
+  );
+  session.defaultSession.setPermissionCheckHandler(
+    (wc, permission, origin, details) =>
+      allowsMicrophone({
+        trustedWindow: wc === win?.webContents,
+        armed: voice.micArmed,
+        permission,
+        origin,
+        details,
+      }),
   );
   session.defaultSession.webRequest.onBeforeRequest((details, callback) =>
     callback({
@@ -146,6 +247,12 @@ app.whenReady().then(() => {
     }),
   );
   handle("snapshot", () => store.snapshot());
+  handle("reviewHistory", (options) =>
+    require("./review-history.cjs").page(store, options),
+  );
+  handle("progress", (options) =>
+    require("./progress.cjs").snapshot(store, options),
+  );
   handle("demo", () => {
     if (store.cards().length)
       throw Error(
@@ -184,6 +291,65 @@ app.whenReady().then(() => {
       timeZone: patch.timeZone,
     });
   });
+  const connections = require("./connections.cjs"),
+    inbox = require("./inbox.cjs"),
+    catchUp = require("./catch-up.cjs"),
+    worker = require("./learning-worker.cjs");
+  let learningError = null,
+    catchUpPending = false;
+  worker.recover(store.folder);
+  handle("learningConnections", () => ({
+    ...connections.status(store.folder),
+    inbox: inbox.summary(store.folder),
+    error: learningError,
+  }));
+  handle("connectLearning", (host, apply = false) =>
+    connections.connect(store.folder, host, { apply }),
+  );
+  handle("disconnectLearning", (host) =>
+    connections.disconnect(store.folder, host),
+  );
+  handle("configureConnections", (patch) =>
+    connections.save(store.folder, {
+      agent: patch.agent,
+      catchUp: patch.catchUp,
+    }),
+  );
+  handle("chooseLearningProject", async () => {
+    const r = await dialog.showOpenDialog(win, {
+      properties: ["openDirectory"],
+    });
+    return r.canceled ? null : r.filePaths[0];
+  });
+  handle("scanLearning", () => catchUp.scan(store.folder));
+  handle("previewLearning", () => worker.preview(store.folder, store.cards()));
+  handle("prepareLearning", async (expectedDigest) => {
+    if (
+      typeof expectedDigest !== "string" ||
+      !/^[a-f0-9]{64}$/.test(expectedDigest)
+    )
+      throw Error("Preview the learning context before preparing it");
+    const r = await worker.prepare(store.folder, store.cards(), {
+      expectedDigest,
+    });
+    if (store) inbox.applyPending(store);
+    return r;
+  });
+  handle("retryLearning", (id) => inbox.retry(store.folder, id));
+  const pollLearning = (scan = false) => {
+    if (!store) return;
+    try {
+      if (scan || catchUpPending)
+        catchUpPending = !!catchUp.scan(store.folder).remainingFiles;
+      inbox.applyPending(store);
+      learningError = null;
+    } catch (e) {
+      learningError = e.message;
+    }
+  };
+  setTimeout(() => pollLearning(true), 2000).unref();
+  setInterval(() => pollLearning(), 5000).unref();
+  setInterval(() => pollLearning(true), 300000).unref();
   const selfTest = require("./self-test.cjs");
   handle("selfTests", () => selfTest.snapshot(store));
   handle("startSelfTest", (options) => selfTest.start(store, options));
@@ -226,6 +392,9 @@ app.whenReady().then(() => {
     return result;
   });
   handle("stop", () => runner.cancel());
+  handle("codeTrust", (id) =>
+    canRunExercise(JSON.parse(store.card(id).content), (key) => store.get(key)),
+  );
   handle("copyChallengeCode", (id, language, part) => {
     const card = JSON.parse(store.card(id).content);
     if (!card.code?.[language] || !["stub", "solution"].includes(part))
@@ -333,9 +502,27 @@ app.whenReady().then(() => {
       },
     });
     win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+    const cancelSpeech = () => {
+      voice.cancel();
+      speak.cancel();
+    };
+    win.webContents.on("render-process-gone", cancelSpeech);
+    win.webContents.on(
+      "did-start-navigation",
+      (_e, _url, _inPlace, isMainFrame) => {
+        if (isMainFrame) cancelSpeech();
+      },
+    );
+    win.on("closed", cancelSpeech);
     win.webContents.on("will-navigate", (e) => e.preventDefault());
     win.webContents.on("will-frame-navigate", (e) => {
-      if (!e.isMainFrame && !e.url.startsWith("recall://widget/"))
+      // A widget frame loads its own document once. It may not navigate
+      // itself afterwards, including to another card's widget.
+      if (
+        !e.isMainFrame &&
+        (!e.url.startsWith("recall://widget/") ||
+          (e.frame?.url || "").startsWith("recall://widget/"))
+      )
         e.preventDefault();
     });
     win.loadURL("recall://app/");
@@ -353,7 +540,10 @@ app.whenReady().then(() => {
 });
 app.on("window-all-closed", () => app.quit());
 app.on("before-quit", () => {
+  voice?.cancel();
+  speak?.cancel();
   runner.cancel();
+  require("./learning-worker.cjs").cancel();
   store?.close();
   store = null;
 });

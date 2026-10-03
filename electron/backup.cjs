@@ -5,11 +5,12 @@ const { DatabaseSync } = require("node:sqlite");
 const { atomic, lock } = require("./config.cjs");
 const paths = [
   "self-tests",
+  "learning-inbox",
+  "learning-connections.json",
   "knowledge",
   "packs",
   "config.json",
   "presentations.json",
-  "legacy-trust.json",
 ];
 function backup(store, target) {
   const dir = path.resolve(
@@ -21,7 +22,7 @@ function backup(store, target) {
       ),
   );
   if (dir === store.folder) throw Error("Backup must have its own directory");
-  fs.mkdirSync(dir, { recursive: true });
+  require("./private-files.cjs").directory(dir);
   if (fs.existsSync(path.join(dir, "manifest.json")))
     throw Error("Backup already exists");
   const dbfile = path.join(dir, "recall.sqlite");
@@ -31,7 +32,17 @@ function backup(store, target) {
     if (fs.existsSync(file))
       fs.cpSync(file, path.join(dir, name), {
         recursive: true,
-        filter: (f) => !f.endsWith(".writer.lock") && !f.endsWith(".tmp"),
+        filter: (f) => {
+          // Temporary authoring contexts are not durable learning data.
+          if (
+            path.relative(store.folder, f) ===
+            path.join("learning-inbox", "jobs")
+          )
+            return false;
+          if (fs.lstatSync(f).isSymbolicLink())
+            throw Error("Backup contains an unsafe symbolic link");
+          return !f.endsWith(".writer.lock") && !f.endsWith(".tmp");
+        },
       });
   }
   const checksums = {};
@@ -39,7 +50,11 @@ function backup(store, target) {
     for (const item of fs.readdirSync(path.join(dir, base))) {
       const rel = path.join(base, item),
         file = path.join(dir, rel);
-      if (fs.statSync(file).isDirectory()) walk(rel);
+      const stat = fs.lstatSync(file);
+      if (stat.isSymbolicLink())
+        throw Error("Backup contains an unsafe symbolic link");
+      fs.chmodSync(file, stat.isDirectory() ? 0o700 : 0o600);
+      if (stat.isDirectory()) walk(rel);
       else
         checksums[rel] = crypto
           .createHash("sha256")
@@ -64,7 +79,7 @@ function restore(folder, input) {
     throw Error("Invalid backup manifest");
   const release = lock(folder),
     stage = path.join(folder, ".restore-stage-" + crypto.randomUUID());
-  fs.mkdirSync(stage);
+  fs.mkdirSync(stage, { mode: 0o700 });
   const saved = path.join(
       folder,
       "backups",
@@ -86,8 +101,9 @@ function restore(folder, input) {
         fs.lstatSync(file).isSymbolicLink()
       )
         throw Error("Unsafe backup path");
-      fs.mkdirSync(path.dirname(target), { recursive: true });
+      require("./private-files.cjs").directory(path.dirname(target));
       fs.copyFileSync(file, target);
+      fs.chmodSync(target, 0o600);
       if (
         crypto
           .createHash("sha256")
@@ -110,7 +126,7 @@ function restore(folder, input) {
     } finally {
       check.close();
     }
-    fs.mkdirSync(saved, { recursive: true });
+    require("./private-files.cjs").directory(saved);
     for (const name of [
       "recall.sqlite",
       "recall.sqlite-wal",

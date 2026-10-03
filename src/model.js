@@ -41,11 +41,10 @@ export function queue(cards, selection, now = Date.now()) {
     })
     .slice(0, selection.limit);
 }
-export const plain = (html) => {
-  const el = document.createElement("div");
-  el.innerHTML = html;
-  return el.textContent || "";
-};
+// Parse into an inert document: nothing loads or runs while reading text out.
+export const plain = (html) =>
+  new DOMParser().parseFromString(String(html ?? ""), "text/html").body
+    .textContent || "";
 export const formatLabel = {
   all: "Mixed",
   concept: "Concepts",
@@ -54,7 +53,7 @@ export const formatLabel = {
 };
 export const scopeText = (s) =>
   s.selfTestDay
-    ? `Self test · ${s.selfTestDay}`
+    ? `Self test · ${s.selfTestDay} · ${formatLabel[s.format] || "Mixed"}${s.selfTestMode === "all" ? " · All cards" : s.selfTestMode === "needs-practice" ? " · Needs practice" : ""}`
     : (s.deck === "all" ? "All decks" : s.deck) +
       " / " +
       (s.topics.length ? s.topics.join(" + ") : "All topics") +

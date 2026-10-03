@@ -5,4 +5,4 @@ description: "Create concept-specific interactive HTML/SVG diagrams or clear sta
 
 # Visuals
 
-Read ../recall-source/references/quality.md and visuals.md. Identify what the learner should notice, then design the actual marks, labels and controls around that relationship. Use theme tokens, accessible labels and responsive sizing. Verify representative/boundary values independently, test every control, and inspect both themes. Preserve explicit Load and answer-reveal boundaries. A simple definition can have a visual example; it does not automatically need a simulator.
+Read ../recall-source/references/quality.md and ../recall-source/references/visuals.md. Identify what the learner should notice, then design the actual marks, labels and controls around that relationship. Use theme tokens, accessible labels and responsive sizing. Verify representative/boundary values independently, test every control, and inspect both themes. Preserve explicit Load and answer-reveal boundaries. A simple definition can have a visual example; it does not automatically need a simulator.

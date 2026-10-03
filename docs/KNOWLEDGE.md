@@ -2,6 +2,37 @@
 
 The learning skills can create a KB from scratch or enrich existing concepts. They use the source adapter and stable KnowledgeRecord IDs. Configure scoped access first; write-enabled configuration authorizes that workflow, not unrelated folders or databases.
 
+## Connect your first source
+
+There is currently no in-app folder/Notion setup wizard. From the Recall checkout, save a `config.local.json` with a selected existing notes folder:
+
+```json
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "my-kb",
+      "type": "markdown",
+      "root": "/absolute/path/to/selected/notes",
+      "write": false
+    }
+  ]
+}
+```
+
+Replace the root with your real absolute path; use `obsidian` for a selected vault/subfolder. The local configuration file is ignored by Git. The source list replaces the existing list, so include every source you want to retain. Omitted profile options, such as capture and timezone, keep their current values.
+
+```sh
+node cli/recall.cjs config config.local.json
+node cli/recall.cjs config config.local.json --apply
+node cli/recall.cjs kb scan my-kb
+node cli/recall.cjs kb search my-kb "weighted mean"
+```
+
+The first command previews the configuration; the second applies it. The scan reads the selected notes. Use `write:true` only when you want the assistant to create/update notes there. For a new KB, create its folder first. You can ask your connected assistant to help configure and verify this scope. No tokens or passwords belong in configuration.
+
+Below, `recall` is the installed profile launcher or the optional short command from `npm link`; `node cli/recall.cjs` also works from the checkout. The [workflow guide](WORKFLOW.md#3-choose-your-knowledge-source) explains canonical sources and optional mirroring.
+
 ## Markdown and Obsidian
 
 Choose an existing root directory. Scans read `.md` files, YAML frontmatter, wikilinks, standard Markdown image references and embedded Obsidian image references. Hidden paths are skipped. Root escapes and escaping symlinks are rejected. No Obsidian application/plugin is required for filesystem mode; respect any agent-specific instruction requiring its official CLI.

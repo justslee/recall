@@ -33,7 +33,11 @@ function readAnki(filename) {
   let db;
   try {
     const database = path.join(folder, "collection.sqlite");
-    fs.writeFileSync(database, entry.getData());
+    const data = entry.getData();
+    // The header's declared size is checked above; verify the real inflate too.
+    if (data.length > 64 * 1024 * 1024)
+      throw Error("Expanded collection exceeds import limit.");
+    fs.writeFileSync(database, data);
     db = new DatabaseSync(database, { readOnly: true });
     const col = db.prepare("SELECT models,decks FROM col").get();
     const models = JSON.parse(col.models),

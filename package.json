@@ -1,21 +1,32 @@
 {
   "name": "recall-local",
   "productName": "Recall",
-  "version": "0.5.0-beta.1",
+  "version": "0.6.0-beta.2",
   "private": true,
   "description": "A local study desk for concepts, mathematics and code",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
+    "setup": "node scripts/setup.cjs",
     "build": "vite build",
     "start": "electron .",
     "dev": "vite --host 127.0.0.1",
     "test": "node --test tests/*.test.cjs",
-    "package": "npm run build && electron-packager . Recall --platform=darwin --arch=arm64 --out=release --overwrite --ignore='^/(release|tests|docs|scripts|src|evidence|.git)($|/)'",
+    "package": "npm run build && electron-packager . Recall --platform=darwin --arch=arm64 --asar --icon=packaging/icon.icns --extend-info=packaging/mac-info.plist --protocol=recall --protocol-name=Recall --out=release --overwrite --ignore='^/(release|tests|docs|scripts|src|public|packaging|evidence|.git)($|/)'",
+    "postpackage": "node scripts/apply-fuses.cjs",
+    "icon": "electron scripts/make-icon.cjs",
     "format": "prettier --write src electron/*.cjs tests scripts docs README.md",
     "test:desktop": "node scripts/smoke-public.cjs",
     "audit:release": "node scripts/audit-release.cjs",
-    "test:journey": "node --test tests/journey.test.cjs"
+    "audit:package": "node scripts/audit-package.cjs",
+    "test:journey": "node --test tests/journey.test.cjs",
+    "test:links": "node scripts/smoke-card-links.cjs",
+    "test:progress": "node scripts/smoke-progress.cjs",
+    "test:connections": "node scripts/smoke-connections.cjs",
+    "test:security:native": "node scripts/security-native.cjs",
+    "test:security:desktop": "node scripts/security-desktop.cjs",
+    "test:voice": "node scripts/smoke-voice.cjs",
+    "test:speak": "node scripts/smoke-speak.cjs"
   },
   "dependencies": {
     "adm-zip": "^0.6.1",
@@ -28,9 +39,11 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "ts-fsrs": "^5.4.2",
+    "ws": "^8.22.0",
     "yaml": "^2.8.1"
   },
   "devDependencies": {
+    "@electron/fuses": "^2.1.3",
     "@electron/packager": "^20.3.0",
     "@playwright/test": "^1.63.0",
     "@vitejs/plugin-react": "^6.1.1",

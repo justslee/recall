@@ -1,9 +1,41 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const methods = [
   "snapshot",
+  "progress",
+  "reviewHistory",
+  "speakSources",
+  "speakPreview",
+  "speakDraft",
+  "speakSaveDraft",
+  "speakPrepare",
+  "speakStart",
+  "speakEvaluate",
+  "speakHistory",
+  "speakAttempt",
+  "speakDelete",
+  "voiceStatus",
+  "voiceConfigure",
+  "voicePrepare",
+  "voiceStart",
+  "voiceAudio",
+  "voiceFinish",
+  "voiceCancel",
+  "voiceEvaluate",
+  "consumeCardLink",
+  "copyCardLink",
   "demo",
   "profileInfo",
   "configureLearning",
+  "learningConnections",
+  "connectLearning",
+  "disconnectLearning",
+  "configureConnections",
+  "chooseLearningProject",
+  "scanLearning",
+  "prepareLearning",
+  "previewLearning",
+  "codeTrust",
+  "retryLearning",
   "selfTests",
   "startSelfTest",
   "showLearningLog",
@@ -30,12 +62,21 @@ const methods = [
   "challengeAttempts",
   "challengeSource",
 ];
-contextBridge.exposeInMainWorld(
-  "recall",
-  Object.fromEntries(
+contextBridge.exposeInMainWorld("recall", {
+  ...Object.fromEntries(
     methods.map((name) => [
       name,
       (...args) => ipcRenderer.invoke("recall:" + name, ...args),
     ]),
   ),
-);
+  onCardLink: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on("recall:card-link", listener);
+    return () => ipcRenderer.removeListener("recall:card-link", listener);
+  },
+  onVoiceEvent: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("recall:voice-event", listener);
+    return () => ipcRenderer.removeListener("recall:voice-event", listener);
+  },
+});

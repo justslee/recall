@@ -125,7 +125,8 @@
   justify-content: flex-end;
   min-width: 155px;
 }
-.self-test-badges span {
+.self-test-badges span,
+.self-test-badges button {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -134,7 +135,12 @@
   background: var(--accent-soft);
   color: var(--accent);
   font-size: 11px;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.self-test-badges svg {
+  flex-shrink: 0;
 }
 .self-test-footnote {
   font-size: 12px;

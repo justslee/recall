@@ -144,3 +144,143 @@ test("gaps, unavailable cards, later links and unreadable records stay visible; 
     ),
   );
 });
+
+test("a previous day can repeat weak or all cards without resetting history; only ratings reschedule", (t) => {
+  const s = fixture(t);
+  st.capture(
+    s.folder,
+    entry({ cardIds: ["concept", "math", "code", "other"] }),
+  );
+  const session = st.start(s, { day: "2026-09-13" }, now);
+  for (const id of session.ids) {
+    s.set("session", { ...s.get("session"), revealed: true });
+    s.rate(
+      {
+        id,
+        rating: id === "concept" ? "Again" : id === "math" ? "Hard" : "Good",
+        sessionId: session.id,
+      },
+      now,
+    );
+  }
+  const later = new Date("2026-09-14T18:00:00Z");
+  const day = st.snapshot(s, later).days.find((d) => d.day === "2026-09-13");
+  assert.equal(day.pending.length, 0);
+  assert.equal(day.cards.find((c) => c.id === "concept").dueNow, true);
+  assert.equal(
+    day.cards.find((c) => c.id === "concept").due,
+    JSON.parse(s.card("concept").schedule).due,
+  );
+  const cardsBefore = s.db.prepare("SELECT * FROM cards ORDER BY id").all();
+  const reviewsBefore = s.db.prepare("SELECT * FROM reviews ORDER BY id").all();
+  assert.throws(
+    () => st.start(s, { day: "2026-09-13", mode: "invalid" }, later),
+    /Unknown/,
+  );
+  assert.throws(
+    () => st.start(s, { day: "2026-09-13" }, later),
+    /No available/,
+  );
+  const retry = st.start(
+    s,
+    { day: "2026-09-13", mode: "needs-practice" },
+    later,
+  );
+  assert.deepEqual(new Set(retry.ids), new Set(["concept", "math"]));
+  assert.equal(retry.revealed, false);
+  assert.equal(retry.selection.practice, false);
+  assert.equal(retry.selection.selfTestDay, "2026-09-13");
+  assert.deepEqual(
+    s.db.prepare("SELECT * FROM cards ORDER BY id").all(),
+    cardsBefore,
+  );
+  assert.deepEqual(
+    s.db.prepare("SELECT * FROM reviews ORDER BY id").all(),
+    reviewsBefore,
+  );
+  assert.throws(
+    () => st.start(s, { day: "2026-09-13", mode: "all" }, later),
+    /Resume/,
+  );
+  s.set("session", { ...retry, revealed: true });
+  s.rate({ id: retry.ids[0], rating: "Good", sessionId: retry.id }, later);
+  assert.notEqual(
+    s.card(retry.ids[0]).schedule,
+    cardsBefore.find((c) => c.id === retry.ids[0]).schedule,
+  );
+  assert.equal(
+    st
+      .snapshot(s, later)
+      .days.find((d) => d.day === "2026-09-13")
+      .cards.find((c) => c.id === retry.ids[0]).rating,
+    "Good",
+  );
+  s.undo();
+  assert.equal(
+    st
+      .snapshot(s, later)
+      .days.find((d) => d.day === "2026-09-13")
+      .cards.find((c) => c.id === retry.ids[0]).rating,
+    "Again",
+  );
+  s.suspend("code", true);
+  s.saveCard({ ...JSON.parse(s.card("other").content), status: "draft" });
+  const all = st.start(
+    s,
+    { day: "2026-09-13", mode: "all", replace: true },
+    later,
+  );
+  assert.deepEqual(new Set(all.ids), new Set(["concept", "math"]));
+  assert.equal(all.selection.selfTestMode, "all");
+});
+
+test("format selection is strict for daily and repeat passes and never falls back", (t) => {
+  const s = fixture(t);
+  st.capture(
+    s.folder,
+    entry({ cardIds: ["concept", "math", "code", "other"] }),
+  );
+  const before = s.cards();
+  for (const format of ["concept", "math", "code", "all"]) {
+    const result = st.start(
+      s,
+      { day: "2026-09-13", replace: true, mode: "all", format },
+      now,
+    );
+    assert.equal(result.selection.format, format);
+    assert(
+      result.ids.every(
+        (id) =>
+          format === "all" || before.find((c) => c.id === id).kind === format,
+      ),
+    );
+    assert.equal(
+      result.ids.length,
+      format === "all" ? 4 : format === "concept" ? 2 : 1,
+    );
+    assert.equal(result.revealed, false);
+  }
+  const session = s.get("session");
+  assert.throws(
+    () =>
+      st.start(
+        s,
+        {
+          day: "2026-09-13",
+          replace: true,
+          mode: "needs-practice",
+          format: "code",
+        },
+        now,
+      ),
+    /No available/,
+  );
+  assert.throws(
+    () =>
+      st.start(s, { day: "2026-09-13", replace: true, format: "unknown" }, now),
+    /format/,
+  );
+  assert.deepEqual(s.get("session"), session);
+  assert.deepEqual(s.cards(), before);
+  assert.equal(s.snapshot().history.length, 0);
+});

@@ -1,6 +1,6 @@
 {
   "name": "recall-public",
-  "version": "0.5.0-beta.1",
+  "version": "0.6.0-beta.2",
   "description": "Build a knowledge base, author visual flashcards and prepare daily self-tests with local Recall.",
   "author": {
     "name": "Recall contributors"

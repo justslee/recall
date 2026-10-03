@@ -152,10 +152,54 @@ function trustCode(store, id, report) {
   });
   return { trusted: id };
 }
+async function reviewCode(store, id, report) {
+  // This operation is invoked only by an explicit local `cards trust --apply`.
+  // Validate claims before execution, then perform independent restricted checks.
+  const card = JSON.parse(store.card(id).content);
+  trustCode(
+    { card: () => ({ content: JSON.stringify(card) }), set: () => {} },
+    id,
+    report,
+  );
+  const { Runner } = require("./runner.cjs");
+  const runner = new Runner({
+    scientificPython: path.join(store.folder, "python/bin/python3"),
+  });
+  for (const [language, code] of Object.entries(card.code)) {
+    const reference = await runner.run(card, language, code.solution);
+    assert.equal(
+      reference.status,
+      "passed",
+      `Local reference validation failed: ${reference.output}`,
+    );
+    const stub = await runner.run(card, language, code.stub);
+    assert.equal(
+      stub.status,
+      "failed",
+      `Unfinished starter must fail behavior tests: ${stub.output}`,
+    );
+    assert.notEqual(
+      stub.phase,
+      "compile",
+      "Starter must compile before its unfinished behavior can be checked",
+    );
+  }
+  trustCode(store, id, report);
+  store.set("validated-code:" + id, {
+    ...store.get("validated-code:" + id),
+    source: "local-review",
+    checkedAt: new Date().toISOString(),
+  });
+  return {
+    trusted: id,
+    validation: "Reference and starter checked locally after explicit review",
+  };
+}
 module.exports = {
   validateCards,
   normalizePack,
   preview,
   importPack,
   trustCode,
+  reviewCode,
 };

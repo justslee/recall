@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Recall app icon: three fanned study cards, the top one carrying the "r." wordmark.
+       Canvas follows the macOS template: 1024 px with the 824 px tile centred, so the
+       Dock shows the same margins and corner radius as Apple's own apps. -->
+  <defs>
+    <linearGradient id="forest" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3c5c4a"/><stop offset="1" stop-color="#23382a"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffdf4"/><stop offset="1" stop-color="#efe9da"/>
+    </linearGradient>
+    <filter id="tileShadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/>
+    </filter>
+    <filter id="cardShadow" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0b1a10" flood-opacity=".35"/>
+    </filter>
+    <clipPath id="tile"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#forest)" filter="url(#tileShadow)"/>
+  <g clip-path="url(#tile)">
+    <g transform="translate(512 528) scale(0.86)">
+      <rect x="-290" y="-250" width="580" height="400" rx="44" fill="#7d9474" transform="translate(-40 -70) rotate(-16)"/>
+      <rect x="-290" y="-250" width="580" height="400" rx="44" fill="#b3c6a0" transform="translate(-18 -36) rotate(-8)"/>
+      <rect x="-290" y="-250" width="580" height="400" rx="44" fill="url(#paper)" filter="url(#cardShadow)"/>
+      <text x="-20" y="100" text-anchor="middle" font-family="Iowan Old Style, Palatino, Georgia, serif" font-style="italic" font-size="340" fill="#355242">r</text>
+      <circle cx="120" cy="66" r="32" fill="#355242"/>
+    </g>
+  </g>
+</svg>

@@ -22,6 +22,91 @@ function setup(t) {
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   return { root, folder, notes };
 }
+test("doctor reports the same xcrun-selected tools as execution and the selected scientific runtime", (t) => {
+  const { folder } = setup(t);
+  const selected = [];
+  const paths = {
+    python3: "/selected/toolchain/python3",
+    "clang++": "/selected/toolchain/clang++",
+  };
+  const runtimes = require("../electron/runtime-info.cjs").diagnostics(folder, {
+    runner: {
+      tool: (name) => paths[name],
+      scientificPythonPath: () => {
+        throw Error("Optional environment is missing");
+      },
+    },
+    execute: (file) => {
+      selected.push(file);
+      return { status: 0, stdout: "Selected runtime 1.0\n" };
+    },
+  });
+  assert.deepEqual(selected, Object.values(paths));
+  assert.equal(runtimes.python3.path, paths.python3);
+  assert.equal(runtimes["clang++"].path, paths["clang++"]);
+  assert.equal(runtimes["scientific-python"].available, false);
+  assert.equal(
+    runtimes["scientific-python"].configuredPath,
+    path.join(folder, "python/bin/python3"),
+  );
+  assert.equal(runtimes["scientific-python"].dependenciesChecked, false);
+});
+
+test(
+  "exercise validation selects scientific Python through --data or RECALL_DATA_DIR",
+  { skip: process.platform !== "darwin" },
+  (t) => {
+    const { root, folder } = setup(t);
+    const interpreter = new (require("../electron/runner.cjs").Runner)().tool(
+      "python3",
+    );
+    fs.mkdirSync(path.join(folder, "python/bin"), { recursive: true });
+    fs.symlinkSync(interpreter, path.join(folder, "python/bin/python3"));
+    const card = structuredClone(
+      require("../examples/cards.json").find((c) => c.kind === "code"),
+    );
+    card.code = {
+      python: { ...card.code.python, runtime: "scientific-python" },
+    };
+    const cards = path.join(root, "cards.json"),
+      mutants = path.join(root, "mutants.json");
+    fs.writeFileSync(cards, JSON.stringify([card]));
+    fs.writeFileSync(
+      mutants,
+      JSON.stringify(require("../examples/mutants.json")),
+    );
+    const { execFileSync } = require("node:child_process");
+    for (const explicit of [false, true]) {
+      const report = path.join(
+        root,
+        explicit ? "explicit.json" : "environment.json",
+      );
+      execFileSync(
+        process.execPath,
+        [
+          path.resolve(__dirname, "../scripts/validate-card-exercises.cjs"),
+          ...(explicit ? ["--data", folder] : []),
+          cards,
+          mutants,
+          report,
+        ],
+        {
+          encoding: "utf8",
+          env: {
+            PATH: process.env.PATH,
+            RECALL_DATA_DIR: explicit ? path.join(root, "unused") : folder,
+          },
+        },
+      );
+      const result = JSON.parse(fs.readFileSync(report));
+      assert.equal(result.exercises[0].id, card.id);
+      assert.equal(result.exercises[0].languages.python.reference, "passed");
+      assert.equal(result.exercises[0].languages.python.stub, "failed");
+      assert(result.exercises[0].languages.python.rejectedMutants.length > 0);
+    }
+  },
+);
+
 test("complete learning journey: note, duplicate protection, cards, daily test, rating, restart and restore", (t) => {
   const { root, folder } = setup(t),
     record = require("../examples/knowledge.json");

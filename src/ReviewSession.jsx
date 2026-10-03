@@ -25,7 +25,7 @@ export function ReviewToolbar({ session, card, wide, onPause, onToggleWide }) {
         {card?.kind === "code" && (
           <button className="ghost" onClick={onToggleWide}>
             {wide ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            {wide ? "Restore sidebar" : "Expand editor"}
+            {wide ? "Standard width" : "Full width"}
           </button>
         )}
         <span className="count">
@@ -92,7 +92,7 @@ export function DetailToolbar({
       {card?.kind === "code" && card.code && (
         <button className="ghost" onClick={onToggleWide}>
           {wide ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-          {wide ? "Restore sidebar" : "Expand editor"}
+          {wide ? "Standard width" : "Full width"}
         </button>
       )}
       {index >= 0 && (
@@ -122,10 +122,11 @@ export function DetailToolbar({
   );
 }
 
-export function DetailFooter({ card, onEdit, onSuspend }) {
+export function DetailFooter({ card, onEdit, onSuspend, onCopyLink }) {
   return (
     <div className="review-footer">
       <button onClick={onEdit}>Edit card</button>
+      <button onClick={onCopyLink}>Copy card link</button>
       <button onClick={onSuspend}>
         {card.suspended ? "Resume card" : "Suspend from review"}
       </button>
@@ -134,15 +135,24 @@ export function DetailFooter({ card, onEdit, onSuspend }) {
   );
 }
 
-export function Completion({ session, events, onBack, onUndo, busy }) {
+export function Completion({
+  session,
+  events,
+  onBack,
+  onUndo,
+  onSelfTest,
+  busy,
+}) {
   const counts = { Again: 0, Hard: 0, Good: 0, Easy: 0 };
   for (const e of events) if (e.rating in counts) counts[e.rating]++;
   const rated = session?.rated || 0,
     skipped = session?.skipped || 0;
+  const isSelfTest = !!session?.selection?.selfTestDay;
+  const needsPractice = counts.Again + counts.Hard;
   return (
     <div className="completion">
       <Check size={36} />
-      <h2>Session complete.</h2>
+      <h2>{isSelfTest ? "This pass is finished." : "Session complete."}</h2>
       <p>
         {rated} {rated === 1 ? "card" : "cards"} reviewed
         {skipped ? ` · ${skipped} skipped` : ""}
@@ -162,10 +172,20 @@ export function Completion({ session, events, onBack, onUndo, busy }) {
           ? "Practice left review dates unchanged."
           : "Your ratings and next review dates are saved on this Mac."}
       </p>
+      {isSelfTest && (
+        <p className="muted">
+          {needsPractice
+            ? `${needsPractice} ${needsPractice === 1 ? "card still needs" : "cards still need"} practice. Finishing a pass does not mean you have mastered them.`
+            : "You can revisit this learning day anytime. A completed pass is one checkpoint, not proof of lasting recall."}{" "}
+          Due cards return in Study Desk; you can also review this day's cards
+          again.
+        </p>
+      )}
       <div className="actions">
-        <button className="primary" onClick={onBack}>
-          Back to study desk
+        <button className="primary" onClick={isSelfTest ? onSelfTest : onBack}>
+          {isSelfTest ? "Back to this learning day" : "Back to study desk"}
         </button>
+        {isSelfTest && <button onClick={onBack}>Study desk</button>}
         <button onClick={onUndo} disabled={busy || !rated}>
           <RotateCcw size={14} /> Undo last action
         </button>

@@ -20,8 +20,13 @@ class Store {
       this.presentations = fs.existsSync(presentationFile)
         ? JSON.parse(fs.readFileSync(presentationFile, "utf8"))
         : {};
-      fs.mkdirSync(folder, { recursive: true });
+      const privateFiles = require("./private-files.cjs");
+      privateFiles.directory(folder);
       this.file = path.join(folder, "recall.sqlite");
+      if (!fs.existsSync(this.file)) privateFiles.write(this.file, "");
+      if (fs.lstatSync(this.file).isSymbolicLink())
+        throw Error("Unsafe database path");
+      fs.chmodSync(this.file, 0o600);
       this.db = new DatabaseSync(this.file);
       this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
  CREATE TABLE IF NOT EXISTS cards(id TEXT PRIMARY KEY, content TEXT NOT NULL, schedule TEXT NOT NULL, suspended INTEGER NOT NULL DEFAULT 0);
@@ -30,6 +35,11 @@ class Store {
  CREATE TABLE IF NOT EXISTS attachments(id TEXT PRIMARY KEY,card_id TEXT NOT NULL,name TEXT NOT NULL,mime TEXT NOT NULL,bytes BLOB NOT NULL,at TEXT NOT NULL);
  `);
       const version = this.db.prepare("PRAGMA user_version").get().user_version;
+      for (const suffix of ["-wal", "-shm"])
+        if (fs.existsSync(this.file + suffix))
+          fs.chmodSync(this.file + suffix, 0o600);
+      for (const name of ["self-tests", "learning-inbox", "knowledge", "packs"])
+        privateFiles.protectTree(path.join(folder, name));
       if (version > 2)
         throw Error("This library needs a newer Recall version.");
       if (version < 2)

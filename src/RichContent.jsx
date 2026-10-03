@@ -10,6 +10,20 @@ function configureDiagrams(appearance) {
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: "strict",
+    secure: [
+      "secure",
+      "securityLevel",
+      "startOnLoad",
+      "maxTextSize",
+      "maxEdges",
+      "suppressErrorRendering",
+      "theme",
+      "themeCSS",
+      "themeVariables",
+      "htmlLabels",
+    ],
+    maxTextSize: 50000,
+    maxEdges: 500,
     theme: "base",
     htmlLabels: false,
     flowchart: {
@@ -42,7 +56,8 @@ function HtmlContent({ html }) {
     const source = (html || "").replace(/\n{3,}/g, "\n\n").trim();
     ref.current.innerHTML = DOMPurify.sanitize(source, {
       FORBID_TAGS: ["style", "iframe", "form", "input", "button", "script"],
-      FORBID_ATTR: ["style"],
+      // No class either, so imported markup cannot dress up as app controls.
+      FORBID_ATTR: ["style", "class"],
       ALLOW_DATA_ATTR: false,
     });
     ref.current.querySelectorAll("a").forEach((a) => {
@@ -70,9 +85,22 @@ function HtmlContent({ html }) {
 }
 // Blocks lifted out of the sanitized prose: Mermaid fences, <pre class="mermaid">,
 // ```widget fences (sandboxed frames) and inline <svg> figures (SVG-profile
-// sanitizer, which keeps <style> so authored diagrams stay styled).
+// sanitizer, rendered as an image so diagram CSS cannot style the app).
 const BLOCKS =
   /```mermaid[^\S\n]*\r?\n(?<mermaid>[\s\S]*?)```|<pre\b[^>]*class=["']mermaid["'][^>]*>(?<pre>[\s\S]*?)<\/pre>|```widget[^\S\n]*(?<title>[^\n]*)\r?\n(?<widget>[\s\S]*?)```|(?<svg><svg\b[\s\S]*?<\/svg>)/gi;
+// The main process numbers widgets with this exact grammar (electron/widgets.cjs
+// FENCE); tests/security.test.cjs fails if the two drift. Counting fences
+// before a position keeps frame N here equal to widget N there, even when an
+// earlier fence sits inside a Mermaid or SVG block and is not shown.
+const WIDGET_FENCE = /```widget[^\S\n]*([^\n]*)\r?\n([\s\S]*?)```/g;
+const widgetIndexAt = (text, position) => {
+  let n = 0;
+  for (const m of text.matchAll(WIDGET_FENCE)) {
+    if (m.index >= position) break;
+    n++;
+  }
+  return n;
+};
 export function RichContent({
   html,
   cardId,
@@ -81,8 +109,7 @@ export function RichContent({
 }) {
   const text = html || "";
   const blocks = [];
-  let cursor = 0,
-    widgetIndex = 0;
+  let cursor = 0;
   for (const match of text.matchAll(BLOCKS)) {
     if (match.index > cursor)
       blocks.push(
@@ -97,7 +124,7 @@ export function RichContent({
         <WidgetFrame
           key={"widget-" + match.index}
           cardId={cardId}
-          index={widgetIndex++}
+          index={widgetIndexAt(text, match.index)}
           title={g.title.trim() || "Interactive widget"}
           allowed={widgetsAllowed}
           revision={revision}
@@ -127,32 +154,95 @@ export function RichContent({
 const sanitizeSvg = (svg) =>
   DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
 
-/** Zoomable viewer for already-sanitized SVG markup. */
-function SvgViewer({ markup, error, label = "Rendered diagram" }) {
+const SVG_NS = "http://www.w3.org/2000/svg";
+const FIGURE_FAILED = "This figure couldn't be displayed.";
+
+/** One broken figure shows a note in its place instead of blanking the app. */
+class FigureBoundary extends React.Component {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidUpdate(previous) {
+    if (this.state.failed && previous.markup !== this.props.markup)
+      this.setState({ failed: false });
+  }
+  render() {
+    return this.state.failed ? (
+      <div className="diagram-viewer">
+        <p className="diagram-error">{FIGURE_FAILED}</p>
+      </div>
+    ) : (
+      this.props.children
+    );
+  }
+}
+function SvgViewer(props) {
+  return (
+    <FigureBoundary markup={props.markup}>
+      <SvgImage {...props} />
+    </FigureBoundary>
+  );
+}
+
+/** SVG image documents cannot execute scripts, load remote resources or style the host. */
+function SvgImage({ markup, error, label = "Rendered diagram" }) {
   const ref = useRef();
+  const appearance = useAppearance();
+  const figure = useMemo(() => {
+    if (!markup) return null;
+    // DOMPurify produced this markup with HTML rules, so read it back with
+    // HTML rules. An XML parse rejects what HTML accepts: without xmlns the
+    // root becomes a plain element with no style, and &nbsp; is an undefined
+    // XML entity. A DOMParser document is inert: no scripts, styles or loads.
+    const svg = new DOMParser().parseFromString(markup, "text/html").body
+      .firstElementChild;
+    if (svg?.namespaceURI !== SVG_NS || svg.localName !== "svg") return null;
+    const theme = getComputedStyle(document.documentElement);
+    for (const token of new Set(markup.match(/--[a-zA-Z][\w-]*/g) || [])) {
+      const value = theme.getPropertyValue(token).trim();
+      if (value) svg.style.setProperty(token, value);
+    }
+    svg.style.color = theme.getPropertyValue("--text").trim();
+    const box = svg
+      .getAttribute("viewBox")
+      ?.trim()
+      .split(/[\s,]+/)
+      .map(Number);
+    const width =
+      box?.[2] > 0 ? box[2] : parseFloat(svg.getAttribute("width")) || 640;
+    const height =
+      box?.[3] > 0 ? box[3] : parseFloat(svg.getAttribute("height")) || 320;
+    return {
+      width,
+      height,
+      src:
+        "data:image/svg+xml;charset=utf-8," +
+        encodeURIComponent(new XMLSerializer().serializeToString(svg)),
+    };
+  }, [markup, appearance]);
   const [zoom, setZoom] = useState(1);
   const fit = (factor) => {
-    const svg = ref.current?.querySelector("svg");
-    if (!svg) return;
-    const box = svg.viewBox.baseVal;
-    if (!box.width || !box.height) return;
+    const svg = ref.current;
+    if (!svg || !figure) return;
     const width =
-      Math.min(box.width, ref.current.parentElement.clientWidth - 40) * factor;
+      Math.min(figure.width, svg.closest(".diagram-scroll").clientWidth - 40) *
+      factor;
     svg.style.width = width + "px";
-    svg.style.height = (width * box.height) / box.width + "px";
+    svg.style.height = (width * figure.height) / figure.width + "px";
     svg.style.maxWidth = "none";
   };
   useEffect(() => {
-    ref.current.innerHTML = markup || "";
     setZoom(1);
     fit(1);
-  }, [markup]);
+  }, [figure]);
   useEffect(() => {
     fit(zoom);
+    if (!ref.current) return;
     const observer = new ResizeObserver(() => fit(zoom));
-    observer.observe(ref.current.parentElement);
+    observer.observe(ref.current.closest(".diagram-scroll"));
     return () => observer.disconnect();
-  }, [zoom, markup]);
+  }, [zoom, figure]);
   return (
     <div className="diagram-viewer">
       <div className="diagram-controls">
@@ -176,8 +266,12 @@ function SvgViewer({ markup, error, label = "Rendered diagram" }) {
         </button>
       </div>
       <div className="diagram-scroll">
-        <div className="diagram" ref={ref} />
-        {error && <p className="diagram-error">{error}</p>}
+        <div className="diagram">
+          {figure && <img ref={ref} src={figure.src} alt={label} />}
+        </div>
+        {(error || (markup && !figure)) && (
+          <p className="diagram-error">{error || FIGURE_FAILED}</p>
+        )}
       </div>
     </div>
   );

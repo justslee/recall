@@ -12,12 +12,10 @@ function dataDir(override) {
   );
 }
 function atomic(file, value) {
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  const temp = file + "." + crypto.randomUUID() + ".tmp";
-  fs.writeFileSync(temp, JSON.stringify(value, null, 2) + "\n", {
-    mode: 0o600,
-  });
-  fs.renameSync(temp, file);
+  require("./private-files.cjs").atomicText(
+    file,
+    JSON.stringify(value, null, 2) + "\n",
+  );
 }
 function config(folder = dataDir()) {
   const file = path.join(folder, "config.json");
@@ -60,7 +58,7 @@ function saveConfig(folder, patch) {
   return next;
 }
 function lock(folder) {
-  fs.mkdirSync(folder, { recursive: true });
+  require("./private-files.cjs").directory(folder);
   const file = path.join(folder, ".writer.lock");
   const owner = JSON.stringify({ pid: process.pid, id: crypto.randomUUID() });
   for (let attempt = 0; attempt < 2; attempt++) {

@@ -62,6 +62,9 @@ export function WidgetFrame({ cardId, index, title, allowed, revision = 0 }) {
         </div>
       ) : (
         <iframe
+          // Reset and revisions mount a fresh frame: a loaded frame is never
+          // navigated again, and the main process refuses if one tries.
+          key={revision + ":" + nonce}
           ref={frame}
           sandbox="allow-scripts"
           src={src}
