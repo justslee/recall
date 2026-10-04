@@ -57,6 +57,24 @@ const outcomes = {
   unclear: "Needs clarification",
   insufficient_reference: "Reference is limited",
 };
+const coachingFocuses = {
+  main_point: "Lead with the main point",
+  organization: "Make the structure easy to follow",
+  precision: "Choose more precise words",
+  audience_fit: "Meet your listener where they are",
+  mechanism: "Connect the how and why",
+  example: "Make the idea concrete",
+  concision: "Keep what your listener needs",
+  accuracy: "Repair the central claim",
+  limits: "Make the limits clear",
+};
+const coachingDrills = {
+  main_point_first: "Main point first",
+  explain_with_example: "Explain with an example",
+  audience_switch: "Try a different listener",
+  compress: "Say it more simply",
+  repair_gap: "Connect the missing piece",
+};
 const time = (seconds = 0) =>
   `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 const date = (at) =>
@@ -242,6 +260,7 @@ function Delivery({ metrics, originalTranscript }) {
 function Feedback({ attempt, onAgain }) {
   const { feedback, config } = attempt;
   const ungrounded = config.grounding === "none";
+  const coaching = feedback.coaching;
   return (
     <div
       className="speak-feedback"
@@ -310,13 +329,61 @@ function Feedback({ attempt, onAgain }) {
         metrics={attempt.metrics}
         originalTranscript={attempt.originalTranscript}
       />
-      <section className="speak-next">
+      <section className="speak-next" aria-label="Next practice rep">
         <span className="eyebrow">ONE MORE REP</span>
-        <h3>{feedback.followUp}</h3>
-        <p>
-          Try the explanation again with this question in mind. Each attempt
-          stands on its own.
-        </p>
+        {coaching ? (
+          <>
+            <h3>
+              {coachingFocuses[coaching.focus] || "Your next practice focus"}
+            </h3>
+            <p className="speak-coaching-rationale">{coaching.rationale}</p>
+            <div className="speak-coaching-drill">
+              <strong>
+                {coachingDrills[coaching.drill.kind] || "Focused practice"}
+              </strong>
+              <p>{coaching.drill.instructions}</p>
+              <ul className="speak-success-checks" aria-label="What to aim for">
+                {coaching.drill.successChecks.map((check, i) => (
+                  <li key={i}>
+                    <Check size={14} aria-hidden="true" />
+                    <span>{check}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {(coaching.quote || coaching.revision) && (
+              <details className="speak-coaching-revision">
+                <summary>See the wording change</summary>
+                {coaching.quote && (
+                  <div>
+                    <small>YOUR WORDING</small>
+                    <blockquote>“{coaching.quote}”</blockquote>
+                  </div>
+                )}
+                {coaching.revision && (
+                  <div>
+                    <small>TRY THIS</small>
+                    <p>{coaching.revision}</p>
+                  </div>
+                )}
+                {!!coaching.referenceIds?.length && (
+                  <small>Based on: {config.reference.title}</small>
+                )}
+                {ungrounded && (
+                  <small>A wording suggestion, not a fact check.</small>
+                )}
+              </details>
+            )}
+          </>
+        ) : (
+          <>
+            <h3>{feedback.followUp}</h3>
+            <p>
+              Try the explanation again with this question in mind. Each attempt
+              stands on its own.
+            </p>
+          </>
+        )}
         <button className="primary" onClick={onAgain}>
           <RotateCcw size={16} /> Practice again
         </button>
@@ -364,6 +431,8 @@ export function SpeakView({ onSettings }) {
   const [history, setHistory] = useState([]),
     [attempt, setAttempt] = useState(null),
     [deleting, setDeleting] = useState(false);
+  const [retryCoaching, setRetryCoaching] = useState(null),
+    [retryAttemptId, setRetryAttemptId] = useState(null);
   const [elapsed, setElapsed] = useState(0),
     [level, setLevel] = useState(0),
     [searching, setSearching] = useState(true);
@@ -581,6 +650,8 @@ export function SpeakView({ onSettings }) {
       setTranscript("");
       setReceipt(null);
       setAttempt(null);
+      setRetryCoaching(null);
+      setRetryAttemptId(null);
       setElapsed(0);
       await api.speakSaveDraft({
         config: next,
@@ -675,7 +746,12 @@ export function SpeakView({ onSettings }) {
       await api.speakSaveDraft(draft.current);
       if (!alive.current || evaluationToken.current !== token) return;
       const result = await api.speakEvaluate(
-        { config, transcript, recordingToken: receipt?.recordingToken || null },
+        {
+          config,
+          transcript,
+          recordingToken: receipt?.recordingToken || null,
+          practiceAttemptId: retryAttemptId || undefined,
+        },
         token,
       );
       if (!alive.current || evaluationToken.current !== token) return;
@@ -695,8 +771,14 @@ export function SpeakView({ onSettings }) {
   const again = async () => {
     setError("");
     let next = attempt.config;
+    const coaching = attempt.feedback.coaching;
     try {
-      if (next.sourceId === "custom") next = await api.speakPreview(next);
+      if (coaching?.drill.kind === "audience_switch")
+        next = await api.speakPreview({
+          ...next,
+          audience: coaching.drill.audience,
+        });
+      else if (next.sourceId === "custom") next = await api.speakPreview(next);
     } catch (error) {
       displayError(error);
       return;
@@ -704,6 +786,8 @@ export function SpeakView({ onSettings }) {
     if (!alive.current) return;
     setConfig(next);
     restoreComposer(next);
+    setRetryCoaching(coaching || null);
+    setRetryAttemptId(coaching ? attempt.id : null);
     setTranscript("");
     setReceipt(null);
     setAttempt(null);
@@ -1100,6 +1184,8 @@ export function SpeakView({ onSettings }) {
                   setConfig(null);
                   setTranscript("");
                   setReceipt(null);
+                  setRetryCoaching(null);
+                  setRetryAttemptId(null);
                   setError("");
                 }}
               >
@@ -1114,6 +1200,20 @@ export function SpeakView({ onSettings }) {
               </span>
             </div>
             <p className="speak-prompt-text">{config.prompt}</p>
+            {retryCoaching && (
+              <details className="speak-retry-focus">
+                <summary>
+                  Practice focus:{" "}
+                  {coachingFocuses[retryCoaching.focus] || "Your next rep"}
+                </summary>
+                <p>{retryCoaching.drill.instructions}</p>
+                <ul>
+                  {retryCoaching.drill.successChecks.map((check, i) => (
+                    <li key={i}>{check}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
             {config.customBrief && (
               <div className="speak-listener-brief">
                 <small>WHAT YOUR LISTENER SHOULD UNDERSTAND</small>

@@ -52,6 +52,21 @@ function feedback(referenceId, quote = "An average with weights") {
     followUp: "What if all weights double?",
     sampleExplanation: "Each value contributes in proportion to its weight.",
     sourceCaveat: "Grounded only in the selected reference.",
+    coaching: {
+      focus: "mechanism",
+      rationale: "The listener needs to know why total weight matters.",
+      quote,
+      revision: "Each value contributes in proportion to its weight.",
+      referenceIds: referenceId ? [referenceId] : [],
+      drill: {
+        kind: "repair_gap",
+        audience: "same",
+        instructions: "Explain what happens when every weight doubles.",
+        successChecks: [
+          "Connect the numerator and denominator to the same scaling factor.",
+        ],
+      },
+    },
   };
 }
 function result(value) {
@@ -265,6 +280,31 @@ test("grounded feedback stores both transcripts, survives full backup, and never
     /sk-synthetic|<script>|document.getElementById/,
   );
   assert.equal(JSON.parse(request.input).reference.id, f.config.reference.id);
+  assert.equal(attempt.feedback.rubricVersion, "articulation-1");
+  assert.deepEqual(
+    attempt.feedback.coaching,
+    feedback(f.config.reference.id).coaching,
+  );
+  assert.equal(
+    JSON.parse(request.input).learnerText,
+    "An average with weights",
+  );
+  assert.equal(JSON.parse(request.input).delivery.fillerCount, 1);
+  assert.equal(
+    Object.hasOwn(JSON.parse(request.input), "originalTranscript"),
+    false,
+  );
+  assert.match(request.instructions, /main point is identifiable early/);
+  assert.match(
+    request.instructions,
+    /A shorter explanation is not automatically better/,
+  );
+  assert.match(request.instructions, /Typed input has no recorded delivery/);
+  assert.match(request.instructions, /No universal ideal words-per-minute/);
+  assert.match(
+    request.instructions,
+    /Do not make filler removal the coaching priority from counts alone/,
+  );
   assert.deepEqual(f.store.db.prepare("SELECT * FROM cards").all(), before);
   assert.equal(
     f.store.db.prepare("SELECT count(*) AS n FROM reviews").get().n,
@@ -293,6 +333,40 @@ test("provider hallucinated quotes, unsupported reference IDs and duplicate dime
     (value) => {
       value.dimensions[3].id = "accuracy";
     },
+    (value) => {
+      value.coaching.quote = "um An average with weights";
+    },
+    (value) => {
+      value.coaching.referenceIds = ["other-source"];
+    },
+    (value) => {
+      value.coaching.focus = "pronunciation";
+    },
+    (value) => {
+      value.coaching.drill.kind = "eliminate_all_fillers";
+    },
+    (value) => {
+      value.coaching.drill.kind = "audience_switch";
+    },
+    (value) => {
+      value.coaching.drill.audience = "peer";
+    },
+    (value) => {
+      value.coaching.drill.successChecks = [];
+    },
+    (value) => {
+      value.coaching.drill.successChecks = [" "];
+    },
+    (value) => {
+      value.coaching.revision = "x".repeat(1501);
+    },
+    (value) => {
+      value.coaching.focus = "accuracy";
+      value.coaching.referenceIds = [];
+    },
+    (value) => {
+      delete value.coaching;
+    },
   ]) {
     const value = feedback(f.config.reference.id);
     mutate(value);
@@ -307,6 +381,113 @@ test("provider hallucinated quotes, unsupported reference IDs and duplicate dime
     assert.equal(f.speak.history().length, 0);
     assert.equal(f.speak.draft().transcript, "An average with weights");
   }
+});
+test("focused retries send only the saved practice objective and audience-switch uses the new listener", async (t) => {
+  const f = setup(t);
+  const value = feedback(f.config.reference.id);
+  value.coaching.focus = "audience_fit";
+  value.coaching.drill.kind = "audience_switch";
+  value.coaching.drill.audience = "peer";
+  value.coaching.drill.instructions =
+    "Explain the same idea to a technical peer, making normalization explicit.";
+  f.speak.fetchImpl = async () => result(value);
+  const first = await f.speak.evaluate(
+    { config: f.config, transcript: "An average with weights" },
+    "first",
+  );
+  let request;
+  f.speak.fetchImpl = async (_url, options) => {
+    request = JSON.parse(options.body);
+    return result(feedback(f.config.reference.id));
+  };
+  await assert.rejects(
+    f.speak.evaluate(
+      {
+        config: f.config,
+        transcript: "An average with weights",
+        practiceAttemptId: first.id,
+      },
+      "wrong-audience",
+    ),
+    /no longer matches/,
+  );
+  const nextConfig = f.speak.preview({ ...f.config, audience: "peer" });
+  const next = await f.speak.evaluate(
+    {
+      config: nextConfig,
+      transcript: "An average with weights",
+      practiceAttemptId: first.id,
+    },
+    "retry",
+  );
+  const input = JSON.parse(request.input);
+  assert.deepEqual(input.practice, {
+    focus: first.feedback.coaching.focus,
+    drill: first.feedback.coaching.drill,
+  });
+  assert.equal(Object.hasOwn(input.practice, "transcript"), false);
+  assert.equal(Object.hasOwn(input.practice, "revision"), false);
+  assert.equal(next.practiceAttemptId, first.id);
+  assert.equal(next.config.audience, "peer");
+  const changed = f.speak.preview({ ...nextConfig, targetSeconds: 30 });
+  await assert.rejects(
+    f.speak.evaluate(
+      {
+        config: changed,
+        transcript: "An average with weights",
+        practiceAttemptId: first.id,
+      },
+      "changed-retry",
+    ),
+    /no longer matches/,
+  );
+  await assert.rejects(
+    f.speak.evaluate(
+      {
+        config: nextConfig,
+        transcript: "An average with weights",
+        practiceAttemptId: "missing",
+      },
+      "missing-retry",
+    ),
+    /attempt|session/i,
+  );
+  assert.equal(f.speak.history().length, 2);
+  assert.equal(
+    f.store.db.prepare("SELECT count(*) AS n FROM reviews").get().n,
+    0,
+  );
+});
+test("focused drills support omissions and wording-only advice without rewriting older attempts", async (t) => {
+  const f = setup(t);
+  const value = feedback(f.config.reference.id);
+  value.coaching.quote = "";
+  value.coaching.focus = "main_point";
+  value.coaching.referenceIds = [];
+  value.coaching.drill.kind = "main_point_first";
+  f.speak.fetchImpl = async () => result(value);
+  const attempt = await f.speak.evaluate(
+    { config: f.config, transcript: "An average with weights" },
+    "focused",
+  );
+  assert.equal(attempt.metrics.method, "typed");
+  assert.equal(attempt.metrics.pauseCount, null);
+  assert.equal(attempt.feedback.coaching.quote, "");
+  assert.deepEqual(attempt.config, f.config);
+
+  const historical = structuredClone(attempt);
+  delete historical.feedback.coaching;
+  delete historical.feedback.rubricVersion;
+  f.store.set("speak:attempt:" + attempt.id, historical);
+  const restarted = new SpeakService({ store: f.store, voice: f.voice });
+  assert.deepEqual(restarted.attempt(attempt.id), historical);
+  assert.equal(restarted.history()[0].id, attempt.id);
+  const saved = backup.backup(f.store, path.join(f.root, "historical-backup"));
+  const restored = path.join(f.root, "historical-restored");
+  backup.restore(restored, saved.backup);
+  const other = new Store(restored);
+  assert.deepEqual(other.get("speak:attempt:" + attempt.id), historical);
+  other.close();
 });
 test("cancellation, changed recording config and concurrent modes cannot produce an attempt", async (t) => {
   const f = setup(t);
@@ -440,6 +621,8 @@ test("no-reference custom feedback cannot claim grounded accuracy or invent refe
   );
   assert.match(request.instructions, /NO REFERENCE WAS SUPPLIED/);
   assert.match(request.instructions, /do not introduce new factual claims/);
+  assert.match(request.instructions, /coaching.focus cannot be accuracy/);
+  assert.deepEqual(attempt.feedback.coaching.referenceIds, []);
   assert.equal(attempt.feedback.outcome, "insufficient_reference");
   assert.equal(
     attempt.feedback.dimensions.find((item) => item.id === "accuracy").level,
@@ -454,6 +637,14 @@ test("no-reference custom feedback cannot claim grounded accuracy or invent refe
     f.speak.evaluate({ config, transcript: answer }, "bad-links"),
     /source-linked/,
   );
+  response.improvements[0].referenceIds = [];
+  response.coaching.focus = "accuracy";
+  await assert.rejects(
+    f.speak.evaluate({ config, transcript: answer }, "bad-coaching"),
+    /source-linked/,
+  );
+  assert.equal(f.speak.history().length, 1);
+  assert.equal(f.speak.draft().transcript, answer);
 });
 test("provided custom references are explicit and never represented as verified KB truth", async (t) => {
   const f = setup(t);

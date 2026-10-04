@@ -187,6 +187,8 @@ async function stubTransports(app) {
         const weighted = input.learnerText.includes(
           "A weighted mean gives each value",
         );
+        const switchAudience =
+          weighted && globalThis.__speakTest.requests.length === 2;
         const quote = weighted
           ? "Divide the weighted sum by total weight."
           : input.learnerText.slice(0, 70);
@@ -236,6 +238,27 @@ async function stubTransports(app) {
           sourceCaveat: input.reference?.text
             ? "This assessment uses only the selected local reference."
             : "",
+          coaching: {
+            focus: switchAudience ? "audience_fit" : "main_point",
+            rationale:
+              "Give the listener a clear starting point before the details.",
+            quote,
+            revision: weighted
+              ? "A weighted mean lets some values count more than others."
+              : quote,
+            referenceIds: input.reference?.text ? [input.reference.id] : [],
+            drill: {
+              kind: switchAudience ? "audience_switch" : "main_point_first",
+              audience: switchAudience ? "peer" : "same",
+              instructions: switchAudience
+                ? "Explain this to a technical peer, connecting the formula to its assumptions."
+                : "Start with the main claim, then connect one example to it.",
+              successChecks: [
+                "State the main claim in the opening sentence.",
+                "Connect one example back to that claim.",
+              ],
+            },
+          },
         };
         return {
           ok: true,
@@ -283,6 +306,10 @@ async function captureThemes(page, name) {
       animations: "disabled",
       fullPage: true,
     });
+    if (name === "feedback")
+      await page.locator(".speak-next").screenshot({
+        path: path.join(evidence, `speak-coaching-${theme}.png`),
+      });
   }
 }
 
@@ -597,9 +624,33 @@ async function run() {
     await expect(
       page.getByRole("region", { name: "Delivery observations", exact: true }),
     ).toContainText("Text only");
+    const nextRep = page.getByRole("region", {
+      name: "Next practice rep",
+      exact: true,
+    });
+    await expect(nextRep).toContainText("Lead with the main point");
+    await expect(nextRep).toContainText(
+      "State the main claim in the opening sentence.",
+    );
+    await expect(page.locator(".speak-coaching-revision")).not.toHaveAttribute(
+      "open",
+      "",
+    );
+    await page.getByText("See the wording change", { exact: true }).click();
+    await expect(page.locator(".speak-coaching-revision")).toContainText(
+      "A weighted mean lets some values count more than others.",
+    );
+    await page.getByText("See the wording change", { exact: true }).click();
     await page
       .getByRole("button", { name: "Practice again", exact: true })
       .click();
+    await expect(page.locator(".speak-retry-focus")).toContainText(
+      "Practice focus: Lead with the main point",
+    );
+    await expect(page.locator(".speak-retry-focus")).not.toHaveAttribute(
+      "open",
+      "",
+    );
     await page
       .getByRole("button", { name: "Start recording", exact: true })
       .click();
@@ -640,6 +691,8 @@ async function run() {
     assert.equal(recordedAttempt.transcript, editedTranscript);
     assert.equal(recordedAttempt.metrics.method, "local_energy");
     assert.equal(recordedAttempt.metrics.fillerCount, 1);
+    assert.equal(recordedAttempt.feedback.rubricVersion, "articulation-1");
+    assert.equal(typeof recordedAttempt.practiceAttemptId, "string");
     await captureThemes(page, "feedback");
     await page.setViewportSize({ width: 760, height: 900 });
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
@@ -661,6 +714,10 @@ async function run() {
     await page
       .getByRole("button", { name: "Practice again", exact: true })
       .click();
+    await expect(page.locator(".speak-prompt")).toContainText("Technical peer");
+    await expect(page.locator(".speak-retry-focus")).toContainText(
+      "Meet your listener where they are",
+    );
     await page
       .getByRole("button", { name: "Start recording", exact: true })
       .click();
@@ -680,6 +737,10 @@ async function run() {
     assert.equal(transport.requests.length, 2);
     assert.equal(transport.requests[0].store, false);
     assert.equal(transport.requests[0].text.format.strict, true);
+    assert.equal(
+      JSON.parse(transport.requests[1].input).practice.focus,
+      "main_point",
+    );
     assert.ok(JSON.stringify(transport.requests[0]).includes(editedTranscript));
     assert.ok(!JSON.stringify(transport.requests).includes(fixtureKey));
     assert.deepEqual(transport.unexpectedNetwork, []);
@@ -691,6 +752,18 @@ async function run() {
 
     // Process restart verifies durable attempt storage rather than React state.
     await app.close();
+    app = null;
+    // Simulate an older persisted evaluation without rewriting it on read.
+    const legacyStore = new Store(folder);
+    try {
+      const key = "speak:attempt:" + savedHistory[1].id;
+      const legacy = legacyStore.get(key);
+      delete legacy.feedback.coaching;
+      delete legacy.feedback.rubricVersion;
+      legacyStore.set(key, legacy);
+    } finally {
+      legacyStore.close();
+    }
     app = await electron.launch(launchOptions);
     const restarted = await app.firstWindow();
     restarted.setDefaultTimeout(15000);
@@ -705,6 +778,12 @@ async function run() {
       (await restarted.evaluate(() => window.recall.speakHistory())).length,
       2,
     );
+    await restarted.locator(".speak-history-list button").last().click();
+    await expect(restarted.locator(".speak-next")).toContainText(
+      "What changes if all weights are doubled?",
+    );
+    await expect(restarted.locator(".speak-coaching-drill")).toHaveCount(0);
+    await restarted.getByRole("button", { name: "Back", exact: true }).click();
     await restarted.locator(".speak-history-list button").first().click();
     await expect(restarted.locator(".speak-feedback")).toContainText(
       "relative influence to normalization",

@@ -620,6 +620,7 @@
   border-radius: 16px;
   border: 1px solid var(--border);
   padding: 28px;
+  overflow-wrap: anywhere;
 }
 .speak-next h3 {
   font: 25px/1.5 var(--serif);
@@ -628,6 +629,87 @@
   color: var(--muted);
   font-size: 12px;
   margin-bottom: 20px;
+}
+.speak-next .speak-coaching-rationale {
+  max-width: 760px;
+  margin-bottom: 18px;
+}
+.speak-coaching-drill {
+  border-left: 2px solid var(--accent);
+  padding-left: 16px;
+  margin: 18px 0 22px;
+}
+.speak-coaching-drill > strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.speak-coaching-drill p {
+  margin: 8px 0 12px !important;
+  max-width: 820px;
+}
+.speak-success-checks {
+  list-style: none;
+  display: grid;
+  gap: 7px;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.speak-success-checks li {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+.speak-success-checks svg {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.speak-coaching-revision {
+  margin: 0 0 20px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  font-size: 12px;
+}
+.speak-coaching-revision summary,
+.speak-retry-focus summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.speak-coaching-revision > div {
+  margin-top: 15px;
+}
+.speak-coaching-revision small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+.speak-coaching-revision blockquote {
+  margin: 8px 0;
+}
+.speak-coaching-revision p {
+  margin: 8px 0 14px !important;
+  white-space: pre-wrap;
+}
+.speak-retry-focus {
+  margin: 16px 0;
+  padding: 12px 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--blue-paper);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.speak-retry-focus p,
+.speak-retry-focus ul {
+  color: var(--muted);
+  font-size: 12px;
+}
+.speak-retry-focus ul {
+  margin-bottom: 0;
+  padding-left: 18px;
 }
 .speak-sample summary {
   cursor: pointer;
