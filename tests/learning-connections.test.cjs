@@ -409,6 +409,83 @@ test("bounded worker submits mocked results and reports provider failures", asyn
   );
 });
 
+test("worker failures retain safe categories without persisting transport credentials or raw provider text", async (t) => {
+  const { folder } = setup(t),
+    worker = require("../electron/learning-worker.cjs"),
+    { EventEmitter } = require("node:events"),
+    { PassThrough } = require("node:stream"),
+    secret = "sk-proj-" + "X".repeat(32),
+    privateText = "SYNTHETIC_PRIVATE_PROVIDER_TEXT",
+    sensitive = `Authorization: Bearer ${secret} ${privateText}`;
+  const cases = [
+    { name: "exit", category: "provider-exit", exitCode: 1 },
+    { name: "signal", category: "provider-signal", signal: "SIGTERM" },
+    { name: "start", category: "provider-start", startError: true },
+    { name: "parse", category: "provider-output", output: sensitive },
+    {
+      name: "blocked",
+      category: "assistant-blocked",
+      output: JSON.stringify({ blocked: sensitive }),
+    },
+    {
+      name: "validation",
+      category: "result-validation",
+      output: JSON.stringify({ captures: sensitive }),
+    },
+  ];
+  for (const scenario of cases) {
+    const id = "private-error-" + scenario.name;
+    inbox.add(folder, entry(id), []);
+    const result = await worker.prepare(folder, [], {
+      resolveExecutable: () => "/synthetic-provider",
+      verifyProvider: () => {},
+      createInvocation: (_agent, binary, stage) => ({
+        binary,
+        args: [],
+        env: {},
+        output: path.join(stage, "last-message.txt"),
+      }),
+      spawnProcess: (_binary, _args, options) => {
+        const child = new EventEmitter();
+        child.stdin = new PassThrough();
+        child.stdout = new PassThrough();
+        child.stderr = new PassThrough();
+        process.nextTick(() => {
+          child.stderr.write(sensitive);
+          if (scenario.startError) {
+            child.emit("error", Error(sensitive));
+            child.emit("close", 1);
+            return;
+          }
+          if (scenario.output)
+            fs.writeFileSync(
+              path.join(options.cwd, "last-message.txt"),
+              scenario.output,
+            );
+          child.emit("close", scenario.exitCode ?? 0, scenario.signal);
+        });
+        return child;
+      },
+    });
+    const item = inbox.read(folder).items.find((item) => item.id === id);
+    assert.equal(result.prepared, 0, scenario.name);
+    assert.equal(item.status, "blocked", scenario.name);
+    assert.equal(item.error, result.error, scenario.name);
+    assert.match(result.error, new RegExp(`^\\[${scenario.category}\\]`));
+    assert.match(result.error, /Source retained/);
+    for (const payload of [JSON.stringify(result), JSON.stringify(item)]) {
+      assert.equal(payload.includes(secret), false, scenario.name);
+      assert.equal(payload.includes(privateText), false, scenario.name);
+      assert.equal(payload.includes("Authorization:"), false, scenario.name);
+    }
+    assert.deepEqual(item.input.capture, entry(id));
+  }
+  assert.deepEqual(
+    fs.readdirSync(path.join(folder, "learning-inbox/jobs")),
+    [],
+  );
+});
+
 test("Claude tool-use commentary does not prematurely complete a learning turn", () => {
   assert.equal(
     scan.message(

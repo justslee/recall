@@ -8,7 +8,9 @@ const { _electron: electron, expect } = require("@playwright/test"),
   const errors = [];
   try {
     app = await electron.launch({
-      args: [path.join(__dirname, "..")],
+      ...(process.env.RECALL_TEST_EXECUTABLE
+        ? { executablePath: process.env.RECALL_TEST_EXECUTABLE, args: [] }
+        : { args: [path.join(__dirname, "..")] }),
       env: { ...process.env, RECALL_DATA_DIR: folder },
     });
     const page = await app.firstWindow();
@@ -19,14 +21,17 @@ const { _electron: electron, expect } = require("@playwright/test"),
     const snapshot = await page.evaluate(() => window.recall.snapshot());
     assert(snapshot.cards.length > 3);
     await expect(
-      page.getByRole("button", { name: "Try the demo", exact: true }),
+      page.getByRole("button", { name: "Try demo", exact: true }),
     ).toHaveCount(0);
     const catalogCards = snapshot.cards.filter((c) => c.catalog),
       deck = catalogCards[0].decks[0];
+    await page.getByRole("button", { name: "Library", exact: true }).click();
+    await page.getByLabel("Collection", { exact: true }).selectOption("all");
+    await page.locator(".scope-popover summary").first().click();
+    await page.getByRole("button", { name: "All topics", exact: true }).click();
+    await page.keyboard.press("Escape");
     await page
-      .locator(".sidebar")
-      .getByRole("button")
-      .filter({ hasText: deck })
+      .getByRole("button", { name: `Open collection ${deck}`, exact: true })
       .click();
     await expect(
       page.getByRole("heading", { name: deck, exact: true }),

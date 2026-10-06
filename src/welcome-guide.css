@@ -1,0 +1,132 @@
+.welcome-guide {
+  margin-bottom: 34px;
+}
+.welcome-intro {
+  max-width: 620px;
+  margin-bottom: 22px;
+}
+.welcome-intro h2 {
+  font: 400 clamp(28px, 3vw, 38px)/1.15 var(--serif);
+  margin: 11px 0;
+  letter-spacing: -0.6px;
+}
+.welcome-intro p {
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 0;
+}
+.welcome-paths {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+.welcome-path {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  white-space: normal;
+  text-align: left;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px 17px 17px 6px;
+  background: var(--card);
+  padding: 23px;
+  box-shadow: 0 3px 0 var(--sunken);
+  transition:
+    transform var(--fast),
+    border-color var(--fast);
+}
+.welcome-path:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: var(--border-strong);
+  background: var(--card);
+}
+.welcome-path-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.welcome-path-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.welcome-path.import .welcome-path-icon {
+  background: var(--blue-paper);
+  color: var(--blue-ink);
+}
+.welcome-path.connect .welcome-path-icon {
+  background: var(--warm-bg);
+  color: var(--warm);
+}
+.welcome-path-number {
+  font: 12px var(--mono);
+  color: var(--faint);
+}
+.welcome-path strong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  font: 500 22px/1.2 var(--serif);
+  color: var(--text);
+}
+.welcome-path-description {
+  color: var(--muted);
+  font: 14px/1.65 var(--sans);
+}
+.welcome-footnote {
+  color: var(--faint);
+  font-size: 12px;
+  margin: 18px 0 0;
+}
+.study-index .learning-preferences label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 10px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.learning-preferences .learning-preferences-header {
+  margin-bottom: 18px;
+}
+.learning-preferences h3 {
+  font: 400 24px/1.25 var(--serif);
+  margin: 9px 0;
+}
+.learning-preferences p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.learning-preferences .learning-preferences-details {
+  margin-top: 18px;
+}
+.study-index .learning-preferences .learning-timezone {
+  display: grid;
+  align-items: start;
+  max-width: 340px;
+  margin: 16px 0;
+}
+.learning-preferences input:not([type="checkbox"]) {
+  width: 100%;
+}
+.learning-preferences .learning-save {
+  margin-top: 16px;
+}
+@media (max-width: 780px) {
+  .welcome-paths {
+    grid-template-columns: 1fr;
+  }
+  .welcome-path {
+    gap: 12px;
+    padding: 20px;
+  }
+}

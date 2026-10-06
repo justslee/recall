@@ -16,7 +16,9 @@ Open **Settings & backups → Learning connections**. Connect Codex, Claude Code
 
 The installer creates a profile-specific CLI launcher, copies the portable skill kit and adds a managed global bridge instruction. Existing instructions are backed up and unrelated skills are preserved. You do not need to open the Recall repository for each conversation.
 
-**Check from another local project:**
+Choose **Check readiness**. The panel reports **Installation**, **CLI**, **Sign-in** and **Learning receipt** separately, so installed skills do not imply successful capture or live provider access. Sign-in is a local CLI report, not a live provider test. Then choose **Verify learning**, enter a real concept, and **Create verification prompt → Copy prompt**. Paste that unique-check prompt into a fresh assistant session in another project. **Learning receipt** becomes verified only when that check resolves to actual ready, unsuspended cards in this library.
+
+**After verification, try a normal request from another local project:**
 
 > Use the installed recall-bridge to check my connection and capture status. Then explain weighted means with a concrete example. Reuse suitable existing objectives, consider useful math/coding supplements, capture only what we discuss and return a new/reused/pending receipt with verified Recall links.
 
@@ -28,17 +30,19 @@ If you use a custom Codex home, connect from a process with that `CODEX_HOME` av
 
 ## 3. Choose your knowledge source
 
-Start with one source. See [Knowledge sources](KNOWLEDGE.md) for a copyable configuration and read/write permissions.
+Open **Settings & backups → Learning connections → Knowledge sources**. If you have no KB, choose **Create my first knowledge base**. Select Markdown, Obsidian, Notion or several together; choose one primary home and which others should receive mirrors. Turn off **Mirror notes to…** for a read-only reference. Choose the destinations, **Review creation**, then authorize **Let my assistants build this knowledge base** and **Create knowledge base**. Local folders are created immediately. Notion needs the Recall assistant connection from step 2, plus a working Notion connector. Use **Finish Notion with assistant → Copy setup prompt** in a fresh session; it stays pending until a real creation and read-back result is submitted.
 
-| Choice         | What you supply                                                            | What the assistant uses                                                         |
-| :------------- | :------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
-| Local Markdown | An existing folder of notes                                                | Scoped Markdown files and stable concept IDs                                    |
-| Obsidian       | A selected vault or KB subfolder                                           | The same scoped filesystem adapter; no mandatory Obsidian plugin                |
-| Notion         | A selected page/database scope and a connector available to your assistant | Live scoped searches/reads, local fetched snapshots and verified write receipts |
+Already have notes? Choose **Add knowledge source**, select its folder or Notion scope and keep **Read-only** access until you want authoring. **Test connection** checks the selected scope before saving. See [Knowledge sources](KNOWLEDGE.md) for creation, what each check establishes and optional CLI configuration.
 
-Ask the assistant to check the configured source before importing or writing. Start read-only if you are connecting existing notes. The app's source configuration does not authenticate a Notion account or install the assistant's connector.
+| Choice         | What you supply                                                                      | What the assistant uses                                                         |
+| :------------- | :----------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
+| Local Markdown | A location for a new KB folder, or an existing notes folder                          | Scoped Markdown files and stable concept IDs                                    |
+| Obsidian       | A location for a new vault, or a selected existing vault/KB subfolder                | The same scoped filesystem adapter; no mandatory Obsidian plugin                |
+| Notion         | A selected parent page for creation, or an existing KB scope; an assistant connector | Live scoped searches/reads, local fetched snapshots and verified write receipts |
 
-For a Notion-first KB with an Obsidian mirror, configure both selected sources with write permission. Tell the assistant:
+For local sources, the check inspects only the selected root. For Notion, configured scope and cached snapshots are separate from authenticated live access: finish the connector check with your assistant. The app does not authenticate a Notion account or install the assistant's connector.
+
+For a new Notion-first KB with an Obsidian mirror, select both in the creation guide and make Notion primary. Finish its pending setup with your assistant before authoring concepts. Local mirrors are not promoted while the selected primary is pending. For an existing setup, configure both selected sources with write permission. Tell the assistant:
 
 > Use my configured Notion KB as canonical and the selected Obsidian KB as its mirror. Search before creating. After a verified Notion write, mirror the same concept ID to Obsidian, preserving unrelated content. Report each outcome separately; keep a failed mirror pending rather than repeating the successful create.
 
@@ -62,7 +66,7 @@ Ask your connected assistant:
 
 > Prepare today's Recall Self Test from actually captured learning, using my profile timezone. Inspect connection/capture status and respect pause. If catch-up is enabled, scan supported local records within its saved date/project scope first; do not broaden it. Inspect each pending inbox item. Reuse ready unsuspended objectives; resolve real gaps with the installed card skills and their editorial, visual, math and code checks. Submit validated results through the inbox, regenerate the daily Markdown log, and report specific blocked gaps. Do not start or rate a test, change schedules, invent learning or infer mastery.
 
-**Prepare next** in Settings can prepare one previewed item with a supported, signed-in CLI. Its worker has tools disabled. For a missing visual, math or coding objective requiring browser/runtime checks, ask your normal assistant to complete the item directly using the inbox contract. Failed or incomplete checks remain blocked.
+**Prepare next** in Settings can prepare one previewed item with a supported, signed-in CLI. Its worker has tools disabled. For a blocked item, use **Finish with assistant** to copy a prompt that identifies the item and its missing checks. Paste it into your normal assistant to complete the required browser/runtime/connector checks and submit the validated inbox result. **Retry** remains available for a transient failure; it cannot substitute for those checks.
 
 To make this daily, ask an assistant host that supports scheduling to run the preparation prompt at your chosen time. Include your timezone, opted-in scope and this notification preference: **stay quiet when unchanged; notify only when a new/materially updated test is ready, a failure occurs or a gap needs attention.** Recall does not create this automation during setup.
 

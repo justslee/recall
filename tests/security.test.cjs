@@ -344,7 +344,8 @@ test("preparation requires the previewed context and removes staging after provi
     ...options,
     expectedDigest: preview.digest,
   });
-  assert.match(result.error, /synthetic provider failure/);
+  assert.match(result.error, /^\[provider-start\]/);
+  assert.doesNotMatch(result.error, /synthetic provider failure/);
   assert.equal(inbox.read(folder).items[0].status, "blocked");
   assert.deepEqual(
     fs.readdirSync(path.join(folder, "learning-inbox/jobs")),

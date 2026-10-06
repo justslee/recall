@@ -18,7 +18,7 @@ These runtimes are optional and do not block concept or math study. Run `node cl
 
 ## My assistant did not add anything to Recall
 
-Check **Settings & backups → Learning connections**: learning capture must be enabled and saved, and the relevant assistant must be connected. Start a fresh Codex or Claude session so it loads global instructions. Ask it to check the installed recall-bridge and give a capture receipt. Instructions guide the assistant; they do not guarantee every conversation was logged.
+Open **Settings & backups → Learning connections** and choose **Check readiness**. Learning capture must be enabled and saved. Inspect **Installation**, **CLI**, **Sign-in** and **Learning receipt** separately: an installed connection does not prove a session reached Recall. Choose **Verify learning → Create verification prompt → Copy prompt**, then paste it into a fresh Codex or Claude session so it loads global instructions. The prompt's unique check ID ties the receipt to that verification; a different generic capture prompt will not complete it. Instructions guide the assistant; they do not guarantee every conversation was logged.
 
 If you enabled catch-up, check its start timestamp, selected folders, exclusions and last scan. Recall must be open for its periodic scanner. Only supported local session files can be inspected. A pending inbox item still needs preparation; it is not a ready card.
 
@@ -26,7 +26,11 @@ If you enabled catch-up, check its start timestamp, selected folders, exclusions
 
 Install and sign into your selected Codex or Claude CLI. Its command should work in your terminal. Preparation uses the default provider and your existing authentication/usage allowance, with tools and personal configuration disabled. Recent CLI restriction flags and the macOS sandbox are required; unsupported versions fail closed. Codex needs file-based login credentials or an API-key environment; keyring-only/custom provider setups are not currently supported. If you use a custom `CODEX_HOME`, connect with that environment available and check the previewed instruction path. Reconnect to refresh saved paths after moving it.
 
-Read the specific inbox error before retrying. The restricted worker cannot perform browser interaction checks or execute code/calculations. Missing visual checks, failed code tests or conflicting card identities must be resolved by a normal assistant with the included skills; a retry alone cannot validate them. Ask your current assistant to inspect the item and prepare it directly through the inbox contract, then report what actually passed.
+Read the specific inbox error before retrying. The restricted worker cannot perform browser interaction checks or execute code/calculations. Choose **Finish with assistant** to copy the item's handoff prompt and paste it into your normal assistant. Missing visual checks, failed code tests or conflicting card identities require the included skills and actual validation; a retry alone cannot validate them. The assistant should inspect the item, prepare it through the inbox contract and report what actually passed.
+
+## My knowledge source is configured but not ready
+
+Open **Learning connections → Knowledge sources**, edit the affected source and use **Test connection**. A local source must point to an existing, readable folder; choose the smallest KB scope you need. A Notion scope is a configuration, not a login. Connect your assistant's Notion tool and ask it to verify a real scoped search. Existing snapshots do not prove live access or complete coverage. Read-only access intentionally blocks KB authoring; enable authoring only for the scope you want changed.
 
 ## A coding card says it needs local review
 

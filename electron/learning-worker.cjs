@@ -1,6 +1,5 @@
 const fs = require("node:fs"),
   path = require("node:path"),
-  os = require("node:os"),
   { spawn } = require("node:child_process");
 const inbox = require("./inbox.cjs"),
   connections = require("./connections.cjs"),
@@ -9,25 +8,65 @@ const privateFiles = require("./private-files.cjs");
 const provider = require("./preparation-provider.cjs");
 const { context } = require("./learning-context.cjs");
 const active = new Map();
+// Transport output can contain authentication details or submitted text. Only
+// these locally authored categories may enter durable/user-visible failures.
+class PreparationFailure extends Error {}
+function failure(category, details = {}) {
+  let reason;
+  switch (category) {
+    case "provider-start":
+      reason = "The assistant transport could not start. Check CLI readiness.";
+      break;
+    case "provider-exit": {
+      const code =
+        Number.isInteger(details.code) &&
+        details.code >= 0 &&
+        details.code <= 255
+          ? ` (exit ${details.code})`
+          : "";
+      reason = `The assistant transport failed${code}. Check CLI sign-in.`;
+      break;
+    }
+    case "provider-signal": {
+      const signal =
+        /^(SIGABRT|SIGBUS|SIGILL|SIGINT|SIGKILL|SIGPIPE|SIGQUIT|SIGSEGV|SIGTERM)$/.test(
+          details.signal || "",
+        )
+          ? ` (${details.signal})`
+          : "";
+      reason = `The assistant transport stopped${signal}.`;
+      break;
+    }
+    case "provider-timeout":
+      reason = "Assistant preparation timed out.";
+      break;
+    case "provider-cancelled":
+      reason = "Assistant preparation was stopped.";
+      break;
+    case "provider-output":
+      reason = "The assistant did not return readable JSON learning results.";
+      break;
+    case "assistant-blocked":
+      reason = "The assistant needs more context or independent checks.";
+      break;
+    case "result-validation":
+      reason = "The assistant's learning result did not pass local validation.";
+      break;
+    default:
+      category = "preparation-failed";
+      reason = "Assistant preparation could not complete.";
+  }
+  return new PreparationFailure(
+    `[${category}] ${reason} Source retained; finish with assistant or retry.`,
+  );
+}
 function cancel() {
   for (const [child, stop] of active) stop();
 }
 function executable(agent) {
-  const dirs = [
-    ...(process.env.PATH || "").split(path.delimiter),
-    path.join(os.homedir(), ".local/bin"),
-    "/opt/homebrew/bin",
-    "/usr/local/bin",
-  ];
-  for (const dir of dirs) {
-    if (!path.isAbsolute(dir)) continue;
-    const f = path.join(dir, agent);
-    try {
-      fs.accessSync(f, fs.constants.X_OK);
-      if (!fs.statSync(f).isFile()) continue;
-      return f;
-    } catch {}
-  }
+  const binary = require("./assistant-readiness.cjs").resolveExecutable(agent);
+  if (binary) return binary;
+
   throw Error(`Install and sign into the ${agent} CLI to prepare learning`);
 }
 function preview(folder, cards) {
@@ -112,24 +151,34 @@ async function prepare(
     });
     try {
       const savedConnection = connections.settings(folder).hosts[agent];
-      const invocation = createInvocation(agent, binary, stage, prompt, {
-        ...(agent === "codex" && savedConnection?.instructions
-          ? { codexHome: path.dirname(savedConnection.instructions) }
-          : {}),
-      });
-      const result = await new Promise((resolve, reject) => {
-        const child = spawnProcess(invocation.binary, invocation.args, {
-          env: invocation.env,
-          cwd: stage,
-          stdio: ["pipe", "pipe", "pipe"],
-          detached: process.platform !== "win32",
+      let invocation;
+      try {
+        invocation = createInvocation(agent, binary, stage, prompt, {
+          ...(agent === "codex" && savedConnection?.instructions
+            ? { codexHome: path.dirname(savedConnection.instructions) }
+            : {}),
         });
+      } catch {
+        throw failure("provider-start");
+      }
+      const result = await new Promise((resolve, reject) => {
+        let child;
+        try {
+          child = spawnProcess(invocation.binary, invocation.args, {
+            env: invocation.env,
+            cwd: stage,
+            stdio: ["pipe", "pipe", "pipe"],
+            detached: process.platform !== "win32",
+          });
+        } catch {
+          reject(failure("provider-start"));
+          return;
+        }
         let stdout = "",
-          stderr = "",
-          timedOut = false;
+          stopReason = null;
         let hardKill;
-        const stop = () => {
-          timedOut = true;
+        const stop = (reason = "provider-cancelled") => {
+          stopReason = reason;
           try {
             process.kill(-child.pid, "SIGTERM");
           } catch {
@@ -143,46 +192,57 @@ async function prepare(
           hardKill.unref();
         };
         active.set(child, stop);
-        const timer = setTimeout(stop, timeoutMs);
+        const timer = setTimeout(() => stop("provider-timeout"), timeoutMs);
         child.stdout.on("data", (b) => {
           stdout = (stdout + b).slice(-2_000_000);
         });
-        child.stderr.on("data", (b) => {
-          stderr = (stderr + b).slice(-6000);
-        });
-        child.once("error", (e) => {
+        // Drain stderr to avoid blocking the child, without retaining its data.
+        child.stderr.on("data", () => {});
+        child.once("error", () => {
           clearTimeout(timer);
           clearTimeout(hardKill);
           active.delete(child);
-          reject(e);
+          reject(failure("provider-start"));
         });
-        child.once("close", (code) => {
+        child.once("close", (code, signal) => {
           clearTimeout(timer);
           clearTimeout(hardKill);
           active.delete(child);
-          if (timedOut) reject(Error("Preparation timed out; source retained"));
-          else if (code !== 0)
-            reject(
-              Error(`Preparation failed (${code}): ${stderr.slice(-1000)}`),
-            );
+          if (stopReason) reject(failure(stopReason));
+          else if (signal) reject(failure("provider-signal", { signal }));
+          else if (code !== 0) reject(failure("provider-exit", { code }));
           else resolve(stdout);
         });
         child.stdin.on("error", () => {});
         child.stdin.end(prompt);
       });
-      const raw =
-        agent === "codex" ? privateFiles.read(invocation.output) : result;
-      const parsed = JSON.parse(raw.trim().replace(/^```json\s*|\s*```$/g, ""));
-      if (parsed.blocked) throw Error(String(parsed.blocked));
-      inbox.submit(folder, item.id, parsed);
+      let parsed;
+      try {
+        const raw =
+          agent === "codex" ? privateFiles.read(invocation.output) : result;
+        parsed = JSON.parse(raw.trim().replace(/^```json\s*|\s*```$/g, ""));
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+          throw Error();
+      } catch {
+        // JSON.parse errors can quote raw provider text; never persist them.
+        throw failure("provider-output");
+      }
+      if (parsed.blocked) throw failure("assistant-blocked");
+      try {
+        inbox.submit(folder, item.id, parsed);
+      } catch {
+        throw failure("result-validation");
+      }
       return { prepared: 1, id: item.id, status: "submitted" };
     } catch (e) {
+      const safeError =
+        e instanceof PreparationFailure ? e.message : failure().message;
       inbox.update(folder, item.id, (current) =>
         current.status === "processing"
-          ? { status: "blocked", error: e.message }
+          ? { status: "blocked", error: safeError }
           : null,
       );
-      return { prepared: 0, id: item.id, error: e.message };
+      return { prepared: 0, id: item.id, error: safeError };
     } finally {
       fs.rmSync(stage, { recursive: true, force: true });
     }

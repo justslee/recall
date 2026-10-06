@@ -4,6 +4,13 @@
   max-width: 75ch;
   line-height: 1.6;
 }
+.learning-connections > h3 {
+  margin: 12px 0;
+  font-family: var(--serif);
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 1.3;
+}
 .learning-connections label {
   display: block;
   margin: 16px 0;
@@ -17,6 +24,154 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
+}
+.assistant-connection {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--paper);
+}
+.assistant-connection header {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.assistant-connection h4,
+.connection-preview h4 {
+  margin: 0;
+  font-size: 18px;
+}
+.assistant-connection-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.connection-badge {
+  margin-left: auto;
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 11px;
+}
+.connection-badge.is-verified {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.assistant-readiness {
+  list-style: none;
+  padding: 0;
+  margin: 22px 0;
+}
+.assistant-readiness li {
+  display: grid;
+  grid-template-columns: 14px minmax(82px, 1fr) minmax(0, 1.55fr);
+  gap: 9px;
+  align-items: baseline;
+  padding: 8px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.assistant-readiness li:last-child {
+  border-bottom: 0;
+}
+.assistant-readiness svg {
+  align-self: center;
+  color: var(--accent);
+}
+.assistant-readiness span {
+  color: var(--muted);
+}
+.assistant-readiness strong {
+  font-weight: 500;
+  text-align: right;
+}
+.assistant-readiness .needs-attention strong {
+  color: var(--warm);
+}
+.learning-connections .connection-note {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.connection-receipt {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.connection-receipt a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent);
+  font-size: 13px;
+}
+.learning-connections .connection-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.assistant-connection .connection-actions {
+  gap: 8px;
+}
+.assistant-connection .connection-actions button {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.connection-verification .eyebrow,
+.assistant-handoff .eyebrow {
+  display: block;
+  margin-bottom: 8px;
+}
+.assistant-handoff textarea {
+  display: block;
+  width: 100%;
+  min-height: 210px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.7;
+  resize: vertical;
+}
+.assistant-handoff .connection-actions {
+  margin-top: 18px;
+}
+.connection-catchup {
+  padding: 20px 0;
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.connection-catchup > summary {
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 500;
+}
+.connection-catchup > summary span {
+  margin-left: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.connection-catchup p,
+.connection-preview p {
+  color: var(--muted);
+  line-height: 1.65;
+}
+.inbox-assistant select {
+  margin: 0 10px;
 }
 .connection-hosts .setting {
   gap: 12px;

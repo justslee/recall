@@ -58,6 +58,58 @@ function commit(folder, message) {
   git(folder, ["-c", "commit.gpgsign=false", "commit", "-m", message]);
 }
 
+test("hosted privacy audit checks a full checkout without persisted Git credentials", () => {
+  const { parse } = require("yaml");
+  const workflow = parse(
+    fs.readFileSync(path.join(root, ".github/workflows/verify.yml"), "utf8"),
+  );
+  const steps = workflow.jobs.verify.steps;
+  const auditIndex = steps.findIndex(
+    (step) => step.run === "npm run audit:release",
+  );
+  const checkoutIndex = steps.findIndex((step) =>
+    step.uses?.startsWith("actions/checkout@"),
+  );
+
+  assert(checkoutIndex >= 0 && auditIndex > checkoutIndex);
+  assert.equal(steps[checkoutIndex].with?.["fetch-depth"], 0);
+  assert.equal(steps[checkoutIndex].with?.["persist-credentials"], false);
+  assert.equal(workflow.permissions.contents, "read");
+
+  const knowledgeChecks = steps.filter(
+    (step) => step.run === "node scripts/smoke-knowledge-setup.cjs",
+  );
+  assert.equal(knowledgeChecks.length, 2);
+  assert.equal(knowledgeChecks[0].env?.RECALL_TEST_EXECUTABLE, undefined);
+  assert.equal(
+    knowledgeChecks[1].env?.RECALL_TEST_EXECUTABLE,
+    "release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall",
+  );
+});
+
+test("shallow clones cannot report a complete history privacy audit", (t) => {
+  const folder = temporary(t);
+  const origin = path.join(folder, "origin");
+  const clone = path.join(folder, "clone");
+  fs.mkdirSync(origin);
+  git(origin, ["init", "--quiet"]);
+  write(origin, "README.md", "Synthetic source");
+  write(origin, "examples/deleted.sqlite3", "Synthetic private artifact");
+  commit(origin, "Add synthetic fixture");
+  fs.unlinkSync(path.join(origin, "examples/deleted.sqlite3"));
+  commit(origin, "Remove synthetic fixture");
+  git(folder, ["clone", "--quiet", "--depth", "1", "file://" + origin, clone]);
+
+  const result = runAudit(sourceAudit, clone);
+  assert.notEqual(result.status, 0);
+  assert.match(
+    result.output,
+    /Git history: shallow repository; audit incomplete/,
+  );
+  assert(!result.output.includes("PASS:"));
+  assert(!result.output.includes(folder));
+});
+
 test("private database, credential and export artifacts fail even with harmless contents", () => {
   for (const name of [
     "examples/recall.sqlite3",
@@ -230,6 +282,103 @@ test("historical filenames are checked even when a private blob is renamed witho
     result.output,
     /history: "docs\/auth\.json": private artifact type/,
   );
+});
+
+test("removed non-allowlisted prose cannot pass the committed-history audit", (t) => {
+  const folder = temporary(t);
+  git(folder, ["init", "--quiet"]);
+  write(
+    folder,
+    "personal-note.md",
+    "Synthetic ordinary prose with no secret pattern",
+  );
+  commit(folder, "Add synthetic fixture");
+  fs.mkdirSync(path.join(folder, "docs"));
+  fs.renameSync(
+    path.join(folder, "personal-note.md"),
+    path.join(folder, "docs/example.md"),
+  );
+  commit(folder, "Move synthetic fixture into approved scope");
+
+  const result = runAudit(sourceAudit, folder);
+  assert.notEqual(result.status, 0);
+  assert.match(
+    result.output,
+    /history: "personal-note\.md": not in release allowlist/,
+  );
+  assert(!result.output.includes("ordinary prose"));
+});
+
+test("excluded generated roots are rejected when staged or historically committed", (t) => {
+  const folder = temporary(t);
+  git(folder, ["init", "--quiet"]);
+  write(folder, "README.md", "Synthetic source");
+  write(folder, ".gitignore", "dist/\n");
+  commit(folder, "Add synthetic source");
+  write(folder, "dist/fixture.json", "{}");
+  git(folder, ["add", "--force", "dist/fixture.json"]);
+
+  const staged = runAudit(sourceAudit, folder);
+  assert.notEqual(staged.status, 0);
+  assert.match(
+    staged.output,
+    /"dist\/fixture\.json": tracked file in excluded root/,
+  );
+  commit(folder, "Add synthetic tracked generated fixture");
+  fs.unlinkSync(path.join(folder, "dist/fixture.json"));
+  commit(folder, "Remove synthetic tracked generated fixture");
+
+  const removed = runAudit(sourceAudit, folder);
+  assert.notEqual(removed.status, 0);
+  assert.match(
+    removed.output,
+    /history: "dist\/fixture\.json": not in release allowlist/,
+  );
+});
+
+test("nested annotated tag messages and sensitive ref names are scanned without values", (t) => {
+  const folder = temporary(t),
+    secret = fixtureKey();
+  git(folder, ["init", "--quiet"]);
+  write(folder, "README.md", "Synthetic source");
+  commit(folder, "Add synthetic source");
+  git(folder, [
+    "-c",
+    "tag.gpgsign=false",
+    "tag",
+    "--annotate",
+    "inner-fixture",
+    "--message",
+    "Synthetic credential canary " + secret,
+  ]);
+  git(folder, [
+    "-c",
+    "tag.gpgsign=false",
+    "tag",
+    "--annotate",
+    "outer-fixture",
+    "inner-fixture",
+    "--message",
+    "Synthetic nested tag",
+  ]);
+  git(folder, ["tag", "--delete", "inner-fixture"]);
+  git(folder, ["tag", secret]);
+
+  const result = runAudit(sourceAudit, folder);
+  assert.notEqual(result.status, 0);
+  assert.match(result.output, /2 annotated tags/);
+  assert.match(
+    result.output,
+    /Git metadata: "tag [a-f0-9]+": possible credential/,
+  );
+  assert.match(
+    result.output,
+    /Git ref: "\[redacted filename\]": possible credential/,
+  );
+  assert(!result.output.includes(secret));
+  assert(!result.output.includes("Synthetic Contributor"));
+  assert(!result.output.includes("fixture@example.invalid"));
+  assert(!result.output.includes(folder));
 });
 
 test("Git metadata is scanned without publishing identities or matched credential values", (t) => {

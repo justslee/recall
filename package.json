@@ -23,6 +23,8 @@
     "test:links": "node scripts/smoke-card-links.cjs",
     "test:progress": "node scripts/smoke-progress.cjs",
     "test:connections": "node scripts/smoke-connections.cjs",
+    "test:knowledge": "node scripts/smoke-knowledge-setup.cjs",
+    "test:knowledge-bootstrap": "node scripts/smoke-knowledge-bootstrap.cjs",
     "test:security:native": "node scripts/security-native.cjs",
     "test:security:desktop": "node scripts/security-desktop.cjs",
     "test:voice": "node scripts/smoke-voice.cjs",
@@ -52,6 +54,9 @@
     "vite": "^8.2.2"
   },
   "overrides": {
+    "mermaid": {
+      "katex": "$katex"
+    },
     "monaco-editor": {
       "dompurify": "$dompurify"
     }

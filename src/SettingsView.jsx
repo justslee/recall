@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FolderOpen, DatabaseBackup, Download } from "lucide-react";
 import { LearningConnections } from "./LearningConnections";
+import { KnowledgeSetup } from "./KnowledgeSetup";
 import { useAppearance } from "./appearance";
 import { VoiceSettings } from "./VoiceAnswer";
 
@@ -23,14 +24,15 @@ export function SettingsView({
   onBackup,
   onExport,
   voiceFocus = false,
+  initialSection = "general",
   onBackToAnswer,
   voiceBackLabel,
 }) {
   const appearance = useAppearance();
-  const [section, setSection] = useState(voiceFocus ? "voice" : "general");
+  const [section, setSection] = useState(voiceFocus ? "voice" : initialSection);
   useEffect(() => {
-    if (voiceFocus) setSection("voice");
-  }, [voiceFocus]);
+    setSection(voiceFocus ? "voice" : initialSection);
+  }, [voiceFocus, initialSection]);
   return (
     <>
       <nav className="settings-tabs" aria-label="Settings sections">
@@ -58,6 +60,7 @@ export function SettingsView({
       </div>
       <div hidden={section !== "connections"}>
         <LearningSettings />
+        <KnowledgeSetup />
         <LearningConnections />
       </div>
       <div hidden={section !== "general"}>
@@ -152,7 +155,8 @@ export function SettingsView({
 
 function LearningSettings() {
   const [value, setValue] = useState(null),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false);
   useEffect(() => {
     window.recall
       .profileInfo()
@@ -160,16 +164,27 @@ function LearningSettings() {
       .catch((e) => setError(e.message));
   }, []);
   const save = async () => {
+    setBusy(true);
+    setError("");
     try {
       await window.recall.configureLearning(value);
       setError("Saved. Captures keep their original learning dates.");
     } catch (e) {
       setError(e.message);
+    } finally {
+      setBusy(false);
     }
   };
   return (
-    <section className="settings-group">
-      <span className="eyebrow">Learning connections</span>
+    <section className="settings-group learning-preferences">
+      <div className="learning-preferences-header">
+        <span className="eyebrow">Your learning loop</span>
+        <h3>Keep what you’re learning.</h3>
+        <p>
+          Choose where your knowledge lives, then connect an assistant.
+          Meaningful learning can join your daily Self Test.
+        </p>
+      </div>
       {value && (
         <>
           <label>
@@ -182,35 +197,27 @@ function LearningSettings() {
             />{" "}
             Allow learning capture from my configured skills
           </label>
-          <label>
-            Learning timezone{" "}
-            <input
-              aria-label="Learning timezone"
-              value={value.timeZone}
-              onChange={(e) => setValue({ ...value, timeZone: e.target.value })}
-            />
-          </label>
-          <button onClick={save}>Save learning settings</button>
-          <p>
-            {value.sources.length
-              ? value.sources
-                  .map(
-                    (s) =>
-                      s.id +
-                      " (" +
-                      s.type +
-                      ", " +
-                      (s.write ? "authoring" : "read only") +
-                      ")",
-                  )
-                  .join(" · ")
-              : "No knowledge sources configured. Use the setup guide and recall config to select a folder, Obsidian scope or Notion connection."}
-          </p>
-          <p>
-            Connecting below adds a managed global instruction and bridge skill.
-            AI preparation uses your chosen assistant account; study and storage
-            remain local.
-          </p>
+          <details className="learning-preferences-details">
+            <summary>Learning date & privacy</summary>
+            <label className="learning-timezone">
+              Learning timezone
+              <input
+                aria-label="Learning timezone"
+                value={value.timeZone}
+                onChange={(e) =>
+                  setValue({ ...value, timeZone: e.target.value })
+                }
+              />
+            </label>
+            <p>
+              Capture records exposure, not mastery. It never rates a card or
+              changes its review schedule. AI preparation uses your chosen
+              assistant account; study and storage remain local.
+            </p>
+          </details>
+          <button className="learning-save" disabled={busy} onClick={save}>
+            {busy ? "Saving…" : "Save learning settings"}
+          </button>
         </>
       )}
       {error && <p role="status">{error}</p>}

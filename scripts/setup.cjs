@@ -82,7 +82,9 @@ function main(
       );
   }
   if (args.includes("--no-launch"))
-    log("\nReady. Run npm start, then choose Try the demo.");
+    log(
+      "\nReady. Run npm start, then choose Try demo, Import cards or Connect learning.",
+    );
   return 0;
 }
 if (require.main === module) {

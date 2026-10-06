@@ -130,9 +130,31 @@ function restore(folder, input) {
         throw Error("Backup is corrupt");
       if (check.prepare("PRAGMA user_version").get().user_version > 2)
         throw Error("Backup needs a newer app");
+      if (
+        check
+          .prepare("SELECT 1 FROM sqlite_schema WHERE type='trigger' LIMIT 1")
+          .get()
+      )
+        throw Error("Backup contains unsupported database triggers");
       check.prepare("SELECT id,content,schedule FROM cards LIMIT 1").all();
     } finally {
       check.close();
+    }
+    // A backup is portable data, not authority to execute its native code.
+    // Verify the original archive first, then revoke only execution approvals
+    // in the staged copy. The live library and all other restored rows remain
+    // unchanged until the normal restore commit below.
+    const staged = new DatabaseSync(path.join(stage, "recall.sqlite"));
+    let executionApprovalsCleared;
+    try {
+      // Keep the staged changes in the database copied into place, without a
+      // sidecar WAL that could be discarded during the directory swap.
+      staged.exec("PRAGMA journal_mode=DELETE");
+      executionApprovalsCleared = staged
+        .prepare("DELETE FROM settings WHERE key GLOB 'validated-code:*'")
+        .run().changes;
+    } finally {
+      staged.close();
     }
     require("./private-files.cjs").directory(saved);
     for (const name of [
@@ -152,7 +174,7 @@ function restore(folder, input) {
         fs.renameSync(path.join(stage, name), path.join(folder, name));
         created.push(name);
       }
-    return { restored: folder, previous: saved };
+    return { restored: folder, previous: saved, executionApprovalsCleared };
   } catch (e) {
     for (const name of created)
       fs.rmSync(path.join(folder, name), { recursive: true, force: true });

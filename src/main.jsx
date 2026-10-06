@@ -39,6 +39,7 @@ import { HistoryView } from "./HistoryView";
 import { ProgressView } from "./ProgressView";
 import { SpeakView } from "./SpeakView";
 import { SettingsView } from "./SettingsView";
+import { WelcomeGuide } from "./WelcomeGuide";
 import { AuthorForm, NewDeck } from "./AuthorForm";
 import "./styles.css";
 import { CatalogView } from "./CatalogView";
@@ -84,6 +85,7 @@ function App() {
     [editing, setEditing] = useState(null),
     [intervals, setIntervals] = useState({});
   const [voiceReturn, setVoiceReturn] = useState(null);
+  const [settingsSection, setSettingsSection] = useState("general");
   const [answerBusy, setAnswerBusy] = useState(false);
   const [learning, setLearning] = useState(null);
   useEffect(() => {
@@ -210,6 +212,7 @@ function App() {
       : detail;
   const go = (where) => {
     setVoiceReturn(null);
+    if (where === "settings") setSettingsSection("general");
     if (where === "catalog") refresh().catch(fail);
     if (where === "review" && activeSession) {
       const card = data.cards.find(
@@ -232,6 +235,10 @@ function App() {
     const origin = { view, detail, wide, scroll: window.scrollY };
     go("settings");
     setVoiceReturn(origin);
+  };
+  const openLearningSettings = () => {
+    go("settings");
+    setSettingsSection("connections");
   };
   const returnFromVoiceSettings = () => {
     if (!voiceReturn) return;
@@ -562,9 +569,11 @@ function App() {
     );
   const title =
     view === "study"
-      ? selection.deck === "all"
-        ? "Make a little room to remember."
-        : selection.deck
+      ? data.cards.length === 0
+        ? "A fresh page."
+        : selection.deck === "all"
+          ? "Make a little room to remember."
+          : selection.deck
       : {
           selftest: "Your self test",
           library: "A library that stays with you.",
@@ -669,15 +678,16 @@ function App() {
             </div>
           </header>
         )}
-        {["study", "library"].includes(view) && (
-          <Filters
-            data={data}
-            selection={selection}
-            changeSelection={changeSelection}
-            topics={topics}
-            study={view === "study"}
-          />
-        )}
+        {["study", "library"].includes(view) &&
+          (view === "library" || data.cards.length > 0) && (
+            <Filters
+              data={data}
+              selection={selection}
+              changeSelection={changeSelection}
+              topics={topics}
+              study={view === "study"}
+            />
+          )}
         {view === "selftest" && (
           <SelfTest
             data={learning}
@@ -696,27 +706,17 @@ function App() {
           />
         )}
         {view === "study" && data.cards.length === 0 && (
-          <section className="self-test-hero">
-            <span className="self-test-kicker">WELCOME TO RECALL</span>
-            <h2>Turn learning into recall.</h2>
-            <p>
-              Try three original questions: an interactive explanation, a
-              calculation and a coding exercise. Or import your cards in
-              Settings.
-            </p>
-            <button
-              className="primary"
-              disabled={busy}
-              onClick={() => mutate(() => api.demo(), "Demo ready.")}
-            >
-              Try the demo
-            </button>
-            <button className="text-button" onClick={() => go("settings")}>
-              Set up my library
-            </button>
-          </section>
+          <WelcomeGuide
+            busy={busy}
+            onDemo={() => mutate(() => api.demo(), "Demo ready.")}
+            onImport={() => {
+              go("library");
+              importAnki();
+            }}
+            onConnect={openLearningSettings}
+          />
         )}
-        {view === "study" && (
+        {view === "study" && data.cards.length > 0 && (
           <StudyDesk
             selfTest={
               <SelfTestTile data={learning} onOpen={() => go("selftest")} />
@@ -735,7 +735,7 @@ function App() {
             onLibrary={() => go("library")}
           />
         )}
-        {view === "study" && (
+        {view === "study" && data.cards.length > 0 && (
           <StudyShelf
             data={data}
             topics={selection.topics}
@@ -968,6 +968,7 @@ function App() {
         {view === "settings" && (
           <SettingsView
             voiceFocus={!!voiceReturn}
+            initialSection={settingsSection}
             voiceBackLabel={
               voiceReturn?.view === "speak" ? "Back to Speak" : undefined
             }

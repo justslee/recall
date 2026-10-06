@@ -50,9 +50,16 @@ const failures = [];
 let count = 0,
   assets = 0,
   historyFiles = 0,
-  commits = 0;
-const identities = new Set();
+  commits = 0,
+  tags = 0;
+const identities = new Set(),
+  tagIdentities = new Set();
 const maxFile = 5 * 1024 * 1024;
+function allowedName(name) {
+  // Git tree paths always use '/', even when the host uses another separator.
+  // A literal backslash in a root filename must not masquerade as a directory.
+  return allowed.has(name.split("/")[0]) || rootFiles.has(name);
+}
 function report(name, categories, prefix = "") {
   for (const category of categories)
     failures.push(prefix + displayName(name) + ": " + category);
@@ -88,7 +95,7 @@ function git(args, category) {
 try {
   for (const name of fs.readdirSync(root)) {
     if (excluded.has(name)) continue;
-    if (!allowed.has(name) && !rootFiles.has(name)) {
+    if (!allowedName(name)) {
       report(name, ["not in release allowlist"]);
       continue;
     }
@@ -97,6 +104,66 @@ try {
   // Inspect every committed tree, so an unsafe name cannot disappear when a
   // byte-identical blob is renamed, and deleted private files remain visible.
   if (fs.existsSync(path.join(root, ".git"))) {
+    // Ignore generated directories only when they are genuinely untracked.
+    // Git includes a previously tracked file regardless of .gitignore rules.
+    const tracked = git(["ls-files", "-z"], "tracked file enumeration");
+    for (const name of (tracked?.toString("utf8") || "")
+      .split("\0")
+      .filter(Boolean)) {
+      if (excluded.has(name.split("/")[0]))
+        report(name, ["tracked file in excluded root"]);
+    }
+
+    const shallow = git(
+      ["rev-parse", "--is-shallow-repository"],
+      "history completeness check",
+    );
+    if (shallow && shallow.toString("utf8").trim() !== "false")
+      failures.push("Git history: shallow repository; audit incomplete");
+
+    // Tags and ref names are published alongside commits, but rev-list does
+    // not expose annotated tag messages. Follow nested tags without printing
+    // their message, tagger identity or a sensitive ref name.
+    const checkedTags = new Set();
+    function inspectTag(oid) {
+      if (checkedTags.has(oid)) return;
+      checkedTags.add(oid);
+      const metadata = git(["cat-file", "tag", oid], "tag metadata read");
+      if (!metadata) return;
+
+      tags++;
+      const text = metadata.toString("utf8");
+      if (metadata.length > maxFile)
+        report(
+          "tag " + oid.slice(0, 12),
+          ["oversized tag metadata"],
+          "Git metadata: ",
+        );
+      report("tag " + oid.slice(0, 12), inspectText(text), "Git metadata: ");
+      for (const match of text.matchAll(/^tagger (.+)$/gm))
+        tagIdentities.add(match[1].replace(/ \d+ [+-]\d{4}$/, ""));
+
+      const target = /^object ([a-f0-9]{40,64})\ntype tag\n/.exec(text);
+      if (target) inspectTag(target[1]);
+    }
+    const refs = git(
+      ["for-each-ref", "--format=%(refname)%00%(objecttype)%00%(objectname)"],
+      "ref enumeration",
+    );
+    for (const record of (refs?.toString("utf8") || "")
+      .split("\n")
+      .filter(Boolean)) {
+      const match = /^([^\0]+)\0([a-z]+)\0([a-f0-9]{40,64})$/.exec(record);
+      if (!match) {
+        failures.push("Git history: invalid ref record; audit incomplete");
+        continue;
+      }
+
+      const [, name, type, oid] = match;
+      report(name, inspectText(name), "Git ref: ");
+      if (type === "tag") inspectTag(oid);
+    }
+
     const revisions = git(["rev-list", "--all"], "revision enumeration");
     const checked = new Set(),
       blobs = new Map();
@@ -133,6 +200,8 @@ try {
           continue;
         }
         const [, mode, type, blobId, name] = match;
+        if (!allowedName(name))
+          report(name, ["not in release allowlist"], "history: ");
         if (mode === "120000" || type !== "blob") {
           report(name, ["symlink or submodule requires review"], "history: ");
           continue;
@@ -159,7 +228,7 @@ try {
   failures.push("Source scan failed; audit incomplete");
 }
 console.log(
-  `Git metadata reviewed: ${commits} commits, ${identities.size} author/committer identities. Names and emails withheld; manually review public attribution.`,
+  `Git metadata reviewed: ${commits} commits, ${tags} annotated tags, ${identities.size} author/committer identities and ${tagIdentities.size} tagger identities. Names and emails withheld; manually review public attribution.`,
 );
 if (failures.length) {
   console.error([...new Set(failures)].join("\n"));

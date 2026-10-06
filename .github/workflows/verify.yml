@@ -4,12 +4,16 @@ permissions:
   contents: read
 jobs:
   verify:
-    runs-on: macos-14
+    runs-on: macos-15
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: "22.18.0"
+          node-version: "22.23.3"
           cache: npm
       - run: npm run setup -- --no-launch
       - run: npm test
@@ -22,12 +26,26 @@ jobs:
       - run: npm run test:links
       - run: npm run test:progress
       - run: npm run test:connections
+      - run: node scripts/smoke-knowledge-setup.cjs
+      - run: npm run test:knowledge-bootstrap
       - run: npm run test:voice
       - run: npm run test:speak
       - run: npm run audit:release
       - run: npm run package
       - run: npm run audit:package
+      - run: npm run test:desktop
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: node scripts/smoke-packaged-connections.cjs
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:connections
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: node scripts/smoke-knowledge-setup.cjs
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:knowledge-bootstrap
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:security:desktop

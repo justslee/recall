@@ -28,7 +28,7 @@ const folder = dataDir(option("data"));
 const apply = flag("apply"),
   json = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const usage =
-  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/search/link/trust | kb scan/search/save/asset/ingest/ack | connections status/connect/disconnect/config | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
+  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/search/link/trust | kb scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
 function withStore(fn) {
   const { Store } = require("../electron/store.cjs");
   const s = new Store(folder);
@@ -182,7 +182,36 @@ function readonly(fn) {
       });
     } else if (command === "kb") {
       const kb = require("../adapters/knowledge.cjs");
-      if (action === "scan") result = kb.scan(folder, rest[0]);
+      if (action === "setup") {
+        const setup =
+            require("../electron/knowledge-bootstrap.cjs").createKnowledgeBootstrap(
+              folder,
+            ),
+          [operation, id, file] = rest;
+        if (operation === "list") result = setup.list();
+        else if (operation === "inspect") result = setup.inspect(id);
+        else if (operation === "prompt") result = setup.assistantPrompt(id);
+        else if (operation === "record" || operation === "complete") {
+          if (!apply)
+            throw Error(
+              "Use --apply only after a real connector creation or read-back.",
+            );
+
+          const input = JSON.parse(
+            require("../electron/private-files.cjs").read(
+              path.resolve(file),
+              256 * 1024,
+            ),
+          );
+          result =
+            operation === "record"
+              ? setup.recordNotion(id, input)
+              : setup.completeNotion(id, input);
+        } else
+          throw Error(
+            "kb setup list | inspect ID | prompt ID | record ID RECEIPT.json --apply | complete ID RESULT.json --apply",
+          );
+      } else if (action === "scan") result = kb.scan(folder, rest[0]);
       else if (action === "search")
         result = kb.search(folder, rest[0], rest.slice(1).join(" "));
       else if (action === "save")

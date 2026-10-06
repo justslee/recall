@@ -141,10 +141,10 @@ app.whenReady().then(() => {
     pendingCardLink = null;
     return link || null;
   });
-  handle("copyCardLink", (id) => {
+  handle("copyCardLink", async (id) => {
     store.card(id);
     const url = cardLink(id);
-    clipboard.writeText(url);
+    await clipboard.writeText(url);
     return url;
   });
   if (!store.get("seeded")) store.set("seeded", true);
@@ -289,7 +289,59 @@ app.whenReady().then(() => {
       timeZone: patch.timeZone,
     });
   });
+  const knowledgeSetup = require("./knowledge-setup.cjs").createKnowledgeSetup(
+    store.folder,
+  );
+  handle("knowledgeSources", () => knowledgeSetup.list());
+  handle("knowledgeChooseFolder", async () => {
+    const result = await dialog.showOpenDialog(win, {
+      title: "Choose your knowledge folder",
+      properties: ["openDirectory"],
+    });
+    return result.canceled
+      ? null
+      : knowledgeSetup.selectFolder(result.filePaths[0]);
+  });
+  handle("knowledgeTestSource", (draft) => knowledgeSetup.testSource(draft));
+  handle("knowledgeSaveSource", (draft, testId) =>
+    knowledgeSetup.saveSource(draft, testId),
+  );
+  handle("knowledgeRemoveSource", (id) => knowledgeSetup.removeSource(id));
+  handle("knowledgeSourcePrompt", (id) => knowledgeSetup.assistantPrompt(id));
+  const knowledgeBootstrap =
+    require("./knowledge-bootstrap.cjs").createKnowledgeBootstrap(store.folder);
+  handle("knowledgeBootstrapState", () => knowledgeBootstrap.list());
+  handle("knowledgeBootstrapChooseParent", async (type) => {
+    if (!["markdown", "obsidian"].includes(type))
+      throw Error("Choose a local knowledge destination");
+
+    const result = await dialog.showOpenDialog(win, {
+      title: `Choose a home for your ${type === "obsidian" ? "Obsidian vault" : "Markdown knowledge base"}`,
+      buttonLabel: "Use this folder",
+      properties: ["openDirectory", "createDirectory"],
+    });
+    return result.canceled
+      ? null
+      : knowledgeBootstrap.selectParent(result.filePaths[0]);
+  });
+  handle("knowledgeBootstrapPreview", (input) =>
+    knowledgeBootstrap.preview(input),
+  );
+  handle("knowledgeBootstrapCreate", (input, previewId) =>
+    knowledgeBootstrap.create(input, previewId),
+  );
+  handle("knowledgeBootstrapPrompt", (id) =>
+    knowledgeBootstrap.assistantPrompt(id),
+  );
+  handle("knowledgeBootstrapRetry", (id) => knowledgeBootstrap.retry(id));
+  handle("copyLearningText", async (text) => {
+    if (typeof text !== "string" || !text.trim() || text.length > 250000)
+      throw Error("Choose a setup or learning prompt to copy");
+    await clipboard.writeText(text);
+    return { copied: true };
+  });
   const connections = require("./connections.cjs"),
+    readiness = require("./assistant-readiness.cjs"),
     inbox = require("./inbox.cjs"),
     catchUp = require("./catch-up.cjs"),
     worker = require("./learning-worker.cjs");
@@ -297,22 +349,41 @@ app.whenReady().then(() => {
     catchUpPending = false;
   worker.recover(store.folder);
   handle("learningConnections", () => ({
-    ...connections.status(store.folder),
+    ...connections.status(store.folder, { cards: store.cards() }),
     inbox: inbox.summary(store.folder),
     error: learningError,
   }));
+  handle("checkLearningReadiness", (host) =>
+    readiness.check(store.folder, host),
+  );
+  handle("learningVerificationPrompt", (host, topic = "") =>
+    readiness.verificationPrompt(store.folder, host, topic),
+  );
+  handle("finishLearningWithAssistant", (id, host) =>
+    readiness.handoff(store.folder, id, host, store.cards()),
+  );
+  handle("openLearningCard", (id) => {
+    if (typeof id !== "string" || !id || id.length > 10000 || !store.card(id))
+      throw Error("This learning card is not available in your library");
+    acceptCardLink(cardLink(id));
+    return { id };
+  });
   handle("connectLearning", (host, apply = false) =>
     connections.connect(store.folder, host, { apply }),
   );
   handle("disconnectLearning", (host) =>
     connections.disconnect(store.folder, host),
   );
-  handle("configureConnections", (patch) =>
-    connections.save(store.folder, {
-      agent: patch.agent,
-      catchUp: patch.catchUp,
-    }),
-  );
+  handle("configureConnections", (patch) => {
+    if (!patch || typeof patch !== "object" || Array.isArray(patch))
+      throw Error("Invalid connection settings");
+
+    const selected = {};
+    for (const key of ["agent", "catchUp"])
+      if (Object.hasOwn(patch, key)) selected[key] = patch[key];
+
+    return connections.save(store.folder, selected);
+  });
   handle("chooseLearningProject", async () => {
     const r = await dialog.showOpenDialog(win, {
       properties: ["openDirectory"],
@@ -393,11 +464,11 @@ app.whenReady().then(() => {
   handle("codeTrust", (id) =>
     canRunExercise(JSON.parse(store.card(id).content), (key) => store.get(key)),
   );
-  handle("copyChallengeCode", (id, language, part) => {
+  handle("copyChallengeCode", async (id, language, part) => {
     const card = JSON.parse(store.card(id).content);
     if (!card.code?.[language] || !["stub", "solution"].includes(part))
       throw Error("Unsupported code copy");
-    clipboard.writeText(card.code[language][part]);
+    await clipboard.writeText(card.code[language][part]);
     return true;
   });
   handle("challengeState", (id, patch) => store.challengeState(id, patch));

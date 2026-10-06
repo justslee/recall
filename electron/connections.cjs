@@ -207,7 +207,7 @@ function disconnect(folder, host, options = {}) {
   save(folder, { hosts: value.hosts });
   return { disconnected: host, backup, preservedOtherConnection: !owned };
 }
-function status(folder) {
+function status(folder, options = {}) {
   const value = settings(folder);
   return {
     ...value,
@@ -215,10 +215,16 @@ function status(folder) {
     hosts: Object.fromEntries(
       ["codex", "claude"].map((host) => {
         const saved = value.hosts[host];
+        const installed = !!saved && ownsConnection(folder, saved);
         return [
           host,
           {
-            connected: !!saved && ownsConnection(folder, saved),
+            connected: installed,
+            ...require("./assistant-readiness.cjs").status(folder, host, {
+              ...options,
+              installed,
+              connectedAt: saved?.connectedAt,
+            }),
           },
         ];
       }),

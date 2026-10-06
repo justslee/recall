@@ -59,15 +59,15 @@ m.oninput = draw; draw();
 What a widget can rely on:
 
 - **Theme.** Light and dark palettes follow macOS in place through `prefers-color-scheme`, retaining slider state and the existing sandbox. Use tokens for artwork; fixed-color imported assets retain their authored colors. Canvas authors should redraw on media-query changes. The document already contains the forest tokens (`--bg`, `--card`, `--sunken`, `--raised`, `--text`, `--muted`, `--faint`, `--border`, `--accent`, `--accent-soft`, `--accent-ink`, `--warm`, radii, `--sans`, `--serif`, `--mono`) plus aliases used on other Claude surfaces (`--color-background`, `--color-text-primary`, `--color-text-secondary`, `--color-border`, `--color-accent`, `--font-sans`, and so on). Plain `label`, `input[type=range]`, `button`, `button.primary`, `.grid`, `.metric`, `.panel`, `.row`, `.eyebrow`, `table` and `svg` are styled to match the app.
-- **Sizing.** The frame grows and shrinks to fit the content automatically. Do not set `height: 100vh` on `html` or `body`; let content define the height.
+- **Sizing.** The frame grows and shrinks to fit the content automatically, up to the current 1400 px height limit. Do not set `height: 100vh` on `html` or `body`; let content define the height. Split long articles into focused explorations and recompose diagrams for narrow cards instead of shrinking labels.
 - **Isolation.** No network, no fonts from the web, no storage, no access to the app, no navigation, no popups. Everything the widget needs must be inline. `fetch`, `localStorage`, `parent.document` and `window.recall` all fail.
 - **Loading.** Nothing runs when a card opens or is revealed. The widget loads only when the reader clicks **Load interactive**. **Reset** reloads it from scratch.
 
-When authoring in Claude, ask for "a Recall widget" and paste this file, or the two rules that matter most: use the theme variables, and keep everything inline. A complete worked example, with math, a two-mode widget and a Mermaid map in one answer, is in [the original demo](../examples/demo.json).
+When authoring in Claude, ask for "a Recall widget" and paste this file, or the two rules that matter most: use the theme variables, and keep everything inline. A complete worked example, with math, a two-mode widget and a Mermaid map in one answer, is in `examples/demo.json` in the repository checkout; the installed connection kit includes this contract's inline example instead.
 
 ### Permissions
 
-Cards written in the app allow their widgets by default; the edit form has a checkbox to opt out. Cards that arrive through an Anki import have widgets **off** until you edit the card and tick **Allow this card's interactive widgets**. The main process enforces this: a widget request for a disallowed card returns 403, so the switch is not just cosmetic.
+Cards written in the app allow their widgets by default; the edit form has a checkbox to opt out. Cards that arrive through an Anki import or learning inbox have widgets **off** until you edit the card and tick **Allow this card's interactive widgets**. Inbox submissions cannot grant permission through a bundle flag or validation report. After enabling the card, choose **Load interactive** to run a widget. The main process enforces this: a widget request for a disallowed card returns 403, so the switch is not just cosmetic.
 
 ## Part two: how it works
 

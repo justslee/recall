@@ -17,17 +17,74 @@ const fs = require("node:fs"),
     const page = await app.firstWindow();
     page.on("pageerror", (e) => errors.push(e.message));
     await expect(
-      page.getByRole("button", { name: "Try the demo", exact: true }),
+      page.getByRole("button", { name: "Try demo", exact: true }),
     ).toBeVisible();
     assert.equal(
       (await page.evaluate(() => window.recall.snapshot())).cards.length,
       0,
     );
+    await expect(
+      page.getByRole("button", { name: "Import cards", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Connect learning", exact: true }),
+    ).toBeVisible();
+    fs.mkdirSync(path.join(__dirname, "../evidence"), { recursive: true });
+    await page.setViewportSize({ width: 1320, height: 980 });
+    for (const theme of ["light", "dark"]) {
+      await page.emulateMedia({ colorScheme: theme });
+      await page.screenshot({
+        path: path.join(__dirname, `../evidence/welcome-${theme}.png`),
+        animations: "disabled",
+      });
+    }
     await page
-      .getByRole("button", { name: "Try the demo", exact: true })
+      .getByRole("button", { name: "Connect learning", exact: true })
       .click();
     await expect(
-      page.getByRole("button", { name: "Try the demo", exact: true }),
+      page.getByRole("button", { name: "Learning connections", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      page.getByRole("button", { name: "Add knowledge source", exact: true }),
+    ).toBeVisible();
+    assert.equal(
+      (await page.evaluate(() => window.recall.profileInfo())).captureEnabled,
+      false,
+    );
+    await page.getByRole("button", { name: "Study desk", exact: true }).click();
+    await app.evaluate(({ dialog }) => {
+      globalThis.__recallOriginalOpenDialog = dialog.showOpenDialog;
+      globalThis.__recallImportDialogSeen = false;
+      dialog.showOpenDialog = async (window, options) => {
+        globalThis.__recallImportDialogSeen =
+          options.properties.includes("openFile");
+        return { canceled: true, filePaths: [] };
+      };
+    });
+    await page
+      .getByRole("button", { name: "Import cards", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Library", exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("status")).toContainText("Import cancelled");
+    assert.equal(
+      await app.evaluate(() => globalThis.__recallImportDialogSeen),
+      true,
+    );
+    await app.evaluate(({ dialog }) => {
+      dialog.showOpenDialog = globalThis.__recallOriginalOpenDialog;
+      delete globalThis.__recallOriginalOpenDialog;
+      delete globalThis.__recallImportDialogSeen;
+    });
+    assert.equal(
+      (await page.evaluate(() => window.recall.snapshot())).cards.length,
+      0,
+    );
+    await page.getByRole("button", { name: "Study desk", exact: true }).click();
+    await page.getByRole("button", { name: "Try demo", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Try demo", exact: true }),
     ).toHaveCount(0);
     assert.equal(
       (await page.evaluate(() => window.recall.snapshot())).cards.length,
@@ -138,7 +195,7 @@ const fs = require("node:fs"),
     await expect(page.getByRole("status")).toContainText("Saved.");
     assert.deepEqual(errors, []);
     console.log(
-      "PASS public app: empty profile, demo, both themes, widget behavior/isolation, hidden math, Monaco/Python, capture opt-in",
+      "PASS public app: three welcome paths, Library import routing/cancellation, guided learning entry, empty profile, demo, both themes, widget behavior/isolation, hidden math, Monaco/Python, capture opt-in",
     );
   } finally {
     if (app) await app.close();

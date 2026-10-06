@@ -1,6 +1,18 @@
 # Public-readiness review
 
-Reviewed October 3, 2026. This is a source-build beta for Apple Silicon macOS, with a portable learning toolkit and user-configured integrations.
+Updated October 5, 2026. This is a source-build beta for Apple Silicon macOS, with a portable learning toolkit and user-configured integrations.
+
+The current onboarding follow-up adds in-app source setup, multi-destination knowledge-base creation and separate assistant readiness checks; its verified results belong in [Implementation](IMPLEMENTATION.md). The October 3 test counts and clean-clone results below remain dated evidence for that reviewed commit, not proof of subsequent edits. The release checklist follows candidate **0.6.0-beta.2**. See the [public repository](https://github.com/justslee/recall) and [Verify workflow](https://github.com/justslee/recall/actions/workflows/verify.yml) for publication and current hosted results.
+
+## Final source security review — October 5
+
+The refreshed dependency audit found advisories in source-map-js and Mermaid's nested KaTeX. The lockfile now uses source-map-js 1.2.2 and deduplicated KaTeX 0.18.10; the registry audit reports zero advisories at review time. This is a dated result, not a guarantee against future advisories.
+
+Backup restore now removes code-execution approvals from the staged database, so restored challenges require review on the destination device. Unexpected database triggers reject the restore before changing the live profile. Provider failure output is discarded instead of being persisted in learning-inbox errors; user-facing errors retain local failure categories and the original learning item. Source/history privacy checks now also inspect excluded tracked roots, historical path allowlists, refs and annotated tags. Synthetic regressions exercise crafted backups, approval reinsertion and secret-containing provider output.
+
+All **147 regression tests** passed, along with the production build, Python/C++ native isolation probes and source desktop checks for welcome/setup, hidden math, Monaco, interactive diagrams and SVG/Mermaid boundaries. Clipboard operations await Electron's asynchronous write; rejected writes never report success and preserve the handoff prompt. CI uses macOS 15 and Node 22.23.3, fetches full history, retains pinned actions and runs the original demo against the packaged app as well as source.
+
+Manual review found original demo content only in the candidate and reachable history; personal profiles, notes, captures, credentials and private installation evidence remain outside the public source. README now leads through one-command setup, four study modes and three optional connection steps, with packaging and advanced workflows collapsed. Signed downloads and live authenticated Notion/Codex/Claude/voice acceptance remain separate work.
 
 ## Verdict
 
@@ -8,7 +20,7 @@ The application and learning workflow can be reproduced with another person's kn
 
 No credentials, private card collection, personal KB export, workspace/page identity or personal screenshot was detected in the reviewed candidate or reachable history. Public examples and screenshots contain original demo material. Pattern checks and manual review reduce risk; they are not a security certification.
 
-The review started from a checkout whose recent features were uncommitted and which had no Git remote. A clone of the earlier commit would miss the current app. The complete source was committed locally as `3962a43`, then cloned into a fresh directory and verified through the README setup, full tests and demo study journey. The checkout still has no GitHub remote; no publication or hosted CI result is claimed.
+The October 3 review started from a checkout whose recent features were uncommitted and which had no Git remote. A clone of the earlier commit would miss the current app. The complete source was committed locally as `3962a43`, then cloned into a fresh directory and verified through the README setup, full tests and demo study journey. Publication and hosted CI were not verified in that earlier review.
 
 ## Findings and changes
 
@@ -39,7 +51,9 @@ The review started from a checkout whose recent features were uncommitted and wh
 | Catch-up                                | Incremental supported local session scanning                               | Explicit date/project scope; app open for periodic scans                       |
 | Speak and answer feedback               | Transcription/evaluation UI and owner-only local plaintext key storage     | Their OpenAI API account, key, internet and billing                            |
 
-The restricted **Prepare next** worker cannot execute code/calculations or inspect a visual in a browser. Rich new objectives may need a normal assistant to finish independent checks and submit the validated inbox result. Missing checks remain blocked. An imported code report does not grant execution trust.
+The restricted **Prepare next** worker cannot execute code/calculations or inspect a visual in a browser. Rich new objectives may need a normal assistant to finish independent checks and submit the validated inbox result. Blocked items offer **Finish with assistant**, which copies an item-specific prompt, alongside **Retry**. Missing checks remain blocked; an imported code report does not grant execution trust.
+
+Knowledge-source setup selects Markdown, Obsidian or Notion, explicit scope, and read-only/authoring access. **Test connection** distinguishes local folder diagnostics from Notion scope/snapshot preflight; only the assistant's real scoped connector search proves live Notion access. Assistant readiness similarly separates **Installation**, **CLI**, **Sign-in** and **Learning receipt**. Installed skills do not establish successful capture or authenticated authoring.
 
 The current OpenAI connection saves a user's key once in **Settings & backups → Voice & feedback**, then preserves it across restarts and updates. It stores plaintext in `credentials/openai.key` (`0600` file, `0700` credentials folder), never returns the saved key to the renderer, and excludes credentials from Recall exports/profile backups. Whole-machine backups may include them, and software running as the same OS account can read them. Recall does not use `safeStorage` or access macOS Keychain for this connection. Legacy `openai.enc` files are not automatically migrated or decrypted; they remain untouched until a replacement is successfully saved or the user explicitly removes the key. Earlier verification below is dated evidence for the reviewed build; current credential-change verification is recorded separately in [Implementation](IMPLEMENTATION.md).
 
@@ -51,13 +65,13 @@ All 95 regression tests passed both in the candidate and the fresh committed clo
 
 The newly packaged app passed its installer/CLI bridge and desktop isolation checks. Its archive audit reviewed 18,161 entries, including 179 first-party text files and 59 binary assets. Application-source matching found no differences across 109 source/assets/package files. Connection checks use isolated temporary homes/profiles. Packaged Voice/Speak checks passed with synthetic microphones and respectively two/four mocked evaluations; they do not verify real microphone quality, live API model access, billing or factual assessment quality. Screenshots were visually checked and use only original demo content.
 
-Source/history checks cover first-party files and reachable commits. Package checks inspect the actual first-party archive contents. The workflow targets the documented [ARM Mac runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners), and its pinned [checkout](https://github.com/actions/checkout/commit/11d5960a326750d5838078e36cf38b85af677262) and [setup-node](https://github.com/actions/setup-node/commit/49933ea5288caeca8642d1e84afbd3f7d6820020) references resolve to the official action repositories. No hosted run was available. Dependency source, arbitrary image pixels and public identity attribution require separate review; commit identity counts are reported without printing names/emails. A passing audit does not establish correctness of every authored card.
+Source/history checks cover first-party files and reachable commits; a shallow repository now fails the audit rather than claiming complete history. CI requests `fetch-depth: 0` and `persist-credentials: false` as described in [checkout usage](https://github.com/actions/checkout#usage). Package checks inspect the actual first-party archive contents. The workflow targets the documented [ARM Mac runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners), and its pinned [checkout](https://github.com/actions/checkout/commit/11d5960a326750d5838078e36cf38b85af677262) and [setup-node](https://github.com/actions/setup-node/commit/49933ea5288caeca8642d1e84afbd3f7d6820020) references resolve to the official action repositories. No hosted run was available. Dependency source, arbitrary image pixels and public identity attribution require separate review; commit identity counts are reported without printing names/emails. A passing audit does not establish correctness of every authored card.
 
 ## Remaining before broad distribution
 
 1. Publish the reviewed commit to the intended GitHub remote and confirm the hosted workflow. Enable a real private vulnerability reporting channel.
 2. Provide a signed, notarized Mac download to remove Node/source-build setup for nontechnical users.
 3. Perform a real first-user acceptance trial with authenticated Codex and Claude, a live scoped Notion KB/mirror, and actual voice evaluation. Only the permitted local/synthetic boundaries were tested here.
-4. Add an in-app knowledge-source wizard to replace manual JSON scope configuration.
+4. Verify the current guided setup with a real new user: selected local folders, permission boundaries, a live Notion connector, fresh assistant sessions, capture receipts and blocked-item handoff. Configuration/preflight and synthetic checks do not replace that acceptance trial.
 
 See [Launch](LAUNCH.md), [Privacy](PRIVACY.md) and [Troubleshooting](TROUBLESHOOTING.md). Profile backups remain private and must never be used as public seed content.
