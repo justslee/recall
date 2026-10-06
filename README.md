@@ -17,6 +17,8 @@ Warm paper. Quiet cards. Your own knowledge.
 
 **Mac · Local first · Visual explanations · Light & dark**
 
+[![Verify](https://github.com/justslee/recall/actions/workflows/verify.yml/badge.svg)](https://github.com/justslee/recall/actions/workflows/verify.yml)
+
 [Get started](#start-in-five-minutes) · [Connect your learning](#connect-your-learning) · [Complete workflow](docs/WORKFLOW.md) · [Documentation](#documentation)
 
 <picture>

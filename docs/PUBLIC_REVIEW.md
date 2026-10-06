@@ -14,6 +14,8 @@ All **147 regression tests** passed, along with the production build, Python/C++
 
 Manual review found original demo content only in the candidate and reachable history; personal profiles, notes, captures, credentials and private installation evidence remain outside the public source. README now leads through one-command setup, four study modes and three optional connection steps, with packaging and advanced workflows collapsed. Signed downloads and live authenticated Notion/Codex/Claude/voice acceptance remain separate work.
 
+The complete source candidate `5e79c8a` was cloned into a new directory with no dependencies or build output. On Node 22.23.3, the README's `npm run setup -- --no-launch`, all 147 tests, full-history privacy audit and original-demo desktop journey passed. The candidate package passed archive privacy (17,926 entries, 182 first-party text files and 59 binary assets), demo study, multi-destination bootstrap and desktop isolation checks. All profiles were disposable; the personal installation and library were untouched. Subsequent documentation-only edits record these results and link the public destination; the hosted workflow checks the final published commit separately.
+
 ## Verdict
 
 The application and learning workflow can be reproduced with another person's knowledge. A clean candidate installation reaches a working study session, and the reusable skills/integration infrastructure are included. Reproducing the full workflow still requires the user's own KB scope, assistant connection, optional API key and daily schedule.
