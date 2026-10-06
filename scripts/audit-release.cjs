@@ -37,6 +37,7 @@ const rootFiles = new Set([
   "index.html",
   ".gitignore",
   ".nvmrc",
+  ".mailmap",
 ]);
 const excluded = new Set([
   "node_modules",

@@ -12,6 +12,7 @@ const { inspectFile, displayName } = require("../shared/privacy-audit.cjs");
     ".github",
     ".gitignore",
     ".nvmrc",
+    ".mailmap",
     "AGENTS.md",
     "CONTRIBUTING.md",
     "LICENSE",

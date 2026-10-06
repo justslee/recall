@@ -1,64 +1,87 @@
 # Make Recall yours
 
-Recall ships the study app and the learning instructions that connect it to an assistant. Your knowledge, accounts and capture scope are configured on your own machine. You can adopt the whole loop or start with study alone.
+[Documentation](README.md) · [Quick start](../README.md#start-in-five-minutes) · [Get help](TROUBLESHOOTING.md)
+
+Start with one study session. Add an assistant, a knowledge base and daily self-testing when you want them. Your accounts, notes and capture scope stay specific to your machine.
+
+[Study](#1-get-one-study-session-working) · [Connect](#2-connect-the-assistants-you-use) · [Knowledge base](#3-choose-your-knowledge-source) · [Daily Self Test](#5-prepare-and-take-the-daily-self-test) · [Daily rhythm](#a-simple-daily-rhythm)
 
 ## 1. Get one study session working
 
-Follow the [README](../README.md#start-in-five-minutes), try the original demo and flip a card. Choose Concepts, Math, Coding or Mixed independently of topic and collection. Coding tools are optional.
+1. Follow the [quick start](../README.md#start-in-five-minutes) and choose **Try demo**.
+2. Choose **Concepts**, **Math**, **Coding** or **Mixed**, independently of topic and collection. Coding tools are optional.
+3. Answer from memory, flip the card, then choose **Again / Hard / Good / Easy**.
 
-**Check:** the demo adds three original cards; a new installation has none of the maintainer's material. Answers start hidden. Rating a card updates that card's schedule.
+**Check:** the demo adds three original cards, answers start hidden, and your rating updates that card's schedule. A fresh profile contains none of the maintainer's material.
 
-If you want card links to open from chat, package Recall, move the app to its final location and launch it once before installing assistant connections.
+For card links from chat, [keep Recall in Applications](SETUP.md#keep-recall-in-applications) and launch it before installing assistant connections.
 
 ## 2. Connect the assistants you use
 
-Open **Settings & backups → Learning connections**. Connect Codex, Claude Code or both. Review the proposed global instruction/skill paths, then **Install connection**. Enable **Allow learning capture from my configured skills**, set your learning timezone, and **Save learning settings**. Start a fresh assistant session.
+1. Open **Settings & backups → Learning connections**.
+2. Connect Codex, Claude Code or both. Review the proposed instruction and skill paths, then choose **Install connection**.
+3. Enable **Allow learning capture from my configured skills**, choose your learning timezone and **Save learning settings**.
+4. Start a **fresh assistant session** and choose **Check readiness** in Recall.
 
-The installer creates a profile-specific CLI launcher, copies the portable skill kit and adds a managed global bridge instruction. Existing instructions are backed up and unrelated skills are preserved. You do not need to open the Recall repository for each conversation.
+The installer adds a profile-specific launcher, the portable skill kit and a managed global bridge instruction. It backs up existing instructions and preserves unrelated skills. You can learn in another local project without opening the Recall repository.
 
-Choose **Check readiness**. The panel reports **Installation**, **CLI**, **Sign-in** and **Learning receipt** separately, so installed skills do not imply successful capture or live provider access. Sign-in is a local CLI report, not a live provider test. Then choose **Verify learning**, enter a real concept, and **Create verification prompt → Copy prompt**. Paste that unique-check prompt into a fresh assistant session in another project. **Learning receipt** becomes verified only when that check resolves to actual ready, unsuspended cards in this library.
+| Readiness check  | What it establishes                                                               |
+| ---------------- | --------------------------------------------------------------------------------- |
+| Installation     | The managed connection is installed.                                              |
+| CLI              | The local assistant command is available and supports the required restrictions.  |
+| Sign-in          | The CLI reports local sign-in; this is not a live provider test.                  |
+| Learning receipt | The unique verification request reached ready, unsuspended cards in this library. |
 
-**After verification, try a normal request from another local project:**
+Choose **Verify learning**, enter a real concept, then **Create verification prompt → Copy prompt**. Paste that exact prompt into the fresh assistant session. Its unique check ID binds the receipt to this verification; a generic prompt does not complete the check.
+
+After verification, try a normal request from another project:
 
 > Use the installed recall-bridge to check my connection and capture status. Then explain weighted means with a concrete example. Reuse suitable existing objectives, consider useful math/coding supplements, capture only what we discuss and return a new/reused/pending receipt with verified Recall links.
 
-Existing, ready cards can enter today's Self Test immediately. A missing objective appears in the inbox; pending does not mean a card was created. A paused connection must stay paused.
+**Check:** ready cards can enter today's Self Test immediately. Missing objectives remain in the inbox until prepared; **pending** does not mean a card exists.
 
-You can tell the assistant **“Don't capture this discussion.”** Routine operations and assistant-only implementation should not be captured. Capture records exposure; it does not infer mastery or rate a card.
+You can say **“Don't capture this discussion.”** Routine operations and assistant-only implementation should not be captured. Exposure does not infer mastery or rate cards. A paused connection stays paused.
 
-If you use a custom Codex home, connect from a process with that `CODEX_HOME` available and inspect the installation preview. Reconnecting refreshes saved paths. See [Troubleshooting](TROUBLESHOOTING.md).
+For a custom Codex home, connect with `CODEX_HOME` available and inspect the proposed paths. Reconnect after moving the home or app. See [connection troubleshooting](TROUBLESHOOTING.md#my-assistant-did-not-add-anything-to-recall).
 
 ## 3. Choose your knowledge source
 
-Open **Settings & backups → Learning connections → Knowledge sources**. If you have no KB, choose **Create my first knowledge base**. Select Markdown, Obsidian, Notion or several together; choose one primary home and which others should receive mirrors. Turn off **Mirror notes to…** for a read-only reference. Choose the destinations, **Review creation**, then authorize **Let my assistants build this knowledge base** and **Create knowledge base**. Local folders are created immediately. Notion needs the Recall assistant connection from step 2, plus a working Notion connector. Use **Finish Notion with assistant → Copy setup prompt** in a fresh session; it stays pending until a real creation and read-back result is submitted.
+Open **Settings & backups → Learning connections → Knowledge sources**.
 
-Already have notes? Choose **Add knowledge source**, select its folder or Notion scope and keep **Read-only** access until you want authoring. **Test connection** checks the selected scope before saving. See [Knowledge sources](KNOWLEDGE.md) for creation, what each check establishes and optional CLI configuration.
+- **Starting from scratch:** choose **Create my first knowledge base**. Select Markdown, Obsidian, Notion or several together; choose one primary home and optional mirrors. Review the destinations and authoring permission before creating them.
+- **Already have notes:** choose **Add knowledge source**, select its folder or Notion scope, choose access, then **Test connection**. Keep it read-only until you want authoring.
 
-| Choice         | What you supply                                                                      | What the assistant uses                                                         |
-| :------------- | :----------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
-| Local Markdown | A location for a new KB folder, or an existing notes folder                          | Scoped Markdown files and stable concept IDs                                    |
-| Obsidian       | A location for a new vault, or a selected existing vault/KB subfolder                | The same scoped filesystem adapter; no mandatory Obsidian plugin                |
-| Notion         | A selected parent page for creation, or an existing KB scope; an assistant connector | Live scoped searches/reads, local fetched snapshots and verified write receipts |
+| Source         | What you provide                                                                             |
+| -------------- | -------------------------------------------------------------------------------------------- |
+| Local Markdown | A home for a new folder, or an existing notes folder.                                        |
+| Obsidian       | A home for a new vault, or an existing vault/KB subfolder. No mandatory plugin.              |
+| Notion         | A selected parent page or existing KB scope, plus your assistant's working Notion connector. |
 
-For local sources, the check inspects only the selected root. For Notion, configured scope and cached snapshots are separate from authenticated live access: finish the connector check with your assistant. The app does not authenticate a Notion account or install the assistant's connector.
+Local folders are created immediately. Notion stays pending until your assistant creates and reads back the selected KB. Use **Finish Notion with assistant → Copy setup prompt**, then **Refresh setup**. Recall does not log into Notion or install that connector.
 
-For a new Notion-first KB with an Obsidian mirror, select both in the creation guide and make Notion primary. Finish its pending setup with your assistant before authoring concepts. Local mirrors are not promoted while the selected primary is pending. For an existing setup, configure both selected sources with write permission. Tell the assistant:
+For a Notion-first KB with an Obsidian mirror, select both and make Notion primary. Finish the primary before authoring concepts; a ready mirror is not silently promoted. For an existing setup, grant scoped write permission to the selected destinations, then tell your assistant:
 
 > Use my configured Notion KB as canonical and the selected Obsidian KB as its mirror. Search before creating. After a verified Notion write, mirror the same concept ID to Obsidian, preserving unrelated content. Report each outcome separately; keep a failed mirror pending rather than repeating the successful create.
 
-**Check:** a newly captured concept has a verified canonical note, a separately verified mirror where requested, and matching source IDs on its cards. This is an assistant-driven workflow; continuous background or automatic bidirectional KB sync is not implemented.
+**Check:** the canonical note and each requested mirror have separately verified outcomes, with matching source IDs on the cards. Connection preflight and cached snapshots do not prove live Notion access. Mirroring is assistant-driven; automatic background or bidirectional sync is not implemented.
+
+[Knowledge-base guide →](KNOWLEDGE.md)
 
 ## 4. Create questions that test the idea
 
-Try this with your configured assistant:
+Try this with your connected assistant:
 
 > Use Recall's installed learning and card skills for this concept. Give it a general definition, connect it to my topic and include a concrete example. Add a purpose-built interactive visual only where it helps. Individually assess whether a math or coding question tests a useful objective. Reuse existing objectives, validate genuine additions and preserve existing history.
 
-The kit includes concept capture, quick questions, deep dives and learning programs, plus card, visual, math, code, audit and Self Test skills. They share the contracts under `recall-source/references`; you can inspect and customise them.
+The [skill kit](../skills/) covers concepts, quick questions, deep dives, learning programs, cards, visuals, math, code, audits and Self Tests. Its shared contracts live under [recall-source/references](../skills/recall-source/references/).
 
-Coding supplements include imports/signatures, starter code, a reference solution and behavioural tests. Validation must accept the reference, reject the unfinished starter and reject realistic incorrect implementations. An AI report alone does not unlock **Run**: a separate local source review and trust action is required. Interactive widgets also require explicit local permission and a **Load interactive** action. See [Authoring](AUTHORING.md).
+- Coding supplements include imports, signatures, starter code, a reference solution and behavioural tests. Validation must accept the reference and reject the starter and realistic incorrect implementations.
+- An AI validation report does not unlock **Run**. Native code requires a separate local source review and trust action.
+- Interactive widgets need explicit local permission and **Load interactive**.
 
-**Check:** the receipt distinguishes reused, newly imported and blocked objectives. Open the cards and test their actual rendered content and interactions. Math/code questions have separate review state from their concept card.
+**Check:** the receipt distinguishes reused, newly imported and blocked objectives. Inspect actual rendered content and interactions. Math and coding questions have their own review state.
+
+[Authoring guide →](AUTHORING.md)
 
 ## 5. Prepare and take the daily Self Test
 
@@ -66,36 +89,50 @@ Ask your connected assistant:
 
 > Prepare today's Recall Self Test from actually captured learning, using my profile timezone. Inspect connection/capture status and respect pause. If catch-up is enabled, scan supported local records within its saved date/project scope first; do not broaden it. Inspect each pending inbox item. Reuse ready unsuspended objectives; resolve real gaps with the installed card skills and their editorial, visual, math and code checks. Submit validated results through the inbox, regenerate the daily Markdown log, and report specific blocked gaps. Do not start or rate a test, change schedules, invent learning or infer mastery.
 
-**Prepare next** in Settings can prepare one previewed item with a supported, signed-in CLI. Its worker has tools disabled. For a blocked item, use **Finish with assistant** to copy a prompt that identifies the item and its missing checks. Paste it into your normal assistant to complete the required browser/runtime/connector checks and submit the validated inbox result. **Retry** remains available for a transient failure; it cannot substitute for those checks.
+For an individual inbox item:
 
-To make this daily, ask an assistant host that supports scheduling to run the preparation prompt at your chosen time. Include your timezone, opted-in scope and this notification preference: **stay quiet when unchanged; notify only when a new/materially updated test is ready, a failure occurs or a gap needs attention.** Recall does not create this automation during setup.
+- **Prepare next** sends one previewed item through a supported, signed-in CLI. Its restricted worker has tools disabled.
+- **Finish with assistant** copies an item-specific prompt for your normal assistant to complete missing browser, runtime or connector checks and submit a validated result.
+- **Retry** can address a transient failure; it cannot substitute for missing quality checks.
 
-Open **Self Test**, choose a learning day and a format, and answer from memory. Previous days remain available through **Review needs practice** or **Review all cards**. These are real reviews: any ratings you submit update the original schedules. The next day's Self Test represents that day's captured learning; earlier due cards return through scheduled Study Desk review.
+To schedule preparation, ask an assistant host that supports scheduling. Specify your time, timezone and opted-in scope. Ask it to **stay quiet when unchanged; notify only when a new or materially updated test is ready, a failure occurs or a gap needs attention**. Recall does not create this automation during setup.
 
-**Check:** Self Test covers the logged objectives, not every conversation you may have had. Completion means attempted, not mastered.
+Then open **Self Test**, select a learning day and format, and answer from memory. Previous days offer **Review needs practice** and **Review all cards**. Ratings update the original cards' schedules. The next day's test covers that day's captured learning; earlier due cards return through Study Desk.
+
+**Check:** coverage means logged objectives, not every conversation. Completing a pass means attempted, not mastered.
 
 ## 6. Catch up only if you want to
 
-Under **Learning connections**, enable local catch-up and choose a start timestamp, included projects and exclusions. Save the settings, then **Check now**. Recall scans periodically while open.
+1. Under **Learning connections**, enable local catch-up.
+2. Choose a start timestamp, included projects and exclusions.
+3. Save, then choose **Check now**. Periodic scanning runs while Recall is open.
 
-It reads supported local Codex/Claude session records, excludes tool payloads and queues candidate learning. It cannot read missing/cloud-only sessions. It reports malformed and incomplete sources rather than fabricating coverage. Redaction is best-effort; inspect the exact provider preview before preparation.
+The scanner reads supported local Codex/Claude session records, excludes tool payloads and queues candidate learning. Missing or cloud-only sessions are unavailable. Malformed and incomplete sources remain visible rather than becoming fabricated coverage. Redaction is best-effort; inspect the exact context preview before preparation.
 
-**Check:** the displayed date/project scope matches your choice, source errors remain visible, and pending items are distinguished from ready cards. A scope change does not erase previously captured material.
+**Check:** the displayed scope matches your choice and pending items remain distinct from ready cards. Changing scope does not erase previously captured learning.
 
 ## 7. Add spoken practice when ready
 
-Save your own OpenAI API key once under **Settings & backups → Voice & feedback**. The key persists across restarts and updates in the local plaintext `credentials/openai.key` file, with owner-only `0600` file permissions inside a `0700` folder. Recall does not use `safeStorage` or access macOS Keychain for this connection. Software running as your OS account can read it. It is never returned to the renderer after saving and is excluded from Recall's exports/profile backups; whole-machine backups may include it. Someone setting up their own clone/profile saves their own key once. No key is needed for typed local drafts or ordinary study.
+Save your own OpenAI API key once under **Settings & backups → Voice & feedback**. No key is needed for ordinary study or typed local drafts. API requests need internet and separate API billing.
 
-If a profile has only a legacy `credentials/openai.enc`, re-enter the key once in this section. Recall does not automatically migrate or decrypt it. The old file remains untouched until a replacement key is successfully saved or you explicitly remove the key.
+- Use the card's **Speak / Type** strip for a quick answer.
+- Use **Speak → Your own topic** for a longer explanation or presentation, with an audience and optional reference.
+- Record, correct the transcript, then request feedback. Accuracy needs a reference; pause measurements are estimates.
 
-Use the card's **Speak / Type** strip for a quick answer. Use **Speak → Your own topic** for an explanation or presentation, with an audience and optional reference. Record, correct the transcript and request feedback. Factual accuracy requires a reference; pause measurements are estimates. These API requests need internet and separately billed API access. See [Voice](VOICE.md) and [Speak](SPEAK.md).
+The key persists locally as plaintext in `credentials/openai.key`, with `0600` file permissions inside a `0700` folder. Recall does not use macOS Keychain or `safeStorage`; software running as your OS account can read it. The key is not returned to the renderer and is excluded from Recall exports and profile backups; whole-machine backups may include it.
+
+Legacy `credentials/openai.enc` is not automatically migrated or decrypted. Re-enter the key once; the old file remains until a replacement is successfully saved or you explicitly remove it. Each new profile or Mac needs its own optional credentials.
+
+[Spoken answers →](VOICE.md) · [Speak practice →](SPEAK.md)
 
 ## A simple daily rhythm
 
 1. Learn or build in any connected project; ask questions as you go.
-2. Check the assistant's receipt. Reuse covered objectives and finish genuine gaps.
+2. Read the assistant's receipt. Reuse covered objectives and finish genuine gaps.
 3. Take the day's Self Test in the format you can manage.
-4. Return to scheduled cards in Study Desk. Use Speak to practise explaining a larger idea.
-5. Back up the profile periodically. Keep backups, session excerpts and private exports out of public repositories.
+4. Return to due cards in Study Desk. Practise explaining larger ideas in Speak.
+5. Back up periodically. Keep backups, session excerpts and private exports out of public repositories.
 
-Updates to this checkout do not replace your library or saved key. After moving the app, reconnect assistants from its final location. After restoring a profile backup on another Mac, re-enter optional credentials; external KB folders and runtimes are separate from the profile backup.
+Checkout updates do not replace your library or saved key. After moving Recall, reconnect assistants from its final location. External KB folders and optional runtimes are separate from profile backups; reconnect and re-enter credentials after restoring on another Mac.
+
+**Next:** [Knowledge sources](KNOWLEDGE.md) · [Setup reference](SETUP.md) · [Troubleshooting](TROUBLESHOOTING.md)

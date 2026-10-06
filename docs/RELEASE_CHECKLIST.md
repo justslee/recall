@@ -1,38 +1,72 @@
-# Public beta release checklist
+# Release checklist
 
-Candidate: **0.6.0-beta.2**, matching `package.json`. Code and documentation are MIT; original demo content is CC0-1.0. Imported material retains its own terms. This is an Apple Silicon macOS source-build beta, with optional integrations.
+[Documentation](README.md) / Releases
 
-Use the candidate's actual command output as release evidence. [Implementation](IMPLEMENTATION.md) records dated local results; a previous test count or dependency audit does not validate a later candidate.
+**Candidate:** `0.6.0-beta.2`, matching `package.json`. Apple Silicon macOS source-build beta; code/docs are MIT, original demo content is CC0-1.0, and imported material retains its own terms.
 
-## Verify the candidate locally
+Use actual candidate output as evidence. Earlier test counts or audits do not validate later changes. [Implementation](IMPLEMENTATION.md) records the reviewed baseline.
 
-- [ ] Review the diff and every untracked release file. Include the app, shared modules, schemas, adapters, skills, examples, assets and documentation required by a fresh clone.
-- [ ] Run `npm test` and `npm run build`, then the documented desktop, connection, native sandbox, card-link, progress, voice and Speak checks. Run `node scripts/smoke-knowledge-setup.cjs` for the source setup journey, then repeat it with `RECALL_TEST_EXECUTABLE` set to the packaged Recall executable. Synthetic provider checks must be labelled synthetic.
-- [ ] Validate the original Python/C++ examples: reference solutions pass; unfinished starters and realistic incorrect implementations fail.
-- [ ] Run `npm run audit:release` from a full Git clone. Shallow history fails this check. Inspect reported author/committer attribution and image pixels manually; pattern checks do not certify arbitrary content or dependencies.
-- [ ] Run `npm run package`, `npm run audit:package` and packaged connection/security/voice/Speak checks against the actual candidate archive.
-- [ ] Confirm an existing-profile upgrade preserves cards, source content, identities, schedules, reviews, attempts, drafts and paused sessions. Keep all private fixture evidence outside the repository.
-- [ ] Validate the shared skill kit and optional plugin manifest; inspect editorial, interactive-visual, math and code quality separately from format validation.
+## 1. Review the complete candidate
 
-## Follow only the README from a fresh clone
+- [ ] Review the diff and every new file needed by a clone: app, shared modules, schemas, adapters, skills, examples, assets and docs.
+- [ ] Review public commit attribution and use an account-linked identity without publishing private email.
+- [ ] Validate the shared skill kit and optional plugin manifest.
+- [ ] Check editorial accuracy, useful visuals, independent math and runnable code separately from schemas.
+- [ ] Verify Python/C++ references pass and unfinished starters/representative wrong answers fail.
+- [ ] Verify an existing-profile upgrade preserves content, IDs, schedules, reviews, attempts, drafts and paused sessions. Keep private fixture evidence outside the repo.
 
-- [ ] Commit the reviewed candidate, make a fresh local clone and run `npm run setup` with an empty, isolated profile.
-- [ ] Check welcome actions: **Try demo** adds only original content; **Import cards** opens **Library**; **Connect learning** opens **Learning connections**.
-- [ ] Complete a Concepts, Math, Coding or Mixed review. Math starts hidden, card flipping replaces front with back, and interactive widgets/code still require explicit permission and execution actions.
-- [ ] In **Knowledge sources**, connect Markdown and Obsidian with an explicitly selected folder, read-only/authoring choice and **Test connection** result. Verify other sources/settings remain intact; checking a connection must not author a note.
-- [ ] Run `npm run test:knowledge-bootstrap` against source and package. Use **Create my first knowledge base** with multiple destinations: check the primary/mirror choices, preview without writes, explicit creation consent, new folders and preserved existing sources. Resume an interrupted setup without overwriting notes. Complete Notion through actual connector create/read-back and its staged receipt; synthetic completion does not verify live access.
-- [ ] Configure a selected Notion scope and complete a real authenticated connector search with the assistant. Configuration/snapshots are not evidence of live authentication. Verify any authorised canonical write and mirror independently.
-- [ ] Install each supported assistant in an isolated home. Check **Installation**, **CLI**, **Sign-in** and **Learning receipt**, start a fresh session, and paste the connection test prompt from another project.
-- [ ] Capture a reused objective and a genuine gap. Verify the receipt and ready Self Test, then resolve one blocked item through **Finish with assistant** and the actual validation/import contract. Retry must not bypass missing checks.
-- [ ] Check scope/pause, optional catch-up, data location, backup/restore and one interrupted preparation. No exposure or setup action may rate a card, change schedules or imply mastery.
+## 2. Run local and packaged checks
 
-## Verify publication separately
+Core commands:
 
-- [ ] Choose the intended GitHub owner/repository, review commit attribution, configure its remote and publish only the reviewed public snapshot.
-- [ ] Enable an actual private vulnerability-reporting channel and verify repository/release/issue destinations before linking them in documentation.
-- [ ] Confirm **Verify** passes on the published commit. Checkout must retain `fetch-depth: 0` so the privacy audit sees history; action credentials are not persisted. See [checkout usage](https://github.com/actions/checkout#usage).
-- [ ] For a downloadable Mac release, sign and notarize it and test that download on a clean Mac. A local source build or unsigned archive is not a notarized distribution.
+```sh
+npm test
+npm run build
+npm audit --audit-level=moderate
+npm run audit:release
+npm run package
+npm run audit:package
+```
 
-The public source destination is [justslee/recall](https://github.com/justslee/recall). Check the [Verify workflow](https://github.com/justslee/recall/actions/workflows/verify.yml) for the exact published commit. Local checks do not establish hosted CI, signing/notarization or authenticated first-user integration. See [Public review](PUBLIC_REVIEW.md) and [Launch](LAUNCH.md).
+- [ ] Run desktop study, card-link, Self Test, Progress, connection, knowledge setup/bootstrap, native sandbox, Voice and Speak checks.
+- [ ] Repeat the packaged journeys using the actual candidate executable.
+- [ ] Label synthetic microphone/provider/Notion receipts as synthetic.
+- [ ] Audit full Git history; shallow history must fail.
+- [ ] Inspect image pixels and commit attribution manually.
 
-Never publish personal decks, KB exports, connection backups, credentials, transcripts, assessment drafts, profile backups or private migration evidence as seed content. Re-run source/history and archive checks after release edits.
+Packaged check pattern:
+
+```sh
+RECALL_TEST_EXECUTABLE=release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall npm run test:desktop
+```
+
+The [Verify workflow](https://github.com/justslee/recall/actions/workflows/verify.yml) lists the full command sequence. Archive checks inspect first-party contents; they do not certify every dependency.
+
+## 3. Follow only the README from a fresh clone
+
+- [ ] Commit the reviewed candidate and test `npm run setup` in a fresh clone with an isolated profile.
+- [ ] Verify **Try demo**, **Import cards** → Library and **Connect learning** → Learning connections.
+- [ ] Complete a Concepts/Math/Coding/Mixed review: math starts hidden, flip replaces the front, and widgets/code need explicit actions.
+- [ ] Connect Markdown/Obsidian scopes with explicit access and **Test connection**; the check must not author notes or change other sources.
+- [ ] Create a multi-destination KB: primary/mirror choices, preview without writes, explicit consent and safe retry without overwritten notes.
+- [ ] Complete actual Notion create/re-fetch/receipt handling through a live connector; synthetic receipts are insufficient for live acceptance.
+- [ ] Install each supported assistant in an isolated home, check installation/CLI/sign-in/receipt and start a fresh session.
+- [ ] Capture a reused objective and genuine gap; verify ready cards and the Self Test.
+- [ ] Finish a blocked item through its assistant handoff and validated import contract. Retry must not bypass missing checks.
+- [ ] Verify pause/scope/catch-up, data location, backup/restore and interrupted preparation. Exposure/setup must not rate cards, infer mastery or change schedules.
+
+## 4. Publish and verify
+
+- [ ] Confirm the owner/repository and reviewed commit, then publish when authorized.
+- [ ] Verify real repository/issue/security-report destinations.
+- [ ] Confirm **Verify** succeeds on that exact commit.
+- [ ] Keep checkout at `fetch-depth: 0` with `persist-credentials: false`; see [checkout usage](https://github.com/actions/checkout#usage).
+- [ ] For a downloadable release, sign/notarize and test the actual download on a clean Mac.
+- [ ] Re-run source/history and archive audits after release edits.
+
+> [!IMPORTANT]
+> Never publish personal decks, KB exports, connection/profile backups, credentials, transcripts, assessment drafts or private migration evidence as seed content.
+
+Local checks do not establish hosted CI, live provider access or notarization. Check the exact result at [justslee/recall](https://github.com/justslee/recall).
+
+**Next:** [Public review](PUBLIC_REVIEW.md) · [Launch plan](LAUNCH.md) · [Privacy](PRIVACY.md)

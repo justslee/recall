@@ -1,53 +1,149 @@
 # Troubleshooting
 
-## Setup stops before installing
+[Documentation](README.md) · [Setup reference](SETUP.md) · [Complete workflow](WORKFLOW.md)
 
-Run `npm run setup -- --check` in the cloned Recall folder. The beta setup supports Apple Silicon Macs running macOS 13 or later and Node 22.18 or later. Install a supported Node version from [nodejs.org](https://nodejs.org/en/download), reopen Terminal, and check `node --version`. If you already use nvm, run `nvm install` and `nvm use` in the checkout; `.nvmrc` pins the tested baseline. An older macOS version must be updated before this Electron build can run.
+Find the symptom, check its cause, then retry. Repairing the app does not require deleting your learning data.
 
-## Dependency installation failed
+[Installation](#installation) · [Connections & capture](#connections-and-capture) · [Cards & local data](#cards-and-local-data) · [Report a problem](#reporting-a-problem)
 
-Setup uses `npm ci` and the committed lockfile. Check the first installation error for network, registry or permissions problems, resolve it, then rerun `npm run setup`. Avoid changing the lockfile just to get past an unexplained failure. Setup does not install global packages or require sudo.
+## Installation
 
-## The app will not open after an update
+### Setup stops before installing
 
-Quit Recall and rerun `npm run setup`. That rebuilds the checkout with the locked dependencies. Your study data is stored separately. Keep a full profile backup before significant upgrades; do not remove your profile to repair a build.
+From the cloned Recall folder, run:
 
-## Python or C++ is unavailable
+```sh
+npm run setup -- --check
+node --version
+```
 
-These runtimes are optional and do not block concept or math study. Run `node cli/recall.cjs doctor`. Standard Python and C++ are resolved through Apple's `xcrun` and require Apple's Command Line Tools, installed explicitly with `xcode-select --install`. Scientific Python uses a separate profile environment; see [runtime setup](SETUP.md#optional-coding-runtimes). No packages are downloaded when you open a card.
+The beta requires Apple Silicon, macOS 13 or later and Node 22.18 or later. Install a supported version from [Node.js](https://nodejs.org/en/download), reopen Terminal and check again. An older macOS version must be updated before this Electron build can run.
 
-## My assistant did not add anything to Recall
+If you already use nvm, the checkout's `.nvmrc` selects the tested baseline:
 
-Open **Settings & backups → Learning connections** and choose **Check readiness**. Learning capture must be enabled and saved. Inspect **Installation**, **CLI**, **Sign-in** and **Learning receipt** separately: an installed connection does not prove a session reached Recall. Choose **Verify learning → Create verification prompt → Copy prompt**, then paste it into a fresh Codex or Claude session so it loads global instructions. The prompt's unique check ID ties the receipt to that verification; a different generic capture prompt will not complete it. Instructions guide the assistant; they do not guarantee every conversation was logged.
+```sh
+nvm install
+nvm use
+npm run setup
+```
 
-If you enabled catch-up, check its start timestamp, selected folders, exclusions and last scan. Recall must be open for its periodic scanner. Only supported local session files can be inspected. A pending inbox item still needs preparation; it is not a ready card.
+### Dependency installation failed
 
-## Prepare next fails or stays blocked
+1. Read the first installation error for a network, registry or permission problem.
+2. Resolve that cause, then rerun:
 
-Install and sign into your selected Codex or Claude CLI. Its command should work in your terminal. Preparation uses the default provider and your existing authentication/usage allowance, with tools and personal configuration disabled. Recent CLI restriction flags and the macOS sandbox are required; unsupported versions fail closed. Codex needs file-based login credentials or an API-key environment; keyring-only/custom provider setups are not currently supported. If you use a custom `CODEX_HOME`, connect with that environment available and check the previewed instruction path. Reconnect to refresh saved paths after moving it.
+   ```sh
+   npm run setup
+   ```
 
-Read the specific inbox error before retrying. The restricted worker cannot perform browser interaction checks or execute code/calculations. Choose **Finish with assistant** to copy the item's handoff prompt and paste it into your normal assistant. Missing visual checks, failed code tests or conflicting card identities require the included skills and actual validation; a retry alone cannot validate them. The assistant should inspect the item, prepare it through the inbox contract and report what actually passed.
+Setup uses `npm ci` and the committed lockfile. Do not change the lockfile just to bypass an unexplained failure. No global packages or `sudo` are required.
 
-## My knowledge source is configured but not ready
+### The app will not open after an update
 
-Open **Learning connections → Knowledge sources**, edit the affected source and use **Test connection**. A local source must point to an existing, readable folder; choose the smallest KB scope you need. A Notion scope is a configuration, not a login. Connect your assistant's Notion tool and ask it to verify a real scoped search. Existing snapshots do not prove live access or complete coverage. Read-only access intentionally blocks KB authoring; enable authoring only for the scope you want changed.
+Quit Recall, then rebuild the checkout:
 
-## A coding card says it needs local review
+```sh
+npm run setup
+```
 
-Importing a card or receiving an AI validation report does not unlock native execution. Review the source and tests, follow the [exercise validation workflow](../skills/recall-source/references/exercises.md), then use the explicit `cards trust --apply` command with Recall closed. This command independently runs the reference and starter in the sandbox. Never bypass this by editing profile settings. Existing reviewed exercises keep their approvals.
+Study data is stored separately from the source. Keep a full profile backup before significant upgrades.
 
-## A card link does not open
+> [!IMPORTANT]
+> Do not remove your profile to repair a build. It contains your cards, review history and drafts.
 
-Build the packaged app with `npm run package`, move it to its intended location, and open it once. This registers Mac card links. Development `npm start` alone does not install the protocol handler. Some chat clients block custom URL schemes; search the exact card title in Library instead. Links identify a card in the receiving app's local library; they do not transfer cards or choose a different data profile.
+### Python or C++ is unavailable
 
-## Recall says the library is in use
+Coding tools are optional; concepts and math remain available. Check the detected runtimes, then install Apple's Command Line Tools if missing:
 
-Quit the app before direct CLI card imports, restore or other SQLite writes. Read-only commands and inbox capture/submission work while open; the app applies submitted inbox results through its own writer. Do not delete a lock file while another Recall process is alive.
+```sh
+node cli/recall.cjs doctor
+xcode-select --install
+```
 
-## I moved the checkout or app
+Standard Python and C++ use Apple's `xcrun`. Scientific Python uses a separate profile environment; see [optional coding runtimes](SETUP.md#optional-coding-runtimes). No packages download when you open a card.
 
-Reconnect your assistants from the app's final location to refresh the launcher and skill paths. Your library can stay in its original profile folder. Machine-specific connection paths are separate from portable card content.
+## Connections and capture
+
+### My assistant did not add anything to Recall
+
+1. Open **Settings & backups → Learning connections**.
+2. Confirm learning capture is enabled and saved.
+3. Choose **Check readiness** and inspect Installation, CLI, Sign-in and Learning receipt separately.
+4. Choose **Verify learning → Create verification prompt → Copy prompt**.
+5. Paste that exact prompt into a **fresh** Codex or Claude session.
+
+The unique check ID ties a receipt to this verification; a different generic prompt will not complete it. Installed skills do not prove learning reached Recall. Instructions guide the assistant, but do not guarantee every conversation was logged.
+
+For catch-up, check the start timestamp, selected folders, exclusions and last scan. Recall must be open for periodic scanning. Only supported local session files are available. A pending inbox item still needs preparation; it is not a ready card.
+
+### Prepare next fails or stays blocked
+
+Check the selected CLI first:
+
+- Install Codex or Claude and sign in; its command should work in Terminal.
+- Update unsupported CLI versions rather than weaken the required restrictions.
+- For a custom `CODEX_HOME`, connect with that environment available, review the proposed path, and reconnect after moving it.
+
+Preparation uses the default provider and existing authentication/usage allowance, with tools and personal configuration disabled inside the macOS sandbox. Codex requires file-based login credentials or an API-key environment; keyring-only login and custom provider setups are not currently supported.
+
+Then inspect the specific inbox error. The restricted worker cannot use a browser or run code/calculations. Choose **Finish with assistant**, copy the handoff prompt and paste it into your normal assistant to complete the actual checks and submit the validated result.
+
+**Retry** can address a transient failure. It cannot validate missing visual checks, failed code tests or conflicting card identities.
+
+### My knowledge source is configured but not ready
+
+Open **Learning connections → Knowledge sources**, edit the affected source and choose **Test connection**.
+
+- **Markdown / Obsidian:** select an existing, readable folder. Use the smallest KB scope you need.
+- **Notion:** connect your assistant's Notion tool and verify a real scoped search. A configured scope or cached snapshot does not prove live access or complete coverage.
+- **Read-only:** authoring is intentionally blocked. Enable it only for the scope you want changed.
+
+[Knowledge-source guide →](KNOWLEDGE.md)
+
+### My new Notion knowledge base is still pending
+
+Use **Finish Notion with assistant → Copy setup prompt** in a fresh, connected assistant session. The assistant needs live access to the selected parent page. After actual creation and read-back, choose **Refresh setup** in Recall.
+
+If the primary is pending, ready local mirrors are not promoted. If setup says **Needs attention** after a source was removed or restricted, review or reconnect it explicitly; Retry does not undo your access change.
+
+[Finish Notion setup →](KNOWLEDGE.md#finish-notion-setup)
+
+## Cards and local data
+
+### A coding card says it needs local review
+
+An imported card or AI validation report cannot grant native execution permission.
+
+1. Inspect the source and tests.
+2. Follow the [exercise validation workflow](../skills/recall-source/references/exercises.md).
+3. With Recall closed, use the explicit `cards trust --apply` action. It independently runs the reference and starter in the sandbox.
+
+Never bypass this through profile settings. A backup restore clears native-code approvals; review and trust restored exercises again. Restoring study data does not restore authority to execute its code.
+
+### A card link does not open
+
+[Package Recall and keep it in Applications](SETUP.md#keep-recall-in-applications), then launch it once. Development `npm start` alone does not install the protocol handler.
+
+Some chat clients block custom URL schemes. Search the exact card title in **Library** instead. Links identify a card in the receiving app's local library; they do not transfer cards or choose another data profile.
+
+### Recall says the library is in use
+
+Quit Recall before direct CLI imports, restore or other SQLite writes. Read-only commands and inbox capture/submission work while open; the app applies submitted results through its writer.
+
+Do not delete a lock file while another Recall process is alive.
+
+### I moved the checkout or app
+
+Reconnect assistants from Recall's final location to refresh launcher and skill paths. Your library can stay in its original profile folder. Machine-specific connection paths are separate from portable card content.
 
 ## Reporting a problem
 
-Include your Mac architecture, macOS and Node versions, Recall version, steps to reproduce, and the first relevant error. Prefer a small synthetic example. Do not attach a full profile, raw conversation log, token or private knowledge-base export to a public issue.
+Include:
+
+- Mac architecture, macOS, Node and Recall versions.
+- The steps to reproduce and first relevant error.
+- A small synthetic example where possible.
+
+Do not attach a full profile, raw conversation log, token or private KB export to a public issue. For a sensitive vulnerability, use the [private security-reporting channel](../SECURITY.md).
+
+**Next:** [Setup reference](SETUP.md) · [Knowledge sources](KNOWLEDGE.md) · [Voice troubleshooting](VOICE.md#troubleshooting)
