@@ -88,7 +88,15 @@ const { Runner } = require("../electron/runner.cjs"),
     const sandbox = require("../electron/process-sandbox.cjs");
     const stage = path.join(root, "provider-job");
     fs.mkdirSync(stage);
-    const python = runner.tool("python3");
+    const python = runner.tool("python3"),
+      // Match Runner's selected-tool runtime scope. Hosted Macs may select a
+      // versioned Xcode bundle instead of Command Line Tools in /Library.
+      runtimeDirectory = path.dirname(path.dirname(path.dirname(python)));
+    assert.notEqual(
+      runtimeDirectory,
+      path.parse(runtimeDirectory).root,
+      "The selected Python tool must not grant a filesystem-root scope",
+    );
     const policy = sandbox.command(
       python,
       [
@@ -99,7 +107,8 @@ const { Runner } = require("../electron/runner.cjs"),
       {
         directory: stage,
         network: true,
-        executionDirectories: ["/Library/Developer"],
+        readDirectories: [runtimeDirectory],
+        executionDirectories: [runtimeDirectory],
       },
     );
     const child = spawnSync(policy.binary, policy.args, {
