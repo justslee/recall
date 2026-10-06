@@ -1,10 +1,20 @@
 const fs = require("node:fs"),
   path = require("node:path");
 const quote = (s) => JSON.stringify(String(s));
+function directoryScope(input) {
+  const real = fs.realpathSync(input);
+  if (real === path.parse(real).root)
+    throw Error("Restricted execution cannot grant a filesystem-root scope");
+
+  return real;
+}
 const rule = (kind, paths) =>
   paths
     .filter(fs.existsSync)
-    .map((p) => `(${kind} ${quote(fs.realpathSync(p))})`)
+    .map(
+      (p) =>
+        `(${kind} ${quote(kind === "subpath" ? directoryScope(p) : fs.realpathSync(p))})`,
+    )
     .join(" ");
 function command(
   binary,
@@ -28,7 +38,7 @@ function command(
     throw Error(
       "Restricted execution requires the supported macOS sandbox; no unrestricted fallback is used",
     );
-  const work = fs.realpathSync(directory);
+  const work = directoryScope(directory);
   const system = [
     "/System",
     "/usr/bin",

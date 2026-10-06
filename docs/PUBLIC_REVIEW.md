@@ -10,6 +10,10 @@ The refreshed dependency audit found advisories in source-map-js and Mermaid's n
 
 Backup restore now removes code-execution approvals from the staged database, so restored challenges require review on the destination device. Unexpected database triggers reject the restore before changing the live profile. Provider failure output is discarded instead of being persisted in learning-inbox errors; user-facing errors retain local failure categories and the original learning item. Source/history privacy checks now also inspect excluded tracked roots, historical path allowlists, refs and annotated tags. Synthetic regressions exercise crafted backups, approval reinsertion and secret-containing provider output.
 
+Native sandbox scopes now reject the canonical filesystem root for scratch, recursive read and recursive execution permissions, including normalized paths and symlinks. This closes a latent selected-tool fallback that could otherwise expand a runtime scope to `/`. Exact literal root access remains bounded. The selected Xcode/Command Line Tools runtimes still pass all outside-file, network, utility and fork denial probes. The complete suite now passes **150 tests** on the CI baseline.
+
+The hardened package was rebuilt on Node 22.23.3 and passed archive privacy plus UTC demo, Progress and desktop security journeys. Progress checks cover exact 7/28/90-day metrics, selected-day history, hidden-answer navigation and unchanged study state; hosted CI repeats the check against both source and package.
+
 All **147 regression tests** passed, along with the production build, Python/C++ native isolation probes and source desktop checks for welcome/setup, hidden math, Monaco, interactive diagrams and SVG/Mermaid boundaries. Clipboard operations await Electron's asynchronous write; rejected writes never report success and preserve the handoff prompt. CI uses macOS 15 and Node 22.23.3, fetches full history, retains pinned actions and runs the original demo against the packaged app as well as source.
 
 Manual review found original demo content only in the candidate and reachable history; personal profiles, notes, captures, credentials and private installation evidence remain outside the public source. README now leads through one-command setup, four study modes and three optional connection steps, with packaging and advanced workflows collapsed. Signed downloads and live authenticated Notion/Codex/Claude/voice acceptance remain separate work.
@@ -73,7 +77,7 @@ Source/history checks cover first-party files and reachable commits; a shallow r
 
 ## Remaining before broad distribution
 
-1. Publish the reviewed commit to the intended GitHub remote and confirm the hosted workflow. Enable a real private vulnerability reporting channel.
+1. Keep the [public source](https://github.com/justslee/recall) and its [hosted Verify results](https://github.com/justslee/recall/actions/workflows/verify.yml) current. Private vulnerability reporting, dependency alerts, secret scanning and push protection are enabled; check the exact commit's result before recommending a release.
 2. Provide a signed, notarized Mac download to remove Node/source-build setup for nontechnical users.
 3. Perform a real first-user acceptance trial with authenticated Codex and Claude, a live scoped Notion KB/mirror, and actual voice evaluation. Only the permitted local/synthetic boundaries were tested here.
 4. Verify the current guided setup with a real new user: selected local folders, permission boundaries, a live Notion connector, fresh assistant sessions, capture receipts and blocked-item handoff. Configuration/preflight and synthetic checks do not replace that acceptance trial.

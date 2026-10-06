@@ -287,6 +287,52 @@ test("provider configuration rejects ambient tools and credentials", (t) => {
   }
 });
 
+test("sandbox refuses canonical filesystem-root directory scopes without changing valid literal access", (t) => {
+  const { root } = setup(t),
+    sandbox = require("../electron/process-sandbox.cjs"),
+    stage = path.join(root, "scope-stage"),
+    runtime = path.join(root, "selected-runtime"),
+    linkedRoot = path.join(root, "linked-root"),
+    fileSystemRoot = path.parse(root).root;
+  fs.mkdirSync(stage);
+  fs.mkdirSync(runtime);
+  fs.symlinkSync(fileSystemRoot, linkedRoot);
+  for (const scope of [
+    fileSystemRoot,
+    path.join(fileSystemRoot, "usr") + "/..",
+    linkedRoot,
+  ]) {
+    for (const options of [
+      { directory: scope },
+      { directory: stage, readDirectories: [scope] },
+      { directory: stage, executionDirectories: [scope] },
+    ])
+      assert.throws(
+        () => sandbox.command("/bin/echo", [], options),
+        /cannot grant a filesystem-root scope/,
+      );
+  }
+  const invocation = sandbox.command("/bin/echo", [], {
+    directory: stage,
+    readDirectories: [runtime],
+    executionDirectories: [runtime],
+    // A literal path is exact access; it does not grant its descendants.
+    read: [fileSystemRoot],
+  });
+  assert.equal(invocation.binary, "/usr/bin/sandbox-exec");
+  assert(
+    invocation.policy.includes(`(literal ${JSON.stringify(fileSystemRoot)})`),
+  );
+  assert(
+    invocation.policy.includes(
+      `(subpath ${JSON.stringify(fs.realpathSync(runtime))})`,
+    ),
+  );
+  assert(
+    !invocation.policy.includes(`(subpath ${JSON.stringify(fileSystemRoot)})`),
+  );
+});
+
 test("Codex preparation uses the saved connection home while keeping credentials and configuration isolated", (t) => {
   const { root } = setup(t);
   const codexHome = path.join(root, "selected-codex"),
