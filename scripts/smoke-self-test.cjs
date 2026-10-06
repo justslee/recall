@@ -7,8 +7,9 @@ const { Store } = require("../electron/store.cjs");
 const st = require("../electron/self-test.cjs");
 (async () => {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), "recall-repeat-day-"));
-  const past = new Date(Date.now() - 86400000),
-    day = st.dayOf(past);
+  const timeZone = "America/New_York",
+    past = new Date(Date.now() - 86400000),
+    day = st.dayOf(past, timeZone);
   const s = new Store(folder);
   s.import(
     ["a", "b"].map((id) => ({
@@ -26,7 +27,7 @@ const st = require("../electron/self-test.cjs");
     })),
   );
   require("../electron/config.cjs").saveConfig(folder, {
-    timeZone: "America/New_York",
+    timeZone,
     captureEnabled: true,
   });
   st.capture(folder, {
@@ -62,7 +63,9 @@ const st = require("../electron/self-test.cjs");
     p.on("pageerror", (e) => errors.push(e.message));
     await p.getByRole("button", { name: "Self test", exact: true }).click();
     await expect(p.getByLabel("Learning day")).toHaveValue(day);
-    await p.getByLabel("Learning day").selectOption(st.dayOf(new Date()));
+    await p
+      .getByLabel("Learning day")
+      .selectOption(st.dayOf(new Date(), timeZone));
     await expect(
       p.getByRole("button", { name: /Review all cards/ }),
     ).toHaveCount(0);

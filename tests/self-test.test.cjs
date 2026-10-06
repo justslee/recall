@@ -3,7 +3,9 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 const { Store } = require("../electron/store.cjs");
+const { saveConfig } = require("../electron/config.cjs");
 const st = require("../electron/self-test.cjs");
 const now = new Date("2026-09-13T18:00:00Z");
 const entry = (patch = {}) => ({
@@ -19,6 +21,7 @@ const entry = (patch = {}) => ({
 });
 function fixture(t) {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), "recall-self-test-"));
+  saveConfig(folder, { timeZone: "America/New_York" });
   const s = new Store(folder);
   s.import(
     ["concept", "math", "code", "other"].map((id, i) => ({
@@ -63,9 +66,57 @@ test("capture is idempotent, immutable, validates evidence, and never changes sc
   );
 });
 test("dates use local day across midnight and DST", () => {
-  assert.equal(st.dayOf("2026-09-14T02:00:00Z"), "2026-09-13");
-  assert.equal(st.dayOf("2026-03-08T06:59:00Z"), "2026-03-08");
-  assert.equal(st.dayOf("2026-03-08T07:01:00Z"), "2026-03-08");
+  const timeZone = "America/New_York";
+  assert.equal(st.dayOf("2026-09-14T02:00:00Z", timeZone), "2026-09-13");
+  assert.equal(st.dayOf("2026-03-08T06:59:00Z", timeZone), "2026-03-08");
+  assert.equal(st.dayOf("2026-03-08T07:01:00Z", timeZone), "2026-03-08");
+});
+
+test("new profile and day helper defaults follow the host timezone, while explicit capture timezone wins", (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "recall-host-zone-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const script = `
+    const assert = require('node:assert/strict');
+    const { config, saveConfig } = require('./electron/config.cjs');
+    const st = require('./electron/self-test.cjs');
+    const folder = process.argv[1];
+    const host = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const at = '2026-09-14T02:00:00Z';
+    assert.equal(config(folder).timeZone, host);
+    assert.equal(st.dayOf(at), st.dayOf(at, host));
+    saveConfig(folder, { timeZone: 'Asia/Tokyo' });
+    const captured = st.capture(folder, {
+      id: 'host-zone', sessionId: 'host-zone', title: 'Timezone boundary',
+      objective: 'Explain local calendar dates', context: 'Synthetic fixture',
+      at, evidence: 'discussed', cardIds: []
+    });
+    assert.equal(captured.day, '2026-09-14');
+    const saved = st.read(folder).entries[0];
+    assert.equal(saved.timeZone, 'Asia/Tokyo');
+    saveConfig(folder, { timeZone: 'America/New_York' });
+    assert.equal(st.read(folder).entries[0].day, '2026-09-14');
+    console.log(JSON.stringify({ host, defaultDay: st.dayOf(at) }));
+  `;
+  for (const [timeZone, day] of [
+    ["UTC", "2026-09-14"],
+    ["America/New_York", "2026-09-13"],
+  ]) {
+    const result = spawnSync(
+      process.execPath,
+      ["-e", script, path.join(root, timeZone.replaceAll("/", "-"))],
+      {
+        cwd: path.resolve(__dirname, ".."),
+        env: { ...process.env, TZ: timeZone },
+        encoding: "utf8",
+        timeout: 10000,
+      },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(JSON.parse(result.stdout), {
+      host: timeZone,
+      defaultDay: day,
+    });
+  }
 });
 test("deduplicate repeated cards, keep math/code siblings and interleave objectives", (t) => {
   const s = fixture(t);
