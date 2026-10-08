@@ -22,5 +22,6 @@ auth.json
 presentations.json
 learning-connections.json
 learning-inbox/
+card-imports/
 self-tests/
 backups/

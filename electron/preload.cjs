@@ -91,6 +91,11 @@ contextBridge.exposeInMainWorld("recall", {
     ipcRenderer.on("recall:card-link", listener);
     return () => ipcRenderer.removeListener("recall:card-link", listener);
   },
+  onLibraryChanged: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on("recall:library-changed", listener);
+    return () => ipcRenderer.removeListener("recall:library-changed", listener);
+  },
   onVoiceEvent: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on("recall:voice-event", listener);

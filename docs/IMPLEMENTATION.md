@@ -34,6 +34,8 @@ Installed skills, CLI availability, sign-in and a verified learning receipt are 
 
 Claude readiness preserves its default macOS Keychain namespace and the OS username. Read-only Keychain directory access is confined to the local `claude auth status` probe, with network disabled. A negative CLI report does not block learning capture or receipt verification. On October 7, 2026, this path was verified against a signed-in Claude Code 2.1.290 installation; regression coverage checks login isolation, restricted read scope and verification despite a negative CLI report.
 
+The Study Desk shelf offers **View all collections** when more than four collections match. Explicit CLI card imports can queue while the app is open; its writer validates and backs up the additive import, then notifies the interface. Learning-inbox imports send the same refresh signal. Neither path reloads the page or replaces an active review queue. Confirm queued imports with `cards import-status REQUEST_ID`; a pending request is not a ready card. October 7 regression and real-desktop checks verified collection expansion, new collection visibility, unchanged existing cards/history, and preserved concept, math and coding drafts without revealing answers.
+
 Local source checks never author a note. Notion configuration and fetched snapshots do not establish live connector authentication. New Notion setup remains pending until the assistant creates and re-fetches its scoped database, then submits a fresh, consistent receipt. The app checks that attestation; it does not independently authenticate the provider. Mirrors follow verified primary writes through assistant skills, without continuous two-way sync.
 
 ### Execution and private data
@@ -71,6 +73,7 @@ For later changes, use the [current workflow result](https://github.com/justslee
 | Portable contracts                            | `schemas/`                         |
 | Profile configuration and writer coordination | `electron/config.cjs`              |
 | Imports and local execution trust             | `electron/bundles.cjs`             |
+| Live additive import queue                    | `electron/card-imports.cjs`        |
 | Coding catalog                                | `electron/catalog.cjs`             |
 | Local KB and Notion bridge                    | `adapters/knowledge.cjs`           |
 | Profile backup/restore                        | `electron/backup.cjs`              |

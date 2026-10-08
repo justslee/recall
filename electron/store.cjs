@@ -38,7 +38,13 @@ class Store {
       for (const suffix of ["-wal", "-shm"])
         if (fs.existsSync(this.file + suffix))
           fs.chmodSync(this.file + suffix, 0o600);
-      for (const name of ["self-tests", "learning-inbox", "knowledge", "packs"])
+      for (const name of [
+        "self-tests",
+        "learning-inbox",
+        "card-imports",
+        "knowledge",
+        "packs",
+      ])
         privateFiles.protectTree(path.join(folder, name));
       if (version > 2)
         throw Error("This library needs a newer Recall version.");

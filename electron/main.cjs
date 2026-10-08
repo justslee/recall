@@ -401,19 +401,26 @@ app.whenReady().then(() => {
     const r = await worker.prepare(store.folder, store.cards(), {
       expectedDigest,
     });
-    if (store) inbox.applyPending(store);
+    if (store && inbox.applyPending(store).applied && win && !win.isDestroyed())
+      win?.webContents.send("recall:library-changed");
     return r;
   });
   handle("retryLearning", (id) => inbox.retry(store.folder, id));
   const pollLearning = (scan = false) => {
     if (!store) return;
+    let changed = false;
     try {
+      changed = !!require("./card-imports.cjs").applyPending(store).applied;
       if (scan || catchUpPending)
         catchUpPending = !!catchUp.scan(store.folder).remainingFiles;
-      inbox.applyPending(store);
+      const learning = inbox.applyPending(store);
+      changed ||= !!learning.applied;
       learningError = null;
     } catch (e) {
       learningError = e.message;
+    } finally {
+      if (changed && win && !win.isDestroyed())
+        win.webContents.send("recall:library-changed");
     }
   };
   setTimeout(() => pollLearning(true), 2000).unref();

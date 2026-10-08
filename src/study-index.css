@@ -353,6 +353,17 @@
 .study-shelf {
   margin-top: 28px;
 }
+.study-shelf .section-heading {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.shelf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
 .shelf-books {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

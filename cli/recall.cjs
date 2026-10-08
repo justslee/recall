@@ -28,7 +28,7 @@ const folder = dataDir(option("data"));
 const apply = flag("apply"),
   json = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const usage =
-  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/search/link/trust | kb scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
+  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/search/link/trust | kb scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
 function withStore(fn) {
   const { Store } = require("../electron/store.cjs");
   const s = new Store(folder);
@@ -108,8 +108,37 @@ function readonly(fn) {
         result = { valid: true, cards: pack.cards.length };
       } else if (action === "import") {
         const widgets = flag("allow-widgets");
-        result = withStore((s) =>
-          bundles.importPack(s, json(rest[0]), { apply, widgets }),
+        const pack = json(rest[0]);
+        try {
+          result = withStore((s) =>
+            bundles.importPack(s, pack, { apply, widgets }),
+          );
+        } catch (error) {
+          if (error.code !== "RECALL_WRITER_BUSY") throw error;
+
+          result = apply
+            ? require("../electron/card-imports.cjs").enqueue(folder, pack, {
+                widgets,
+              })
+            : readonly((db) =>
+                bundles.preview(
+                  { db },
+                  {
+                    ...bundles.normalizePack(pack),
+                    cards: bundles
+                      .normalizePack(pack)
+                      .cards.map((c) => ({
+                        ...c,
+                        widgetsAllowed: widgets && c.widgetsAllowed === true,
+                      })),
+                  },
+                ),
+              );
+        }
+      } else if (action === "import-status") {
+        result = require("../electron/card-imports.cjs").status(
+          folder,
+          rest[0],
         );
       } else if (action === "search")
         result = readonly((db) =>

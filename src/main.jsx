@@ -166,6 +166,41 @@ function App() {
     return next;
   };
   useEffect(() => {
+    if (!api) return;
+    let live = true;
+    let running = false;
+    let again = false;
+    const load = async () => {
+      if (running) {
+        again = true;
+        return;
+      }
+      running = true;
+      try {
+        do {
+          again = false;
+          const next = await api.snapshot();
+          if (!live) return;
+
+          // Refresh the library without replacing a locally edited answer,
+          // changing filters, revealing a card or replacing the review queue.
+          setData(next);
+        } while (again && live);
+      } catch (error) {
+        if (live) fail(error);
+      } finally {
+        running = false;
+      }
+    };
+    const unsubscribe = api.onLibraryChanged?.(load);
+    window.addEventListener("focus", load);
+    return () => {
+      live = false;
+      unsubscribe?.();
+      window.removeEventListener("focus", load);
+    };
+  }, []);
+  useEffect(() => {
     if (!api) {
       setToast({
         id: "bridge",

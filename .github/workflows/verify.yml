@@ -24,6 +24,7 @@ jobs:
       - run: npm run test:desktop
       - run: node scripts/smoke-self-test.cjs
       - run: npm run test:links
+      - run: npm run test:live-imports
       - run: npm run test:progress
       - run: npm run test:connections
       - run: node scripts/smoke-knowledge-setup.cjs
@@ -37,6 +38,9 @@ jobs:
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:progress
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:live-imports
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: node scripts/smoke-packaged-connections.cjs

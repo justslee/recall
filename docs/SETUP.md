@@ -105,7 +105,7 @@ node cli/recall.cjs --data /absolute/test-profile doctor
 ```
 
 > [!IMPORTANT]
-> Quit Recall before direct CLI card imports, backup, restore or other SQLite writes. Read-only searches and inbox capture/submission work while it is open; the app applies submitted results through its writer.
+> Card imports and inbox submissions work while Recall is open; its writer applies them and the interface refreshes automatically. Confirm queued imports with `recall cards import-status REQUEST_ID`. Quit Recall before backup, restore or other exclusive CLI writes.
 
 Card links identify a card in the receiving app's local library. They do not transfer content or encode a custom data profile. Opening a card is read-only; a study rating is a separate action.
 

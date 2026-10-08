@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId, useState } from "react";
 import { ArrowUpRight, Plus } from "lucide-react";
 import { inDeck, isDue } from "./model";
 
@@ -9,6 +9,8 @@ export function StudyShelf({
   onNewDeck,
   compact = false,
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const shelfId = useId();
   const decks = data.decks
     .map((name) => {
       const cards = data.cards.filter(
@@ -30,14 +32,27 @@ export function StudyShelf({
     <section className="study-shelf" aria-label="Your collections">
       <div className="section-heading">
         <h2>Your study shelf</h2>
-        {onNewDeck && (
-          <button className="text-button" onClick={onNewDeck}>
-            <Plus size={15} /> New collection
-          </button>
-        )}
+        <div className="shelf-actions">
+          {compact && decks.length > 4 && (
+            <button
+              className="text-button"
+              aria-expanded={expanded}
+              aria-controls={shelfId}
+              onClick={() => setExpanded((value) => !value)}
+            >
+              {expanded ? "Show fewer collections" : "View all collections"}
+              <span aria-hidden="true"> · {decks.length}</span>
+            </button>
+          )}
+          {onNewDeck && (
+            <button className="text-button" onClick={onNewDeck}>
+              <Plus size={15} /> New collection
+            </button>
+          )}
+        </div>
       </div>
-      <div className="shelf-books">
-        {(compact ? decks.slice(0, 4) : decks).map((d, i) => (
+      <div className="shelf-books" id={shelfId}>
+        {(compact && !expanded ? decks.slice(0, 4) : decks).map((d, i) => (
           <button
             className={`shelf-book cover-${i % 3}`}
             key={d.name}

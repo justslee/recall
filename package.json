@@ -21,6 +21,7 @@
     "audit:package": "node scripts/audit-package.cjs",
     "test:journey": "node --test tests/journey.test.cjs",
     "test:links": "node scripts/smoke-card-links.cjs",
+    "test:live-imports": "node scripts/smoke-live-imports.cjs",
     "test:progress": "node scripts/smoke-progress.cjs",
     "test:connections": "node scripts/smoke-connections.cjs",
     "test:knowledge": "node scripts/smoke-knowledge-setup.cjs",

@@ -26,6 +26,22 @@ Card IDs must remain stable across imports. Source/objective identity matters mo
 equality. Preview defaults are additive: changed content under an existing ID is rejected for
 review, and missing upstream cards are retained.
 
+Recall can stay open during imports. With `--apply`, the CLI queues an import for
+the running app's writer when that library is in use. The app applies it within
+about five seconds and refreshes the shelf and Library, preserving active study
+and drafts. When the app is closed, imports apply immediately.
+
+A queued request is not yet an imported card. Use the returned `requestId` to
+confirm the receipt:
+
+```sh
+recall cards import-status REQUEST_ID
+```
+
+Expect `mode: "imported"` with inserted/unchanged counts before returning card
+links. A blocked receipt preserves the specific conflict or validation error.
+Bulk source imports do not create learning captures or daily Self Tests.
+
 After inspecting and testing the actual widget code, an import can explicitly allow widgets:
 
 ```sh

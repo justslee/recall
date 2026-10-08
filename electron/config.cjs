@@ -87,9 +87,11 @@ function lock(folder) {
         fs.unlinkSync(file);
         continue;
       }
-      throw Error(
+      const error = Error(
         "Recall is using this library. Quit the app before a CLI write or restore.",
       );
+      error.code = "RECALL_WRITER_BUSY";
+      throw error;
     }
   }
   throw Error("Could not acquire library lock");
