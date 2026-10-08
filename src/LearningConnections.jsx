@@ -136,7 +136,7 @@ export function LearningConnections() {
                     auth.state === "signed-in"
                       ? "CLI reports signed in"
                       : auth.state === "signed-out"
-                        ? "Sign-in needed"
+                        ? "CLI reports signed out"
                         : auth.state === "unknown"
                           ? "Couldn’t verify"
                           : "Not checked"

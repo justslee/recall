@@ -208,12 +208,16 @@ async function check(folder, host, options = {}) {
   );
   const environment = {
     HOME: home,
+    // Claude uses the OS username for the Keychain account lookup. Without
+    // USER, the clean environment can fall back to a different account.
+    USER: os.userInfo().username,
     PATH: "/usr/bin:/bin:/usr/sbin:/opt/homebrew/bin:/usr/local/bin",
     TMPDIR: stage,
     LANG: "en_US.UTF-8",
     TERM: "dumb",
     CODEX_HOME: codexHome,
-    CLAUDE_CONFIG_DIR: path.join(home, ".claude"),
+    // Do not synthesize CLAUDE_CONFIG_DIR, even for ~/.claude: setting it
+    // selects a different macOS Keychain entry from a normal default login.
     CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
   };
   const sourceEnvironment = options.environment || process.env;
@@ -230,6 +234,11 @@ async function check(folder, host, options = {}) {
       read: [path.join(home, ".claude.json")],
       readDirectories: [
         host === "codex" ? codexHome : path.join(home, ".claude"),
+        // Only the local Claude auth-status probe needs Keychain file reads.
+        // Provider workers and version/help probes keep their existing scope.
+        ...(host === "claude" && args.join(" ") === "auth status"
+          ? [path.join(home, "Library", "Keychains")]
+          : []),
         path.dirname(realBinary),
         ...(realBinary.startsWith("/opt/homebrew/")
           ? ["/opt/homebrew/Cellar", "/opt/homebrew/lib"]

@@ -76,6 +76,16 @@ The unique check ID ties a receipt to this verification; a different generic pro
 
 For catch-up, check the start timestamp, selected folders, exclusions and last scan. Recall must be open for periodic scanning. Only supported local session files are available. A pending inbox item still needs preparation; it is not a ready card.
 
+### Claude works in Terminal, but Recall reports signed out
+
+Run `claude auth status --text` in Terminal. This checks Claude Code's login; being signed into the Claude website alone does not establish CLI authentication.
+
+If Terminal reports signed in, you can continue using a fresh Claude Code session and **Verify learning**. The sign-in indicator does not block capture or verification. A learning receipt confirms the connection separately; it does not prove Recall's **Prepare next** worker can authenticate.
+
+Older Recall builds explicitly set `CLAUDE_CONFIG_DIR` during readiness checks, which makes Claude look up a different macOS Keychain entry even when the directory is `~/.claude`. The check also omitted the OS username and denied Keychain file reads. The fix preserves the default login namespace and OS username, and permits read-only Keychain access only for Claude's local authentication-status command; internet access remains disabled.
+
+Update and rebuild Recall, then select **Check readiness** again. You do not need to log out, clear credentials or reinstall the learning connection for this fix. The check uses Claude's default configuration; custom terminal account configurations can still differ from the app's environment. See [Claude's credential management](https://code.claude.com/docs/en/authentication#credential-management).
+
 ### Prepare next fails or stays blocked
 
 Check the selected CLI first:

@@ -32,6 +32,8 @@ Card links open with answers hidden. They cannot reveal, rate or execute a card,
 
 Installed skills, CLI availability, sign-in and a verified learning receipt are separate checks. The bounded **Prepare next** worker has model tools disabled; rich new objectives may need **Finish with assistant** for independent visual, math or code checks. Copying a handoff never dispatches work or bypasses validation.
 
+Claude readiness preserves its default macOS Keychain namespace and the OS username. Read-only Keychain directory access is confined to the local `claude auth status` probe, with network disabled. A negative CLI report does not block learning capture or receipt verification. On October 7, 2026, this path was verified against a signed-in Claude Code 2.1.290 installation; regression coverage checks login isolation, restricted read scope and verification despite a negative CLI report.
+
 Local source checks never author a note. Notion configuration and fetched snapshots do not establish live connector authentication. New Notion setup remains pending until the assistant creates and re-fetches its scoped database, then submits a fresh, consistent receipt. The app checks that attestation; it does not independently authenticate the provider. Mirrors follow verified primary writes through assistant skills, without continuous two-way sync.
 
 ### Execution and private data

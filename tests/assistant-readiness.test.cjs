@@ -138,6 +138,46 @@ test("unsupported auth commands and failures remain unknown without trying a mod
     );
   }
 });
+test("Claude readiness preserves the default Keychain namespace, account and scoped access", async (t) => {
+  const { home, folder } = setup(t, "claude"),
+    mock = mockCheck({
+      home,
+      host: "claude",
+      auth: { code: 0, stdout: '{"loggedIn":true}', stderr: "" },
+    });
+  const run = mock.options.runCommand;
+  const command = mock.options.command;
+  mock.options.command = (binary, args, rules) => {
+    const keychains = path.join(home, "Library", "Keychains");
+    assert.equal(
+      rules.readDirectories.includes(keychains),
+      args.join(" ") === "auth status",
+    );
+    assert(!rules.readDirectories.includes(home));
+    assert(!rules.readDirectories.includes(path.join(home, "Library")));
+    return command(binary, args, rules);
+  };
+  mock.options.runCommand = async (binary, args, options) => {
+    assert.equal(options.env.HOME, home);
+    assert.equal(options.env.USER, os.userInfo().username);
+    if (
+      Object.hasOwn(options.env, "CLAUDE_CONFIG_DIR") ||
+      options.env.USER !== os.userInfo().username
+    )
+      return { code: 1, stdout: '{"loggedIn":false}', stderr: "" };
+
+    return run(binary, args, options);
+  };
+  await readiness.check(folder, "claude", mock.options);
+  assert.equal(
+    readiness.status(folder, "claude", mock.options).authentication.state,
+    "signed-in",
+  );
+  assert.equal(
+    readiness.status(folder, "claude", mock.options).learning.state,
+    "unchecked",
+  );
+});
 test("negative and contradictory CLI messages never become signed-in reports", async (t) => {
   for (const [auth, expected] of [
     [{ code: 0, stdout: "Not logged in", stderr: "" }, "signed-out"],
@@ -177,6 +217,29 @@ test("negative and contradictory CLI messages never become signed-in reports", a
       expected,
     );
   }
+});
+test("a negative CLI auth report does not block verification or real learning receipts", async (t) => {
+  const { home, folder } = setup(t, "claude"),
+    mock = mockCheck({
+      home,
+      host: "claude",
+      auth: { code: 1, stdout: '{"loggedIn":false}', stderr: "" },
+    });
+  await readiness.check(folder, "claude", mock.options);
+  const prompt = readiness.verificationPrompt(
+    folder,
+    "claude",
+    "weighted averages",
+  );
+  assert.equal(selfTest.read(folder).entries.length, 0);
+  inbox.add(folder, captureFor(prompt), [demoCard]);
+  const result = readiness.status(folder, "claude", {
+    ...mock.options,
+    installed: true,
+    cards: [demoCard],
+  });
+  assert.equal(result.authentication.state, "signed-out");
+  assert.equal(result.learning.state, "verified");
 });
 test("a verification prompt creates no learning until exact host-tagged inbox and card receipts arrive", (t) => {
   const { folder } = setup(t);
