@@ -14,7 +14,7 @@ A quiet study desk for concepts, mathematics and code. Warm paper, visual explan
 
 [![Verify](https://github.com/justslee/recall/actions/workflows/verify.yml/badge.svg)](https://github.com/justslee/recall/actions/workflows/verify.yml)
 
-[Get started](#start-in-five-minutes) · [Connect your learning](#connect-your-learning) · [Daily workflow](docs/WORKFLOW.md) · [All guides](docs/README.md)
+[Get started](#start-in-five-minutes) · [Get updates](#get-the-latest-update) · [Connect your learning](#connect-your-learning) · [All guides](docs/README.md)
 
 |                                                                          Light                                                                          |                                                  Dark                                                   |
 | :-----------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------: |
@@ -64,6 +64,33 @@ Choose a format, select **Start review**, answer from memory, then flip and rate
 > The built **Recall.app** includes its own Electron/Node runtime, so opening that app does not require a separate Node installation. Node and npm are needed for setup, rebuilding and running from the source checkout.
 
 This is an Apple Silicon source-build beta. A signed, notarized download and verified setup for other platforms are not yet available.
+
+## Get the latest update
+
+This beta does not have an automatic app updater yet. **Your study data stays separate from the code**, so updating does not require reimporting your cards or setting up your knowledge base again.
+
+1. Finish any recording or evaluation. Back up through **Settings & backups → Library & backups**, then **quit Recall**.
+2. Open Terminal in your cloned `recall` folder and run:
+
+   ```sh
+   git pull --ff-only
+   npm run setup -- --no-launch
+   ```
+
+3. Choose how you normally open Recall:
+
+   | You use…                       | Finish the update                                                                                                                          |
+   | :----------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+   | **Terminal / source checkout** | Run `npm start`.                                                                                                                           |
+   | **Recall.app in Applications** | Run `npm run package`. In Finder, replace your existing app with `release/Recall-darwin-arm64/Recall.app`, then open it from Applications. |
+
+Rebuilding the checkout alone does **not** update the app in Applications. Keep the app at its existing location so installed assistant launchers still point to it.
+
+**Downloaded a ZIP?** Download and unzip the latest ZIP into a new folder, run `npm run setup -- --no-launch` there, then follow step 3. You can skip `git pull`.
+
+If you customized the code, preserve your edits before updating; stop if Git reports conflicts or a diverged branch. When an update changes assistant skills, [refresh the learning connections](docs/SETUP.md#refresh-assistant-instructions) and start fresh Codex/Claude sessions.
+
+**New cards are different:** they appear automatically while Recall stays open. Only installing a new app build requires restarting. [Full update guide →](docs/SETUP.md#update-an-existing-installation)
 
 ## Choose the practice you have room for
 
@@ -126,6 +153,7 @@ Interactive widgets load only when requested in a sandbox without network or pri
 | You want to…                                    | Read                                                                                                                |
 | :---------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
 | Set up, install or fix a connection             | [Setup](docs/SETUP.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)                                                 |
+| Get the latest app and assistant instructions   | [Update Recall](#get-the-latest-update) · [Detailed update guide](docs/SETUP.md#update-an-existing-installation)    |
 | Connect assistants and build a daily habit      | [Complete workflow](docs/WORKFLOW.md)                                                                               |
 | Create a KB or connect your notes               | [Knowledge sources](docs/KNOWLEDGE.md)                                                                              |
 | Author cards, math, code and visuals            | [Authoring](docs/AUTHORING.md) · [Interactive visuals](docs/WIDGETS.md)                                             |

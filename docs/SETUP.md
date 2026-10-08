@@ -4,7 +4,7 @@
 
 Use this page for installation, optional coding tools and advanced CLI setup. For a first study session, start with the [README](../README.md#start-in-five-minutes).
 
-[Install](#install-and-open-recall) · [Applications](#keep-recall-in-applications) · [Coding tools](#optional-coding-runtimes) · [CLI & profiles](#cli-and-profiles) · [Capture](#learning-capture) · [Catch-up](#catch-up-and-preparation-controls)
+[Install](#install-and-open-recall) · [Applications](#keep-recall-in-applications) · [Updates](#update-an-existing-installation) · [Coding tools](#optional-coding-runtimes) · [CLI & profiles](#cli-and-profiles) · [Capture](#learning-capture) · [Catch-up](#catch-up-and-preparation-controls)
 
 ## Install and open Recall
 
@@ -48,6 +48,51 @@ The packaged **Recall.app** includes its own Electron/Node runtime. Opening it a
 Launching the packaged app registers **Open in Recall** links. Development `npm start` alone does not install the macOS protocol handler.
 
 This is a source-build beta. A signed, notarized download is not yet available; Intel Macs and other operating systems do not have a verified setup path.
+
+## Update an existing installation
+
+Updates are manual in this beta. Node and npm are needed to build an update, even though the installed app includes its own runtime.
+
+Finish recordings/evaluations, make a backup in **Settings & backups → Library & backups**, then quit Recall. Open Terminal in the source checkout you originally cloned. If you have edited the source, save and reconcile those changes before updating; do not discard them with a reset.
+
+```sh
+git pull --ff-only
+npm run setup -- --no-launch
+```
+
+`git pull --ff-only` fetches the latest upstream commits without creating a merge commit. If either command fails, resolve its error before continuing. Setup installs the committed dependencies/runtime and rebuilds the interface without opening a second app.
+
+### If you run from the checkout
+
+```sh
+npm start
+```
+
+### If you use the app in Applications
+
+Build the updated Mac app:
+
+```sh
+npm run package
+```
+
+In Finder, open `release/Recall-darwin-arm64` inside the checkout. Copy **Recall.app** to the same Applications folder as your current app and choose **Replace**, then open that installed copy. Updating source or rebuilding the interface alone leaves the installed app unchanged. Keeping the same app path preserves the destination of existing assistant launchers.
+
+Your cards, schedules, reviews, attachments, drafts and paused session live in the selected profile, outside the checkout. The default is `~/Library/Application Support/Recall`; custom profiles should keep using their original `RECALL_DATA_DIR`. Do not delete or replace the profile to update the app, and do not reimport your library or recreate knowledge sources.
+
+### If you downloaded a ZIP
+
+Download a fresh ZIP from the repository's **Code → Download ZIP** menu and extract it into a new folder. Preserve any edits in your old folder. From the new folder, run `npm run setup -- --no-launch`, then follow the checkout or Applications steps above. A ZIP has no Git metadata, so `git pull` does not apply.
+
+### Refresh assistant instructions
+
+An app replacement at the same path updates its CLI, but installed assistant instructions and the portable skill kit are separate copies. When an update changes those skills, or you move the app/checkout:
+
+1. Open the updated app from its final location.
+2. In **Settings & backups → Learning connections**, choose **Disconnect**, then **Connect → Install connection** for each assistant you use. Review the proposed paths before installing. This backs up and replaces Recall's managed instructions; it preserves unrelated instructions and skills, capture preferences and study data.
+3. Start fresh Codex/Claude sessions. Use **Check readiness** and **Verify learning** to confirm the connection.
+
+Only an app-code update needs a restart. Validated card imports and learning-inbox submissions appear while the app stays open; they do not require these update steps.
 
 ## Optional coding runtimes
 

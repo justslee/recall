@@ -10,6 +10,7 @@ Choose the guide for what you want to do next. You can use Recall for ordinary s
 | ------------------------------------------------ | --------------------------------------------------------------------- |
 | Install Recall and try a card                    | [Quick start](../README.md#start-in-five-minutes)                     |
 | Keep the app in Applications or add coding tools | [Setup reference](SETUP.md)                                           |
+| Get the latest version without losing study data | [Update Recall](../README.md#get-the-latest-update)                   |
 | Connect the complete learning loop               | [Make Recall yours](WORKFLOW.md)                                      |
 | Prepare and revisit a day's learning             | [Daily Self Test](WORKFLOW.md#5-prepare-and-take-the-daily-self-test) |
 | Fix setup, capture or card-link problems         | [Troubleshooting](TROUBLESHOOTING.md)                                 |

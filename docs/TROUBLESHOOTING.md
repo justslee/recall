@@ -48,6 +48,8 @@ npm run setup
 
 Study data is stored separately from the source. Keep a full profile backup before significant upgrades.
 
+If you open **Recall.app** from Applications, rebuild and replace that copy too; rebuilding the checkout does not update an installed app. Follow [Update an existing installation](SETUP.md#update-an-existing-installation).
+
 > [!IMPORTANT]
 > Do not remove your profile to repair a build. It contains your cards, review history and drafts.
 
@@ -138,7 +140,7 @@ Some chat clients block custom URL schemes. Search the exact card title in **Lib
 
 ### Recall says the library is in use
 
-Quit Recall before direct CLI imports, restore or other SQLite writes. Read-only commands and inbox capture/submission work while open; the app applies submitted results through its writer.
+Card imports and inbox capture/submission work while open; the app applies queued results through its writer and refreshes the library. Check a queued card import with `recall cards import-status REQUEST_ID`. Quit Recall before backup, restore, native-code trust or other exclusive CLI writes.
 
 Do not delete a lock file while another Recall process is alive.
 
