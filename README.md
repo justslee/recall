@@ -24,9 +24,22 @@ _Appearance follows your Mac. Screenshots use original demo content._
 
 ## Start in five minutes
 
-**You need:** an Apple Silicon Mac, macOS 13 or later, and [Node.js 22 LTS](https://nodejs.org/en/download). Version 22.23.3 or later is recommended; 22.18 is the functional minimum.
+**You need:** an Apple Silicon Mac running macOS 13 or later.
 
 No account, API key or knowledge base is needed to try Recall. Setup needs internet; ordinary study works offline afterward.
+
+**1. Install Node.js first.** Download the **Node.js 22 macOS installer** from [nodejs.org](https://nodejs.org/en/download). It includes **npm**, the tool used to set up Recall. Version 22.23.3 is the tested baseline; 22.18 is the minimum.
+
+Open a new Terminal window after installation and check:
+
+```sh
+node --version
+npm --version
+```
+
+Already have a compatible Node version? Skip the installation. Recall's setup checks Node but **does not install it**.
+
+**2. Download and open Recall.**
 
 ```sh
 git clone https://github.com/justslee/recall.git
@@ -48,6 +61,7 @@ Choose a format, select **Start review**, answer from memory, then flip and rate
 
 > [!TIP]
 > Want an app in Applications and working **Open in Recall** links? Follow [Keep Recall in Applications](docs/SETUP.md#keep-recall-in-applications) before installing assistant connections.
+> The built **Recall.app** includes its own Electron/Node runtime, so opening that app does not require a separate Node installation. Node and npm are needed for setup, rebuilding and running from the source checkout.
 
 This is an Apple Silicon source-build beta. A signed, notarized download and verified setup for other platforms are not yet available.
 

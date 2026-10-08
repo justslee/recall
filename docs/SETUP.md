@@ -10,6 +10,8 @@ Use this page for installation, optional coding tools and advanced CLI setup. Fo
 
 **Requirements:** Apple Silicon Mac, macOS 13 or later, and Node 22.18 or later. A current Node 22 LTS release is recommended; `.nvmrc` records the tested baseline.
 
+**Install Node before running setup.** Use the [Node.js 22 macOS installer](https://nodejs.org/en/download), which includes npm. Open a new Terminal window and run `node --version` and `npm --version` to verify installation. Recall's setup checks prerequisites; it does not install Node.
+
 From the cloned Recall folder:
 
 ```sh
@@ -40,6 +42,8 @@ If setup stops, follow [Troubleshooting](TROUBLESHOOTING.md#setup-stops-before-i
 2. Move `release/Recall-darwin-arm64/Recall.app` into Applications.
 3. Quit a running development copy, then open the packaged app.
 4. Install assistant connections from this final app location. Reconnect if you move it later.
+
+The packaged **Recall.app** includes its own Electron/Node runtime. Opening it and using its installed assistant bridge do not require a separate Node installation. Keep Node and npm available if you want to rebuild, update from source or run checkout CLI commands.
 
 Launching the packaged app registers **Open in Recall** links. Development `npm start` alone does not install the macOS protocol handler.
 
