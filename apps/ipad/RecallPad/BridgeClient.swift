@@ -38,6 +38,7 @@ final class BridgeClient: NSObject, ObservableObject, @preconcurrency NetService
     @Published private(set) var currentTutorSession: StudySession?
     @Published private(set) var cachedTutorSession: StudySession?
     @Published private(set) var activeDocumentId: String?
+    @Published private(set) var activeNotebookNoteId: String?
     @Published private(set) var connected = false
     @Published private(set) var pairing = false
     @Published var message: String?
@@ -49,7 +50,9 @@ final class BridgeClient: NSObject, ObservableObject, @preconcurrency NetService
     private var browser: NetServiceBrowser?
     private var services: [NetService] = []
     private var store: DocumentStore?
+    private var notebooks: NotebookStore?
     private var sending = false
+    private var sendingNotebooks = false
     private var isForeground = false
     var studyQuestionsSession: StudySession? { currentStudySession?.mode == "study" ? currentStudySession : cachedStudySession }
     var tutorQuestionsSession: StudySession? { connected ? currentTutorSession : cachedTutorSession }
@@ -103,10 +106,15 @@ final class BridgeClient: NSObject, ObservableObject, @preconcurrency NetService
                 guard let self else { return }
                 await self.refresh()
                 await self.flushOutbox()
+                await self.flushNotebookOutbox()
                 await self.refreshReceipts()
                 try? await Task.sleep(for: .seconds(4))
             }
         }
+    }
+
+    func activateNotebooks(store: NotebookStore) {
+        notebooks = store
     }
 
     func deactivate() {
@@ -121,6 +129,10 @@ final class BridgeClient: NSObject, ObservableObject, @preconcurrency NetService
 
     func pair(_ text: String) async {
         guard !pairing else { return }
+        guard !sending, !sendingNotebooks else {
+            message = "Wait for the current transfer to finish before changing the Mac pairing. Your work remains saved."
+            return
+        }
         pairing = true
         defer { pairing = false }
         do {
@@ -158,6 +170,10 @@ final class BridgeClient: NSObject, ObservableObject, @preconcurrency NetService
     }
 
     func forgetMac() {
+        guard !sending, !sendingNotebooks else {
+            message = "Wait for the current transfer to finish before removing this pairing. Your work remains saved."
+            return
+        }
         deactivate()
         PairingKeychain.remove()
         pairedMac = nil
@@ -233,7 +249,7 @@ final class BridgeClient: NSObject, ObservableObject, @preconcurrency NetService
     }
 
     func flushOutbox() async {
-        guard connected, !sending, let store else { return }
+        guard connected, !pairing, !sending, let store else { return }
         sending = true
         defer { sending = false; activeDocumentId = nil }
         for attempt in store.attempts.filter({ $0.state == .waitingForMac && $0.retryAllowed }) {
@@ -284,15 +300,111 @@ final class BridgeClient: NSObject, ObservableObject, @preconcurrency NetService
     }
 
     private func refreshReceipts() async {
-        guard connected, let store else { return }
-        for attempt in store.attempts.filter({ [.receivedOnMac, .queuedOnMac, .evaluating, .needsAttention, .needsResume, .copiedForTutor, .manualPageTray, .pasting, .pasteUnverified].contains($0.state) }) {
-            if let receipt = try? await object(path: "/v1/attempts/\(attempt.id)") { applyReceipt(receipt) }
+        guard connected else { return }
+        if let store {
+            for attempt in store.attempts.filter({ [.receivedOnMac, .queuedOnMac, .evaluating, .needsAttention, .needsResume, .copiedForTutor, .manualPageTray, .pasting, .pasteUnverified].contains($0.state) }) {
+                if let receipt = try? await object(path: "/v1/attempts/\(attempt.id)") { applyReceipt(receipt) }
+            }
+        }
+        if let notebooks {
+            for submission in notebooks.submissions.filter({ $0.receivedAt != nil && $0.recipientInstallationId == pairedMac?.installationId && ![.added, .reviewed].contains($0.state) }) {
+                if let receipt = try? await object(path: "/v1/attempts/\(submission.id)") { applyReceipt(receipt) }
+            }
         }
     }
     private func applyReceipt(_ object: [String: Any]) {
+        if let id = object["id"] as? String, notebooks?.submissions.contains(where: { $0.id == id }) == true {
+            do { try applyNotebookReceipt(object) } catch { message = error.localizedDescription }
+            return
+        }
         guard let id = object["id"] as? String, let state = object["state"] as? String,
               let mapped = DeliveryState.fromReceipt(state), let store else { return }
         try? store.updateAttempt(id, state: mapped, retryAllowed: mapped != .needsAttention)
+    }
+
+    /// Only explicitly prepared snapshots are eligible. Private notebook edits
+    /// never enter this outbox, and re-pairing cannot redirect queued work.
+    func flushNotebookOutbox() async {
+        guard connected, isForeground, !pairing, !sendingNotebooks, let notebooks, let pairedMac else { return }
+        sendingNotebooks = true
+        defer { sendingNotebooks = false; activeNotebookNoteId = nil }
+        for submission in notebooks.submissions.filter(\.isPendingDelivery) {
+            guard isForeground else { return }
+            guard notebooks.submissions.contains(where: { $0.id == submission.id && $0.isPendingDelivery }) else { continue }
+            guard submission.recipientInstallationId == pairedMac.installationId else {
+                try? notebooks.markDeliveryInterrupted(submission.id, message: "This snapshot belongs to a different Mac pairing. Your work is kept; pair that Mac again or explicitly send a new snapshot.", retryAllowed: false)
+                continue
+            }
+            activeNotebookNoteId = submission.noteId
+            do { try await deliverNotebook(submission, store: notebooks) }
+            catch {
+                if case PadError.rejected(let detail) = error {
+                    try? notebooks.markDeliveryInterrupted(submission.id, message: detail, retryAllowed: false)
+                } else {
+                    connected = false
+                    try? notebooks.markDeliveryInterrupted(submission.id, message: "Connection interrupted. This selected snapshot is saved and will retry with the same identity.")
+                    return
+                }
+            }
+            activeNotebookNoteId = nil
+        }
+    }
+
+    private func deliverNotebook(_ submission: NotebookSubmission, store: NotebookStore) async throws {
+        let directory = store.submissionURL(submission.id)
+        var assets: [String: (Data, String)] = [:]
+        for page in submission.pages {
+            let bytes = try Data(contentsOf: directory.appendingPathComponent(page.filename))
+            guard bytes.sha256 == page.sha256, bytes.count == page.byteLength else {
+                throw PadError.rejected("A selected page failed its integrity check. Your original notebook has been kept.")
+            }
+            assets[page.sha256] = (bytes, page.mimeType)
+        }
+        for drawing in submission.drawings {
+            let bytes = try Data(contentsOf: directory.appendingPathComponent(drawing.filename))
+            guard bytes.sha256 == drawing.hash, bytes.count == drawing.bytes else {
+                throw PadError.rejected("A selected drawing failed its integrity check. Your original notebook has been kept.")
+            }
+            assets[drawing.hash] = (bytes, "application/x-pencilkit")
+        }
+        guard assets.values.reduce(0, { $0 + $1.0.count }) <= 64 * 1024 * 1024 else { throw PadError.tooLarge }
+        let staged = try await object(path: "/v1/attempts/\(submission.id)/manifest", method: "POST", body: submission.manifest())
+        for hash in staged["missing"] as? [String] ?? [] {
+            guard let asset = assets[hash] else { throw PadError.rejected("The Mac requested a page outside the selected snapshot. Your notebook has been kept.") }
+            _ = try await request(path: "/v1/attempts/\(submission.id)/assets/\(hash)", method: "PUT", bytes: asset.0, mime: asset.1)
+        }
+        let receipt = try await object(path: "/v1/attempts/\(submission.id)/commit", method: "POST")
+        guard receipt["id"] as? String == submission.id, receipt["state"] as? String == "received" || String(describing: receipt["state"] ?? "").hasPrefix("notebook_") else {
+            throw PadError.rejected("The Mac did not confirm saving this selected snapshot. Your notebook has been kept.")
+        }
+        try applyNotebookReceipt(receipt)
+    }
+
+    private func applyNotebookReceipt(_ receipt: [String: Any]) throws {
+        guard let notebooks, let id = receipt["id"] as? String,
+              let submission = notebooks.submissions.first(where: { $0.id == id }),
+              submission.recipientInstallationId == pairedMac?.installationId else { return }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        func date(_ value: Any?) -> Date? {
+            guard let text = value as? String else { return nil }
+            if let parsed = formatter.date(from: text) { return parsed }
+            return ISO8601DateFormatter().date(from: text)
+        }
+        let detail = receipt["notebook"] as? [String: Any]
+        if let detail {
+            guard detail["noteId"] as? String == submission.noteId,
+                  detail["revision"] as? Int == submission.revision,
+                  detail["contentHash"] as? String == submission.contentHash,
+                  detail["selectedPageIds"] as? [String] == submission.selectedPageIds else {
+                throw PadError.rejected("The Mac receipt does not match these selected notebook pages. The earlier receipt has been kept.")
+            }
+        }
+        let status = detail?["status"] as? String ?? receipt["state"] as? String ?? "received"
+        let knowledge = (detail?["knowledge"] as? [[String: Any]])?.map { "\($0["sourceId"] as? String ?? "Knowledge base"): \($0["status"] as? String ?? "unconfirmed")" }.joined(separator: " · ")
+        try notebooks.updateSubmission(id, receiptState: status, message: detail?["error"] as? String,
+            processedAt: date(detail?["processedAt"]), receivedAt: date(receipt["receivedAt"]),
+            inboxId: detail?["inboxId"] as? String, cardIds: detail?["cardIds"] as? [String], knowledgeStatus: knowledge)
     }
 
     private func startEvents() {

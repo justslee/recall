@@ -20,7 +20,9 @@ This opens a temporary demo window, writes the images here and removes its tempo
 
 ## iPad screenshots
 
-`setup-ipad-home.png` and `setup-ipad-home-dark.png` show the native app's empty home screen in a separate iPad simulator, using the same source build. They are simulator captures, not proof of real-device writing or transfer quality.
+`setup-ipad-home.png` and `setup-ipad-home-dark.png` show the earlier Study Index home design corresponding to TestFlight build 4, with a synthetic front-only demonstration sheet in a separate iPad simulator. They do not show the newer Live/Notebooks workspace selector. These simulator captures are not proof of real-device writing or transfer quality.
+
+`setup-notebooks.png` and `setup-notebooks-dark.png` show the new private notebook source build, captured on October 11, 2026. The Linear Algebra notebook, Vectors and bases note and two empty pages are synthetic. These actual light/dark simulator screens do not establish physical Pencil writing, touch-swipe recognition or a live notebook-to-KB transfer; they are not part of TestFlight build 4.
 
 Refresh these only in a disposable simulator with no pairing or personal sheets. Build the simulator app using the [native build guide](../IPAD_NATIVE.md), install and launch it in that simulator, then capture its light and dark appearance. The Mac screenshot command does not alter an iPad or simulator.
 

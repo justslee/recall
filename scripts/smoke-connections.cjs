@@ -180,7 +180,7 @@ const { Store } = require("../electron/store.cjs"),
     await p.getByRole("button", { name: "Save connection settings" }).click();
     await expect(p.getByRole("button", { name: "Check now" })).toBeEnabled();
     inbox.submit(folder, "ui-gap", { captures: [{ cardIds: [card.id] }] });
-    await expect(p.getByText("No pending learning.")).toBeVisible({
+    await expect(p.getByText("No pending conversation captures.")).toBeVisible({
       timeout: 15000,
     });
     await expect(

@@ -72,6 +72,7 @@ Capture is opt-in. It records what you actually discuss, without inferring maste
 | Explain a concept or your own topic to an audience | **Speak**, with references and focused coaching. | [Speak walkthrough](docs/demos/SPEAK.md)                                  |
 | Solve a Recall question with your Pencil           | **Recall Study** in the optional iPad app.       | [Paper walkthrough](docs/demos/PAPER.md)                                  |
 | Work by hand during an assistant conversation      | Chat-linked **Tutor Pad**.                       | [Paper-learning workflow](docs/demos/PAPER.md#learn-with-your-chat-tutor) |
+| Keep personal notebooks and submit chosen pages    | **Notebooks** in new source builds.              | [Notebook walkthrough](docs/NOTEBOOKS.md)                                 |
 | See what needs more practice                       | **Progress** and **Review history**.             | [Review your learning](docs/demos/LEARNING.md#test-the-day)               |
 
 Voice transcription, Speak evaluation and Recall's handwriting assessment use an optional **OpenAI API account with billing**, separate from a ChatGPT subscription. Chat-linked Tutor Pad uses your existing assistant conversation instead. No Accessibility permission or automatic chat sending is part of the paper workflow.
@@ -100,7 +101,7 @@ Interactive widgets load only when requested inside a sandbox. Native coding run
 
 **Start:** [Illustrated setup](docs/SETUP.md) · [Walkthroughs](docs/demos/README.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
 
-**Customize:** [Card authoring](docs/AUTHORING.md) · [Interactive visuals](docs/WIDGETS.md) · [Learning skills](skills/)
+**Customize:** [Make Recall yours with Codex or Claude](docs/CUSTOMIZE.md) · [Card authoring](docs/AUTHORING.md) · [Interactive visuals](docs/WIDGETS.md) · [Learning skills](skills/)
 
 **Develop:** [Contributing](CONTRIBUTING.md) · [Advanced setup](docs/SETUP_REFERENCE.md) · [All references](docs/README.md)
 

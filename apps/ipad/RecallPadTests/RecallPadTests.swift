@@ -959,6 +959,129 @@ final class RecallPadTests: XCTestCase {
     }
 
     @MainActor
+    func testPromptLayoutPreservesCanvasPendingInkAndNativeUndo() async throws {
+        let original = fixtureDrawing()
+        let state = PromptCanvasTestState(drawing: original)
+        var changes = 0
+        let host = UIHostingController(rootView: PromptCanvasTestView(state: state, onChanged: { changes += 1 }))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 1024, height: 768)
+        defer { window.isHidden = true; window.rootViewController = nil }
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(250))
+        let canvas = try XCTUnwrap(findCanvas(in: host.view))
+        let coordinator = try XCTUnwrap(canvas.delegate as? PaperCanvas.Coordinator)
+        let undoManager = try XCTUnwrap(canvas.undoManager)
+        let initialCanvasHeight = canvas.bounds.height
+        XCTAssertEqual(canvas.drawing, original)
+
+        // Reproduce the interval before PencilKit's drawing callback: the canvas
+        // has newer ink while the editor's SwiftUI binding still holds the saved drawing.
+        let pending = PKDrawing(strokes: original.strokes + fixtureDrawing(color: .blue, width: 5).strokes)
+        canvas.delegate = nil
+        canvas.drawing = pending
+        undoManager.removeAllActions()
+        undoManager.beginUndoGrouping()
+        undoManager.registerUndo(withTarget: canvas) { target in
+            let redoDrawing = target.drawing
+            target.drawing = original
+            target.undoManager?.registerUndo(withTarget: target) { redoTarget in redoTarget.drawing = redoDrawing }
+        }
+        undoManager.endUndoGrouping()
+        XCTAssertTrue(undoManager.canUndo)
+
+        // Drive the public binding used by the real prompt component. SwiftUI's
+        // AX elements are not vended inside an in-process UIHostingController test.
+        state.expanded = false
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        XCTAssertTrue(findCanvas(in: host.view) === canvas, "Collapsing the prompt must not remount PencilKit")
+        XCTAssertGreaterThan(canvas.bounds.height, initialCanvasHeight + 80, "Collapsing the prompt must give the working more room")
+        XCTAssertEqual(canvas.drawing.dataRepresentation(), pending.dataRepresentation(), "A prompt refresh must not overwrite ink awaiting its callback")
+        XCTAssertTrue(canvas.undoManager === undoManager)
+        XCTAssertTrue(undoManager.canUndo, "The existing undo stack must survive prompt layout changes")
+
+        state.expanded = true
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        XCTAssertTrue(findCanvas(in: host.view) === canvas)
+        XCTAssertEqual(canvas.bounds.height, initialCanvasHeight, accuracy: 1)
+        XCTAssertEqual(canvas.drawing.dataRepresentation(), pending.dataRepresentation())
+        XCTAssertEqual(state.drawing, original, "Layout alone must not rewrite the editor's drawing binding")
+        XCTAssertEqual(changes, 0, "Showing or hiding a prompt must not become a Pencil edit")
+
+        // Complete the delayed callback, then exercise the same native canvas
+        // commands used by the toolbar against its retained undo group.
+        canvas.delegate = coordinator
+        coordinator.canvasViewDrawingDidChange(canvas)
+        XCTAssertEqual(state.drawing, pending)
+        XCTAssertEqual(changes, 1)
+        state.command = .init(id: UUID(), undo: true)
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertTrue(findCanvas(in: host.view) === canvas)
+        XCTAssertEqual(canvas.drawing, original)
+        XCTAssertTrue(undoManager.canRedo)
+        state.command = .init(id: UUID(), undo: false)
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(canvas.drawing, pending)
+
+        window.frame = CGRect(x: 0, y: 0, width: 320, height: 800)
+        host.traitOverrides.horizontalSizeClass = .compact
+        host.view.frame = window.bounds
+        state.expanded = false
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertTrue(findCanvas(in: host.view) === canvas, "A compact collapsed prompt must keep the existing PencilKit view")
+        XCTAssertGreaterThanOrEqual(canvas.bounds.height, 400, "Collapsing the compact prompt must leave ample writing space")
+        XCTAssertEqual(canvas.drawing, pending)
+    }
+
+    @MainActor
+    func testCompactEditorKeepsSendControlsVisibleForEveryMode() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let question = QuestionPackage(id: "compact-question", cardId: "compact-card", title: "Explain a derivative", prompt: "<p>What does a derivative measure?</p>", topic: "Mathematics", kind: "concept", referenceHash: "synthetic-front-reference")
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let configurations: [(mode: PaperMode, bound: Bool, expectedSend: String)] = [(.study, false, "SEND FOR FEEDBACK"), (.tutor, true, "SEND TO TUTOR"), (.tutor, false, "SEND TO MAC")]
+
+        for appearance in [UIUserInterfaceStyle.light, .dark] {
+            for configuration in configurations {
+                let store = DocumentStore(directory: directory.appendingPathComponent(UUID().uuidString))
+                var document = try store.open(mode: configuration.mode, question: configuration.mode == .study ? question : nil, tutorProblem: configuration.bound ? tutorFixture() : nil, tutorTitle: configuration.bound ? "Linear algebra" : nil)
+                document = try store.save(document, drawing: fixtureDrawing())
+                let host = UIHostingController(rootView: PaperEditor(initialDocument: document).environmentObject(store).environmentObject(BridgeClient()))
+                // A real 320-point iPad split view has compact horizontal traits.
+                // Resizing a unit-test UIWindow alone retains the device's regular trait.
+                host.traitOverrides.horizontalSizeClass = .compact
+                let window = UIWindow(windowScene: scene)
+                window.frame = CGRect(x: 0, y: 0, width: 320, height: 800)
+                window.overrideUserInterfaceStyle = appearance
+                host.overrideUserInterfaceStyle = appearance
+                window.rootViewController = host
+                window.makeKeyAndVisible()
+                host.view.frame = window.bounds
+                host.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(250))
+                let attachment = XCTAttachment(image: canvasSnapshot(host.view))
+                attachment.name = "Compact editor \(configuration.expectedSend) \(appearance == .dark ? "dark" : "light")"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+                let text = try renderedText(in: host.view)
+                XCTAssertTrue(text.contains(configuration.expectedSend), "The full send label must remain visible at split-view width in both appearances. Rendered: \(text)")
+                let canvas = try XCTUnwrap(findCanvas(in: host.view))
+                XCTAssertGreaterThanOrEqual(canvas.bounds.height, 300, "Compact writing needs a useful sheet while reading the expanded prompt")
+                XCTAssertTrue(store.attempts.isEmpty, "Layout verification must not send the synthetic work")
+                XCTAssertEqual(store.documents.first?.revision, document.revision, "Resizing the editor must not create a phantom edit")
+                window.isHidden = true
+                window.rootViewController = nil
+            }
+        }
+    }
+
+    @MainActor
     func testSheetDeletionConfirmationIsCenteredAndReadableInLightPortrait() async throws {
         try await assertDeletionConfirmation(size: CGSize(width: 820, height: 1180), appearance: .light)
     }
@@ -1520,6 +1643,28 @@ final class RecallPadTests: XCTestCase {
             context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         }
         return stride(from: 0, to: pixels.count, by: 4).filter { matching(pixels[$0], pixels[$0 + 1], pixels[$0 + 2]) }.count
+    }
+}
+
+@MainActor
+private final class PromptCanvasTestState: ObservableObject {
+    @Published var drawing: PKDrawing
+    @Published var height = 1800.0
+    @Published var expanded = true
+    @Published var command: PaperCanvas.CanvasCommand?
+
+    init(drawing: PKDrawing) { self.drawing = drawing }
+}
+
+private struct PromptCanvasTestView: View {
+    @ObservedObject var state: PromptCanvasTestState
+    let onChanged: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            PaperPromptCard(html: "<p>Explain your reasoning for 2x = 6.</p>", mode: .tutor, expanded: $state.expanded)
+            PaperCanvas(drawing: $state.drawing, height: $state.height, style: .squared, tool: .pen, onChanged: onChanged, command: state.command)
+        }
     }
 }
 

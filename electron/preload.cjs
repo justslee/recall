@@ -62,6 +62,8 @@ const methods = [
   "checkLearningReadiness",
   "learningVerificationPrompt",
   "finishLearningWithAssistant",
+  "notebookInspect",
+  "notebookPage",
   "openLearningCard",
   "connectLearning",
   "disconnectLearning",

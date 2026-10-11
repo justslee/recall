@@ -14,6 +14,8 @@ Preserve explicit answers and widget/code execution boundaries. Concept, math an
 
 The reusable learning loop includes conceptual teaching and KB creation, source-aware card authoring, purposeful visuals, independently checked math/code, opted-in capture and daily self-tests. Knowledge capture records exposure, not mastery. Recall's FSRS reviews own card scheduling.
 
+Recall Pad separates live Study/Tutor sessions from private **Notebooks → Notes → Pages**. Notebook writing saves locally and is never automatically captured. An explicit **Send to Recall** shares a selected, immutable snapshot for source-aware KB and card preparation. Receipts distinguish durable receipt, preparation, actual destination outcomes and the last successfully added version; later edits remain private. See [Notebooks](NOTEBOOKS.md).
+
 ## Preservation and scope
 
 Existing users retain content, identifiers, diagrams, attempts, schedules, drafts and sessions. Imports are additive and conflicts are explicit. New profiles have an optional original demo. [Recall Pad](HANDWRITING.md) adds an optional native iPad writing companion; library, feedback and scheduling remain on the Mac. Tutor Pad supports a [chat-bound paper-learning session](PAPER_LEARNING.md): publish a current prompt and read selected submitted pages through local assistant tools, with tutoring in the invoking chat. Manual copying into any application and iPad export/sharing remain available. Real-device recovery, transfer, intended-client image delivery and live grading verification are required before public distribution. Other platforms, general content-revision editing and background KB synchronization require separate implementation and verification.

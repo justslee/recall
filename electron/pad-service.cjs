@@ -56,6 +56,11 @@ class PadService {
     }
   }
   async start() {
+    // Explicitly sent notebook snapshots can outlive a crash between their
+    // durable image commit and inbox enqueue. Recovery never contacts an AI.
+    this.notebookIssues =
+      require("./notebook-intake.cjs").recover(this.store, this.paper).issues ??
+      [];
     if (this.store.get("pad:enabled", false))
       try {
         await this.bridge.start();
@@ -151,6 +156,11 @@ class PadService {
   }
   async received(a) {
     if (this.closed) return;
+    if (a.mode === "notebook") {
+      require("./notebook-intake.cjs").receive(this.store, this.paper, a);
+      this.event({ type: "attempt", id: a.id });
+      return;
+    }
     if (a.mode === "tutor") {
       this.paperSessions.notify();
       return;

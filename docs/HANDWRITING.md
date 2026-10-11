@@ -43,6 +43,8 @@ Question text and LaTeX render locally. Embedded PNG, JPEG and WebP figures are 
 
 Write on the scrollable plain, ruled or squared sheet. Pencil writes; fingers scroll and zoom. Undo, eraser and selection tools stay in a small toolbar. Work autosaves, and switching questions preserves each sheet.
 
+Tap **Hide** on the question to give your working more room; **Show** brings it back. A new problem opens its prompt again. The share button at the top previews your current work before export. **Recent sheets** offers **All**, **Study** and **Tutor** filters.
+
 Beside the **Pen**, tap the color swatch to choose graphite, blue, green, red, purple or amber and adjust **Pen thickness**. Select the **Eraser**, then tap its size control to adjust the erasing diameter. The eraser removes the ink you touch rather than an entire stroke. These preferences are remembered on this iPad and affect new marks; earlier ink keeps its colors and thickness. In a narrow window, swipe the toolbar to reach its other controls.
 
 The writing surface follows **iPad Settings → Display & Brightness**: warm paper in light mode, dark forest paper in dark mode. Ink and grid lines adapt while you keep the sheet open; switching appearance preserves your strokes and selected tool. Export previews, PNG/PDF pages and thumbnails retain your ink colors on white paper for readable sharing and assessment.
@@ -83,7 +85,7 @@ Receiving pages never changes the clipboard or controls another app. There is no
 
 Sending keeps the canvas open with a compact delivery receipt. Earlier sheets remain available. Tutor sheets do not automatically become flashcards, knowledge-base notes or Self Test captures.
 
-To delete a sheet, use **… → Delete sheet…** in Recent sheets or the editor. A centered confirmation card names the sheet and offers **Cancel** and **Delete sheet**. Cancel keeps the current writing canvas in place. A successful deletion removes its Recent sheets row immediately, including offline. This removes its ink, local submissions and queued transfers from the iPad. Copies already received on the Mac or attached to a chat remain there. A sheet actively sending must finish its transfer before deletion.
+To delete a sheet, **swipe left** on its Recent sheets row and tap **Delete**, touch and hold for its actions, or use **… → Delete sheet…** in Recent sheets or the editor. Swiping alone never deletes work. A centered confirmation card names the sheet and offers **Cancel** and **Delete sheet**; Escape also cancels when using a keyboard. Cancel keeps the current writing canvas in place. A successful deletion removes its Recent sheets row immediately, including offline. This permanently removes its ink, local submissions and queued transfers from the iPad. Copies already received on the Mac or attached to a chat remain there. A sheet actively sending must finish its transfer before deletion.
 
 ## Offline and recovery
 

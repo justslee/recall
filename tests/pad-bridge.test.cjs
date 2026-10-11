@@ -230,6 +230,127 @@ async function submit(f, device, m) {
   return commit.value;
 }
 
+test("notebook uploads use authenticated device storage without live grants, question access or tutor delivery", async (t) => {
+  const f = await setup(t),
+    device = await pair(f),
+    other = await pair(f),
+    ink = Buffer.from("synthetic notebook ink"),
+    pageId = crypto.randomUUID(),
+    noteId = crypto.randomUUID(),
+    notebookId = crypto.randomUUID(),
+    m = {
+      version: 3,
+      id: crypto.randomUUID(),
+      documentId: noteId,
+      revision: 1,
+      mode: "notebook",
+      handoffId: null,
+      questionId: null,
+      drawing: null,
+      evaluate: false,
+      createdAt: new Date().toISOString(),
+      pages: [
+        {
+          index: 0,
+          hash: contract.digest(PNG),
+          mime: "image/png",
+          name: "Written page.png",
+          width: 1,
+          height: 1,
+          sourcePageId: pageId,
+          sourceRevision: 1,
+          sourceHash: contract.digest(ink),
+        },
+      ],
+      drawings: [
+        { sourcePageId: pageId, hash: contract.digest(ink), bytes: ink.length },
+      ],
+      notebook: {
+        id: notebookId,
+        title: "Private notebook",
+        noteId,
+        noteTitle: "Explicit snapshot",
+        revision: 1,
+        selectedPageIds: [pageId],
+        sourcePages: [{ id: pageId, revision: 1, hash: contract.digest(ink) }],
+        contentHash: contract.digest("notebook selected source"),
+      },
+    };
+  const study = structuredClone(f.bridge.session),
+    tutor = structuredClone(f.bridge.tutorSession);
+  assert.equal(
+    (
+      await request(f, `/v1/attempts/${m.id}/manifest`, {
+        method: "POST",
+        body: m,
+      })
+    ).status,
+    401,
+  );
+  const prepared = await request(f, `/v1/attempts/${m.id}/manifest`, {
+    method: "POST",
+    token: device.token,
+    body: m,
+  });
+  assert.equal(prepared.status, 200);
+  assert.equal(
+    f.paper.db
+      .prepare("SELECT count(*) n FROM paper_device_grants WHERE device_id=?")
+      .get(device.deviceId).n,
+    0,
+  );
+  for (const hash of prepared.value.missing)
+    assert.equal(
+      (
+        await request(f, `/v1/attempts/${m.id}/assets/${hash}`, {
+          method: "PUT",
+          token: device.token,
+          body: hash === contract.digest(PNG) ? PNG : ink,
+        })
+      ).status,
+      200,
+    );
+  const committed = await request(f, `/v1/attempts/${m.id}/commit`, {
+    method: "POST",
+    token: device.token,
+  });
+  assert.equal(committed.status, 200);
+  assert.equal(committed.value.state, "notebook_received");
+  assert.equal(committed.value.notebook.noteId, noteId);
+  assert.equal(
+    (await request(f, `/v1/attempts/${m.id}`, { token: other.token })).value
+      .state,
+    "staging",
+  );
+  assert.equal(
+    (
+      await request(f, `/v1/attempts/${m.id}/manifest`, {
+        method: "POST",
+        token: other.token,
+        body: { ...m, id: crypto.randomUUID() },
+      })
+    ).status,
+    400,
+  );
+  assert.deepEqual(f.bridge.session, study);
+  assert.deepEqual(f.bridge.tutorSession, tutor);
+  assert.equal(
+    f.paper.db
+      .prepare("SELECT count(*) n FROM paper_tutor_attempt_bindings")
+      .get().n,
+    0,
+  );
+  assert.equal(
+    f.paper.db.prepare("SELECT count(*) n FROM paper_questions").get().n,
+    0,
+  );
+  assert.equal(f.paper.attempt(m.id).manifest.evaluate, false);
+  assert.equal(
+    JSON.stringify(committed.value).includes("DO-NOT-EXPORT-DEVICE-SECRET"),
+    false,
+  );
+});
+
 test("large issued-question histories migrate to SQLite and keep pairing identity readable across restarts", async (t) => {
   const f = await setup(t);
   const paired = await pair(f);

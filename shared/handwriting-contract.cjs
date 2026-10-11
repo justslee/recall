@@ -31,13 +31,30 @@ function text(value, limit, name) {
 function manifest(input) {
   if (
     !input ||
-    ![VERSION, 2].includes(input.version) ||
-    !["study", "tutor"].includes(input.mode)
+    ![VERSION, 2, 3].includes(input.version) ||
+    !["study", "tutor", "notebook"].includes(input.mode)
   )
     throw Error("Unsupported handwriting submission.");
   checkedId(input.id);
   checkedId(input.documentId);
-  checkedId(input.handoffId);
+  const notebook = input.version === 3;
+  if (notebook) {
+    if (
+      input.mode !== "notebook" ||
+      input.handoffId !== null ||
+      input.questionId !== null ||
+      input.evaluate !== false ||
+      input.drawing !== null ||
+      input.target !== undefined
+    )
+      throw Error(
+        "Notebook snapshots cannot request live sessions or evaluation.",
+      );
+  } else {
+    if (input.mode === "notebook")
+      throw Error("Notebook snapshots require version 3.");
+    checkedId(input.handoffId);
+  }
   if (
     !Number.isSafeInteger(input.revision) ||
     input.revision < 1 ||
@@ -52,7 +69,7 @@ function manifest(input) {
     throw Error("Tutor sheets must not request a card reference.");
   if (
     typeof input.evaluate !== "boolean" ||
-    (input.mode === "tutor" && input.evaluate)
+    (input.mode !== "study" && input.evaluate)
   )
     throw Error("Invalid evaluation request.");
   if (
@@ -92,6 +109,13 @@ function manifest(input) {
       name: text(p.name, 160, "page name"),
       width: p.width,
       height: p.height,
+      ...(notebook
+        ? {
+            sourcePageId: checkedId(p.sourcePageId),
+            sourceRevision: p.sourceRevision,
+            sourceHash: p.sourceHash,
+          }
+        : {}),
     };
   });
   let drawing = null;
@@ -116,6 +140,92 @@ function manifest(input) {
   }
   if (drawing && known.has(drawing.hash))
     throw Error("Drawing and image data must have distinct digests.");
+  let notebookMetadata, drawings;
+  if (notebook) {
+    const n = input.notebook;
+    if (
+      !n ||
+      checkedId(n.id) !== n.id ||
+      checkedId(n.noteId) !== input.documentId ||
+      n.revision !== input.revision ||
+      !hashPattern.test(n.contentHash) ||
+      !Array.isArray(n.selectedPageIds) ||
+      !n.selectedPageIds.length ||
+      n.selectedPageIds.length > LIMITS.pages ||
+      new Set(n.selectedPageIds).size !== n.selectedPageIds.length ||
+      !Array.isArray(n.sourcePages) ||
+      n.sourcePages.length !== n.selectedPageIds.length
+    )
+      throw Error("Invalid notebook snapshot identity or page selection.");
+    const sourcePages = n.sourcePages.map((p, index) => {
+      if (
+        checkedId(p.id) !== n.selectedPageIds[index] ||
+        !Number.isSafeInteger(p.revision) ||
+        p.revision < 1 ||
+        !hashPattern.test(p.hash)
+      )
+        throw Error("Invalid authored notebook page revision.");
+      return { id: p.id, revision: p.revision, hash: p.hash };
+    });
+    const sourceById = new Map(sourcePages.map((p) => [p.id, p]));
+    const renderedSources = [];
+    for (const page of pages) {
+      const source = sourceById.get(page.sourcePageId);
+      if (
+        !source ||
+        page.sourceRevision !== source.revision ||
+        page.sourceHash !== source.hash
+      )
+        throw Error(
+          "Rendered pages must match their selected authored revisions.",
+        );
+      if (renderedSources.at(-1) !== source.id) renderedSources.push(source.id);
+    }
+    if (JSON.stringify(renderedSources) !== JSON.stringify(n.selectedPageIds))
+      throw Error(
+        "Notebook images must preserve every selected page in order.",
+      );
+    if (
+      !Array.isArray(input.drawings) ||
+      input.drawings.length !== sourcePages.length
+    )
+      throw Error(
+        "Include one editable drawing for each selected notebook page.",
+      );
+    drawings = input.drawings.map((d, index) => {
+      if (
+        d.sourcePageId !== sourcePages[index].id ||
+        !hashPattern.test(d.hash) ||
+        d.hash !== sourcePages[index].hash ||
+        known.has(d.hash) ||
+        !Number.isSafeInteger(d.bytes) ||
+        d.bytes < 1 ||
+        d.bytes > LIMITS.drawingBytes
+      )
+        throw Error("Invalid editable notebook drawing.");
+      return { sourcePageId: d.sourcePageId, hash: d.hash, bytes: d.bytes };
+    });
+    const drawingSizes = new Map();
+    for (const d of drawings) {
+      if (drawingSizes.has(d.hash) && drawingSizes.get(d.hash) !== d.bytes)
+        throw Error("Repeated drawing data must have a consistent byte size.");
+      drawingSizes.set(d.hash, d.bytes);
+    }
+    notebookMetadata = {
+      id: n.id,
+      title: text(n.title, 240, "notebook title"),
+      noteId: n.noteId,
+      noteTitle: text(n.noteTitle, 240, "note title"),
+      revision: n.revision,
+      selectedPageIds: [...n.selectedPageIds],
+      sourcePages,
+      contentHash: n.contentHash,
+    };
+    if (!n.title.trim() || !n.noteTitle.trim())
+      throw Error("Notebook and note titles must not be blank.");
+  } else if (input.notebook !== undefined || input.drawings !== undefined) {
+    throw Error("Notebook metadata belongs only to notebook snapshots.");
+  }
   return {
     version: input.version,
     id: input.id,
@@ -129,6 +239,7 @@ function manifest(input) {
     drawing,
     evaluate: input.evaluate,
     ...(input.target === undefined ? {} : { target: input.target }),
+    ...(notebook ? { notebook: notebookMetadata, drawings } : {}),
   };
 }
 function imageInfo(bytes, mime, decode) {

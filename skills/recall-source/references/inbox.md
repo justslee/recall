@@ -1,5 +1,7 @@
 # Cross-project learning inbox
 
+Recall Pad notebook snapshots use the separate [notebook result contract](notebooks.md). They contain selected images rather than conversation text, so the restricted **Prepare next** worker skips them. Use **Finish with assistant** to review their pages and perform scoped KB/card authoring. A transfer receipt is not a completed learning receipt.
+
 Use the installed recall-bridge CLI to connect to the selected profile. Capture pause applies to scanning, preparation and import. Only connected assistants and explicitly enabled catch-up scopes are inspected. This is a local queue, not a promise of coverage for unavailable conversations. `inbox preview` shows the exact source, bounded matching card excerpts, and same-session objectives selected for preparation. Preparing uses the selected CLI's default provider with existing authentication, restricted tools/configuration and a macOS filesystem boundary. It does not load arbitrary personal hooks, plugins or provider configuration. Do not widen permissions to work around a failed isolation check.
 
 `inbox add FILE` accepts a LearningCapture with optional `needsAuthoring: true` and `reason` for missing objectives or useful supplements. Reuse verified cards immediately. Stable capture identity and timestamp must survive retries. No direct SQLite writes; the running app applies submitted results through its writer. With the app closed, use `inbox apply`.

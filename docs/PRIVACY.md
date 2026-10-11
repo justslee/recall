@@ -79,6 +79,14 @@ A study assessment deliberately requested on the iPad may run after reconnecting
 
 ## Assistant preparation
 
+### Private notebooks
+
+Notebook edits stay in Recall Pad's separate local notebook store. Only **Send to Recall** creates an immutable selection and offline outbox; queued snapshots are bound to that Mac's installation identity. Later edits are never sent automatically. Deleting a page cancels its unreceived local snapshots, while previous Mac/KB/card copies remain at their destinations.
+
+The Mac stores selected images and editable drawings in its existing backup-covered paper tables, then queues a notebook source without an automatic provider call. **Finish with assistant** deliberately exposes the selected pages to Codex or Claude for interpretation, scoped KB authoring and validated card creation. The restricted text-only worker does not process notebook images. Receiving pages is not a successful KB write. Per-source outcomes, unreadable handwriting and partial completion remain visible; remote Notion read-back is assistant-attested.
+
+Only received snapshots are included in Mac profile backups. The rest of the personal notebook remains on the iPad; use your normal device backup. Backup restore preserves selected work but blocks old pending notebook results until explicit resubmission. [Notebook workflow](NOTEBOOKS.md).
+
 Optional preparation sends the previewed source excerpt, up to 12 relevant card excerpts and up to
 30 objectives from the same session to the selected CLI's default provider using existing
 authentication. Original import metadata and unrelated learning history are excluded.

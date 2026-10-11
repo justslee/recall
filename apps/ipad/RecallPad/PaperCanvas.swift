@@ -53,11 +53,7 @@ enum PaperToolSizing {
 }
 
 enum PaperPalette {
-    static let background = UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.075, green: 0.11, blue: 0.095, alpha: 1)
-            : UIColor(red: 0.99, green: 0.98, blue: 0.95, alpha: 1)
-    }
+    static let background = PadPalette.paperUIColor
     static let grid = UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(red: 0.63, green: 0.72, blue: 0.66, alpha: 0.14)

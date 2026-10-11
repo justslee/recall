@@ -16,14 +16,14 @@ Recall Pad is optional and installed separately. Invited testers use TestFlight;
 
 Pairing survives ordinary restarts and updates. Your sheets autosave on the iPad, including offline work. Reopen both apps and reconnect in the foreground to transfer queued submissions.
 
-<img src="../images/setup-ipad-home.png" alt="The native Recall Pad home screen in an empty iPad simulator" width="560">
+<img src="../images/setup-ipad-home.png" alt="The native Recall Pad writing desk with a synthetic demonstration sheet in the iPad simulator" width="560">
 
 _Choose Recall Study for a card, or Tutor Pad for your conversation. This is a simulator screenshot._
 
 <details>
 <summary>See the iPad’s dark appearance</summary>
 
-<img src="../images/setup-ipad-home-dark.png" alt="Recall Pad’s home screen following dark appearance in the empty simulator" width="560">
+<img src="../images/setup-ipad-home-dark.png" alt="Recall Pad’s writing desk following dark appearance with a synthetic demonstration sheet" width="560">
 
 Paper and ink follow the iPad’s appearance. Exported pages use a readable white background.
 
@@ -36,6 +36,13 @@ Paper and ink follow the iPad’s appearance. Exported pages use a readable whit
 | Start from a concept or math card on the Mac. Choose **Write on iPad**, work, then **Send for feedback**. Inspect the saved pages and feedback in Recall. Reveal the worked solution and rate the card yourself. | Start from your learning conversation. Ask the assistant to put a useful problem or note prompt on the pad. Submit your work and discuss it in that same chat. |
 
 Recall Study follows the Mac's next question with a small three-question desk. Earlier sheets remain saved. Coding stays in the Mac editor.
+
+## Make room for your working
+
+- Tap **Hide** above the question to expand your writing space; **Show** brings the question back. A new problem opens its prompt again.
+- Use **All / Study / Tutor** to find saved sheets. Touch and hold a sheet for its actions, or swipe left to reveal **Delete**. Deletion always asks for confirmation and removes only the iPad copy.
+- Pencil writes; fingers scroll and pinch to zoom. The toolbar has Undo/Redo, ink color, pen thickness, eraser size and paper style. Swipe the toolbar horizontally when space is tight.
+- Tap the share button to preview and export your current pages. Sending and exporting leave your editable sheet in place.
 
 ## Learn with your chat tutor
 

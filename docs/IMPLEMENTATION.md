@@ -22,6 +22,18 @@ Recall is an Apple Silicon macOS beta. Install a published app from [GitHub Rele
 
 ## Important boundaries
 
+### Private notebook source build
+
+The new source implementation adds a separate Recall Pad **Notebooks** space: notebooks contain named notes and user-managed PencilKit pages. Its additive index does not modify the live Study/Tutor index. Autosave never captures or submits learning. Explicit selected-page or selected-note notebook sends create immutable, Mac-bound offline snapshots; uploads preserve every selected drawing and rendered page through the existing authenticated writer.
+
+The Mac's **From your notebooks** panel separates storage, assistant preparation, cards and per-source KB outcomes. The text-only worker skips notebooks. A full assistant uses the new page inspection/export CLI and [notebook result contract](../skills/recall-source/references/notebooks.md), searches/reuses concepts and cards, and supplies exact-source/page evidence plus actual scoped KB record revisions. Partial KB failures retain successful cards and allow a scoped retry. No notebook workflow rates a card or changes schedules.
+
+**Verified locally on October 11, 2026:** all 284 Node regression tests, 69 native iPad simulator tests (including 14 notebook persistence/recovery tests), 12 portable Swift tests, the web build and an unsigned iPad device-SDK build passed. An isolated Electron journey passed in both source and a separate packaged Mac app: ordered page preview, keyboard/focus handling, assistant prompt copying without dispatch, partial KB results, remaining-gap handoff and restricted Tutor IPC. Synthetic cards, schedules, reviews, live sessions and the read-only KB stayed unchanged. The notebook regression tests also cover supplement-only and KB-only retries preserving earlier captures and card links.
+
+Simulator interaction verified separate Live/Notebooks navigation, notebook/note creation, page creation/rename/navigation, reopening, paired-Mac and blank-page Send guards, Cancel without sending and deletion Cancel preservation. Light/dark screenshots use synthetic notes. Source/history and packaged privacy audits passed; image pixels were reviewed separately. These checks establish the tested storage, transfer and writer boundaries, not live handwriting interpretation or remote Notion authoring quality.
+
+Notebook changes are not yet in the published Mac ZIP or TestFlight build 4. Real-iPad notebook Pencil writing, touch-swipe behavior, the new iPad-to-Mac notebook transfer and a full assistant-to-KB/card preparation remain release gates. [User guide](NOTEBOOKS.md).
+
 ### Learning and review
 
 Capture records discussed exposure. It never infers mastery, rates a card or changes a schedule. Starting a repeat Self Test preserves prior results; only subsequent ratings reschedule the original cards. Study Desk remains the place for scheduled due review.
@@ -95,6 +107,14 @@ An optional Codex-first paper-learning connection adds scoped session capabiliti
 The signed update installed in place on a physical iPad with its saved index, drawing and thumbnail bytes unchanged. The Mac package also installed locally, Codex and Claude Code registrations and skills were verified, and a connection-check note was published through the installed MCP server. Existing cards, schedules, reviews, coding attempts and paper data were unchanged. The user then confirmed the note was visible, wrote a line and submitted it. The physical iPad → durable Mac storage → installed MCP read → existing Codex chat image-inspection roundtrip passed for that one-page submission, using an explicit CLI/MCP fallback with the original prompt/revision preserved. No real image or personal content is published.
 
 The returned image hash matched its stored page hash, the durable binding retained the original problem, and cards/reviews/coding state and attempts matched the preinstall baseline. These checks establish implementation boundaries, including session isolation, restore authorization, managed configuration and recovery, plus the one-page live transfer. Fresh-client native MCP discovery/rendering, actual Claude/ChatGPT image delivery, sustained tutoring and grading quality remain unverified. The fallback image inspection does not certify all client integrations.
+
+### Recall Pad Study Index refresh
+
+The native home and editor now share the Mac app's warm paper, forest appearance, serif headings and index-card surfaces. Recent sheets use a native List with All/Study/Tutor filters, swipe-left Delete, long-press actions and a visible options menu. Full-swipe deletion is disabled; every deletion still requires the centered confirmation. Question prompts collapse to leave more room for writing and reopen for a new problem. The tool strip and Send controls adapt to narrow Split View, and current-work export has a direct toolbar button. Pencil input, finger scrolling/zoom, immutable submissions, autosave, pairing and stored-data formats retain their existing boundaries.
+
+**Verified locally on October 11, 2026:** 55 native simulator tests, 12 portable Swift tests, all 271 Node regression tests and the web build passed. New native checks cover pending-ink/canvas/undo preservation through prompt layout changes and all three Send modes at 320-point width in light/dark appearance. Simulator interaction verified the Study filter, light/dark Home, actual prompt Show/Hide, the native Delete accessibility action and Cancel preservation. Mouse-drag automation opened a row instead of establishing touch-swipe recognition, so real-iPad swipe and Pencil interaction remain a device check. Setup screenshots use a synthetic front-only sheet. The source/history privacy audit passed; this verification does not imply a new TestFlight upload or physical-device installation.
+
+Recall Pad 0.1.0 build 4 was archived, exported and uploaded to App Store Connect with owner approval. The immutable candidate passed distribution-signature, disabled-debugger, matching-profile, privacy, icon, resource-layout and locked offline-resource checks. A post-upload comparison confirmed that Xcode's uploaded package contains the same app code, 73 resources, metadata and entitlements as the verified candidate. Apple completed processing, and the owner approved the build's encryption declaration. Build 4 is Testing in the existing internal TestFlight group. Physical-device interaction remains a separate check; build 3's external beta review was left unchanged.
 
 ### Earlier development verification
 

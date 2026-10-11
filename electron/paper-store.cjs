@@ -220,7 +220,7 @@ class PaperStore {
     return { id: m.id, missing, state: "staging" };
   }
   assets(m) {
-    return [
+    const assets = [
       ...new Map(
         m.pages.map((p) => [
           p.hash,
@@ -236,7 +236,13 @@ class PaperStore {
             },
           ]
         : []),
+      ...(m.drawings ?? []).map((drawing) => ({
+        ...drawing,
+        mime: "application/x-pencilkit",
+        limit: contract.LIMITS.drawingBytes,
+      })),
     ];
+    return [...new Map(assets.map((asset) => [asset.hash, asset])).values()];
   }
   stagedExists(id, hash) {
     const file = path.join(this.stageFolder, id, hash);
@@ -265,7 +271,7 @@ class PaperStore {
       const info = contract.imageInfo(bytes, asset.mime, this.decodeImage);
       if (info.width !== asset.width || info.height !== asset.height)
         throw Error("Declared image dimensions differ from its contents.");
-    } else if (bytes.length !== m.drawing.bytes)
+    } else if (bytes.length !== asset.bytes)
       throw Error("Editable drawing size is invalid.");
     let total = bytes.length;
     for (const a of this.assets(m))
@@ -294,7 +300,12 @@ class PaperStore {
       }, 0) +
       (m.drawing && this.stagedExists(id, m.drawing.hash)
         ? m.drawing.bytes
-        : 0);
+        : 0) +
+      (m.drawings ?? []).reduce(
+        (sum, drawing) =>
+          sum + (this.stagedExists(id, drawing.hash) ? drawing.bytes : 0),
+        0,
+      );
     if (stagedTotal > contract.LIMITS.totalBytes)
       throw Error("Split work larger than 64 MB into smaller submissions.");
     return { hash, stored: true };
@@ -307,6 +318,11 @@ class PaperStore {
     if (existing) {
       if (existing.device_id !== deviceId)
         throw Error("Submission belongs to another device.");
+      const saved = this.db
+        .prepare("SELECT manifest FROM paper_attempts WHERE id=?")
+        .get(id);
+      if (JSON.parse(saved.manifest).mode === "notebook")
+        return this.receipt(deviceId, id);
       return { id, state: "received", receivedAt: existing.received_at };
     }
     const row = this.db
@@ -336,7 +352,8 @@ class PaperStore {
     );
     const expandedBytes =
       m.pages.reduce((sum, page) => sum + lengths.get(page.hash), 0) +
-      (m.drawing?.bytes ?? 0);
+      (m.drawing?.bytes ?? 0) +
+      (m.drawings ?? []).reduce((sum, drawing) => sum + drawing.bytes, 0);
     if (expandedBytes > contract.LIMITS.totalBytes)
       throw Error("Split work larger than 64 MB into smaller submissions.");
     const ref = m.mode === "study" ? this.reference(m.questionId) : null;
@@ -356,12 +373,13 @@ class PaperStore {
           document.card_id !== (ref?.card_id ?? null))
       )
         throw Error("Document belongs to a different question or device.");
-      const revision = this.db
+      const previous = this.db
         .prepare("SELECT manifest FROM paper_attempts WHERE document_id=?")
         .all(m.documentId)
-        .map((r) => JSON.parse(r.manifest))
-        .find((a) => a.revision === m.revision);
+        .map((r) => JSON.parse(r.manifest));
+      const revision = previous.find((a) => a.revision === m.revision);
       if (
+        m.mode !== "notebook" &&
         revision &&
         (JSON.stringify(revision.pages) !== JSON.stringify(m.pages) ||
           JSON.stringify(revision.drawing) !== JSON.stringify(m.drawing))
@@ -369,6 +387,17 @@ class PaperStore {
         throw Error(
           "Document revision conflicts with an earlier submission. Save a new revision.",
         );
+      if (m.mode === "notebook")
+        for (const old of previous)
+          for (const page of m.notebook.sourcePages) {
+            const prior = old.notebook?.sourcePages.find(
+              (p) => p.id === page.id && p.revision === page.revision,
+            );
+            if (prior && prior.hash !== page.hash)
+              throw Error(
+                "Notebook page revision conflicts with earlier ink. Save a new revision.",
+              );
+          }
       this.db
         .prepare(
           "INSERT INTO paper_documents VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET latest_revision=max(latest_revision,excluded.latest_revision),updated_at=excluded.updated_at",
@@ -416,16 +445,26 @@ class PaperStore {
         force: true,
       });
     } catch {}
-    return { id, state: "received", receivedAt };
+    return m.mode === "notebook"
+      ? this.receipt(deviceId, id)
+      : { id, state: "received", receivedAt };
   }
   receipt(deviceId, id) {
     contract.checkedId(id);
     const row = this.db
       .prepare(
-        "SELECT received_at,status FROM paper_attempts WHERE id=? AND device_id=?",
+        "SELECT received_at,status,manifest,manifest_hash FROM paper_attempts WHERE id=? AND device_id=?",
       )
       .get(id, deviceId);
     if (!row) return { id, state: "staging" };
+    const manifest = JSON.parse(row.manifest);
+    if (manifest.mode === "notebook")
+      return require("./notebook-intake.cjs").receipt(this.store.folder, {
+        id,
+        receivedAt: row.received_at,
+        manifest,
+        manifestHash: row.manifest_hash,
+      });
     const shared = this.db
       .prepare(
         "SELECT read_at FROM paper_tutor_attempt_bindings WHERE attempt_id=? AND device_id=?",
@@ -486,8 +525,8 @@ class PaperStore {
     };
   }
   attempts(cardId, mode) {
-    if (mode !== undefined && !["study", "tutor"].includes(mode))
-      throw Error("Choose Study or Tutor Pad work.");
+    if (mode !== undefined && !["study", "tutor", "notebook"].includes(mode))
+      throw Error("Choose Study or Tutor Pad work, or a notebook snapshot.");
     const rows = mode
       ? this.db
           .prepare(

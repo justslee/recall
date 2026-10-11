@@ -1,7 +1,7 @@
 {
   "name": "recall-local",
   "productName": "Recall",
-  "version": "0.6.0-beta.3",
+  "version": "0.6.0-beta.4",
   "private": true,
   "description": "A local study desk for concepts, mathematics and code",
   "type": "module",
@@ -39,6 +39,7 @@
     "test:handwriting": "node scripts/smoke-handwriting.cjs",
     "test:tutor-workspace": "node scripts/smoke-tutor-workspace.cjs",
     "test:paper-learning": "node scripts/smoke-paper-learning.cjs",
+    "test:notebooks": "node scripts/smoke-notebooks.cjs",
     "test:pad-lifecycle": "node scripts/smoke-pad-lifecycle.cjs",
     "docs:check": "node scripts/check-docs.cjs",
     "docs:screenshots": "node scripts/capture-docs.cjs"

@@ -233,6 +233,12 @@ app.whenReady().then(async () => {
   handle("padFollowStudy", (input) => pad.bridge.followStudy(input));
   handle("paperAttempts", (id, mode) => pad.paper.attempts(id, mode));
   handle("paperPage", (id, index) => pad.paper.page(id, index));
+  handle("notebookInspect", (id) =>
+    require("./notebook-intake.cjs").inspect(store.folder, id),
+  );
+  handle("notebookPage", (id, index) =>
+    require("./notebook-intake.cjs").page(store.folder, id, index),
+  );
   handle("paperImport", (input) => {
     const attempt = pad.paper.import(input.cardId, input.pages);
     pad.event({ type: "attempt", id: attempt.id });
@@ -536,6 +542,8 @@ app.whenReady().then(async () => {
   handle("learningConnections", () => ({
     ...connections.status(store.folder, { cards: store.cards() }),
     inbox: inbox.summary(store.folder),
+    notebooks: require("./notebook-intake.cjs").list(store.folder),
+    notebookIssues: pad.notebookIssues || [],
     error: learningError,
   }));
   handle("checkLearningReadiness", (host) =>
@@ -598,6 +606,8 @@ app.whenReady().then(async () => {
       changed = !!require("./card-imports.cjs").applyPending(store).applied;
       if (scan || catchUpPending)
         catchUpPending = !!catchUp.scan(store.folder).remainingFiles;
+      pad.notebookIssues =
+        require("./notebook-intake.cjs").recover(store, pad.paper).issues || [];
       const learning = inbox.applyPending(store);
       changed ||= !!learning.applied;
       learningError = null;

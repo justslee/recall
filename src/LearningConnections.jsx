@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import "./learning-connections.css";
+import { NotebookIntake } from "./NotebookIntake";
 const hostName = (host) => (host === "codex" ? "Codex" : "Claude");
 function ReadinessRow({ label, text, complete = false, attention = false }) {
   return (
@@ -62,7 +63,8 @@ export function LearningConnections() {
     return <p role="status">{message || "Loading connections…"}</p>;
   const scope = draft.catchUp,
     patch = (p) => setDraft({ ...draft, catchUp: { ...scope, ...p } }),
-    pending = data.inbox.items.filter(
+    conversationItems = data.inbox.items.filter((i) => i.type !== "notebook"),
+    pending = conversationItems.filter(
       (i) => !["ready", "dismissed"].includes(i.status),
     );
   return (
@@ -203,6 +205,22 @@ export function LearningConnections() {
                 </button>
                 {installed && (
                   <>
+                    <button
+                      disabled={busy}
+                      onClick={() =>
+                        run(async () => {
+                          await window.recall.connectLearning(host, true);
+                          window.dispatchEvent(
+                            new Event("recall-connections-changed"),
+                          );
+                          return {
+                            message: `Updated ${hostName(host)} instructions. Start a fresh session to use the latest workflow.`,
+                          };
+                        })
+                      }
+                    >
+                      Refresh instructions
+                    </button>
                     <button
                       disabled={busy}
                       onClick={() =>
@@ -463,9 +481,22 @@ export function LearningConnections() {
           </button>
         </div>
       </details>
+      <NotebookIntake
+        items={data.notebooks || []}
+        issues={data.notebookIssues || []}
+        agent={draft.agent}
+        hosts={data.hosts}
+        captureEnabled={data.captureEnabled}
+        busy={busy}
+        run={run}
+        onPrompt={(prompt) => {
+          setAssistantPrompt(prompt);
+          setVerificationHost(null);
+        }}
+      />
       <div className="learning-inbox">
         <h3>
-          Learning inbox <small>{pending.length} waiting</small>
+          Conversation captures <small>{pending.length} waiting</small>
         </h3>
         <p>
           {data.captureEnabled ? "Capture enabled" : "Capture paused"} ·{" "}
@@ -562,7 +593,7 @@ export function LearningConnections() {
           </div>
         )}
         {pending.length === 0 ? (
-          <p>No pending learning.</p>
+          <p>No pending conversation captures.</p>
         ) : (
           <ul>
             {pending.slice(0, 30).map((i) => (
@@ -619,8 +650,8 @@ export function LearningConnections() {
           </p>
         )}
         <p>
-          {data.inbox.items.filter((i) => i.status === "ready").length} ready ·{" "}
-          {data.inbox.items.filter((i) => i.status === "dismissed").length}{" "}
+          {conversationItems.filter((i) => i.status === "ready").length} ready ·{" "}
+          {conversationItems.filter((i) => i.status === "dismissed").length}{" "}
           checked with no new learning
         </p>
         {data.inbox.issues.map((i, n) => (

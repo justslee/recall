@@ -23,7 +23,7 @@ function read(folder) {
         if (
           !value.id ||
           !value.status ||
-          !["objective", "session"].includes(value.type)
+          !["objective", "session", "notebook"].includes(value.type)
         )
           throw Error("Invalid inbox item");
         items.push(value);
@@ -61,7 +61,7 @@ function enqueue(folder, input) {
         throw Error("Inbox identity already exists with different content");
       return { id: input.id, inserted: false, status: prior.status };
     }
-    if (!input.id || !["objective", "session"].includes(input.type))
+    if (!input.id || !["objective", "session", "notebook"].includes(input.type))
       throw Error("Invalid inbox item");
     const value = {
       id: input.id,
@@ -112,7 +112,14 @@ function submit(folder, id, result) {
   if (!result.captures.length && !result.reason)
     throw Error("Explain why no learning was found");
   update(folder, id, (item) => {
-    if (["ready", "dismissed", "submitted", "applying"].includes(item.status))
+    const notebookPartial =
+      item.type === "notebook" &&
+      ["ready", "dismissed"].includes(item.status) &&
+      item.receipt?.notebook?.status === "needs_attention";
+    if (
+      !notebookPartial &&
+      ["ready", "dismissed", "submitted", "applying"].includes(item.status)
+    )
       throw Error("Item is already resolved or submitted");
     return { status: "submitted", result, error: null };
   });
@@ -122,6 +129,12 @@ function applyOne(store, item) {
   const r = item.result,
     all = new Map(store.cards().map((c) => [c.id, c]));
   const pack = r.pack ? bundles.normalizePack(r.pack) : null;
+  // A notebook is an explicit, immutable image source, not an assistant turn.
+  // Only reviewed pages and verified KB outcomes can produce a completed receipt.
+  const notebookReceipt =
+    item.type === "notebook"
+      ? require("./notebook-intake.cjs").validateResult(store, item, r)
+      : null;
   if (pack) {
     const checked = r.quality?.reviewedCardIds;
     if (
@@ -151,6 +164,19 @@ function applyOne(store, item) {
     }
     if (item.type === "objective")
       return { ...item.input.capture, cardIds: c.cardIds };
+    if (item.type === "notebook")
+      return {
+        title: c.title,
+        objective: c.objective,
+        context: c.context,
+        at: item.input.sourceAt,
+        cardIds: c.cardIds,
+        kbUrl: c.kbUrl || "",
+        id: item.id + "/" + hash(c.objective.trim().toLowerCase()).slice(0, 20),
+        sessionId: item.input.sessionId,
+        evidence: "explained",
+        source: item.input.source,
+      };
     const messages = item.input.messages || [];
     if (!messages.some((m) => m.at === c.at))
       throw Error("Capture timestamp must come from the source messages");
@@ -193,13 +219,35 @@ function applyOne(store, item) {
     if (prior) st.link(store.folder, prior.id, c.cardIds);
     else st.capture(store.folder, c);
   }
+  // A partial notebook retry may contain only KB receipts or a new supplement.
+  // Its completion receipt still represents all learning already applied from
+  // this immutable snapshot. Canonical links are additive; derive totals from
+  // them instead of replacing history with just the latest retry's captures.
+  const appliedCaptures = notebookReceipt
+    ? st
+        .read(store.folder)
+        .entries.filter(
+          (entry) =>
+            entry.id.startsWith(item.id + "/") &&
+            entry.sessionId === item.input.sessionId &&
+            entry.source === item.input.source &&
+            entry.at === new Date(item.input.sourceAt).toISOString(),
+        )
+    : captures;
+  if (notebookReceipt && appliedCaptures.length < (item.receipt?.captures ?? 0))
+    throw Error(
+      "Earlier notebook captures could not be recovered. Their prior receipt has been kept; inspect the learning log before retrying.",
+    );
+  if (notebookReceipt && notebookReceipt.status !== "needs_attention")
+    notebookReceipt.status = appliedCaptures.length ? "added" : "reviewed";
   update(store.folder, item.id, {
-    status: captures.length ? "ready" : "dismissed",
-    cardIds: [...new Set(captures.flatMap((c) => c.cardIds))],
+    status: appliedCaptures.length ? "ready" : "dismissed",
+    cardIds: [...new Set(appliedCaptures.flatMap((c) => c.cardIds))],
     receipt: {
       inserted: imported.inserted,
       unchanged: imported.unchanged,
-      captures: captures.length,
+      captures: appliedCaptures.length,
+      ...(notebookReceipt ? { notebook: notebookReceipt } : {}),
     },
     reason: r.reason || "",
     result: null,
@@ -229,7 +277,11 @@ function applyPending(store) {
 }
 function retry(folder, id) {
   update(folder, id, (item) => {
-    if (item.status !== "blocked")
+    const notebookPartial =
+      item.type === "notebook" &&
+      ["ready", "dismissed"].includes(item.status) &&
+      item.receipt?.notebook?.status === "needs_attention";
+    if (item.status !== "blocked" && !notebookPartial)
       throw Error("Only blocked items can be retried");
     return { status: item.result ? "submitted" : "pending", error: null };
   });
@@ -242,7 +294,7 @@ function summary(folder) {
     : {};
   return {
     items: value.items.map(
-      ({ id, type, title, status, createdAt, cardIds, error, reason }) => ({
+      ({
         id,
         type,
         title,
@@ -251,6 +303,25 @@ function summary(folder) {
         cardIds,
         error,
         reason,
+        input,
+        receipt,
+      }) => ({
+        id,
+        type,
+        title,
+        status,
+        createdAt,
+        cardIds,
+        error,
+        reason,
+        ...(type === "notebook"
+          ? {
+              attemptId: input.attemptId,
+              pageCount: input.pageCount,
+              notebook: input.notebook,
+              notebookReceipt: receipt?.notebook,
+            }
+          : {}),
       }),
     ),
     issues: [...value.issues, ...(scan.issues || [])],

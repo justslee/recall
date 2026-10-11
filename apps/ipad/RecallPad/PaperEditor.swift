@@ -8,6 +8,7 @@ struct PaperEditor: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var phase
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var document: PaperDocument
     @State private var drawing = PKDrawing()
     @State private var tool: PaperTool = .pen
@@ -29,6 +30,7 @@ struct PaperEditor: View {
     @State private var showRename = false
     @State private var sheetName = ""
     @State private var showToolSettings = false
+    @State private var promptExpanded = true
     @AppStorage("assessmentDisclosureV1") private var disclosureAccepted = false
     @AppStorage("paperInkColorV1") private var inkColorName = PaperInkColor.graphite.rawValue
     @AppStorage("paperPenWidthV1") private var savedPenWidth = 2.5
@@ -45,6 +47,12 @@ struct PaperEditor: View {
     private var tutorTarget: String { document.tutorProblem == nil ? "clipboard" : "assistant" }
     private var belongsToTutor: Bool { document.tutorProblem != nil }
     private var latestSubmission: PaperAttempt? { store.attempts.first { $0.documentId == document.id } }
+    private var promptHTML: String? {
+        document.mode == .study ? document.questionPackage?.prompt : document.tutorProblem?.prompt
+    }
+    private var sendTitle: String {
+        document.mode == .study ? "Send for feedback" : belongsToTutor ? "Send to tutor" : "Send to Mac"
+    }
 
     init(initialDocument: PaperDocument) {
         self.initialDocument = initialDocument
@@ -53,70 +61,28 @@ struct PaperEditor: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if document.mode == .study, let question = document.questionPackage {
-                    QuestionView(html: question.prompt).frame(height: 150).background(PadPalette.surface)
-                } else if let problem = document.tutorProblem {
-                    QuestionView(html: problem.prompt).frame(height: 150).background(PadPalette.surface)
-                }
+                if let promptHTML { promptCard(html: promptHTML) }
                 writingToolbar
                 PaperCanvas(drawing: $drawing, height: $height, style: document.paperStyle, tool: tool, onChanged: scheduleSave, command: command, inkColor: inkColor, penWidth: penWidth, eraserWidth: eraserWidth)
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                    if document.mode == .tutor {
-                        Label(belongsToTutor ? document.tutorTitle ?? "Your tutor" : "Your Mac", systemImage: belongsToTutor ? "bubble.left.and.bubble.right" : "macbook").font(.subheadline)
-                        if belongsToTutor {
-                            Toggle("Follow tutor", isOn: $followTutor).toggleStyle(.button)
-                        } else {
-                            Text("Paste into any app").font(.caption).foregroundStyle(.secondary)
-                        }
-                        Button { showTutorHelp = true } label: { Image(systemName: "info.circle") }
-                            .accessibilityLabel("Sending pages to your Mac")
-                            .popover(isPresented: $showTutorHelp) {
-                                VStack(alignment: .leading, spacing: 14) {
-                                    Label(belongsToTutor ? "Your tutor. This prompt." : "Write here. Paste anywhere.", systemImage: belongsToTutor ? "bubble.left.and.bubble.right" : "doc.on.clipboard").font(.headline)
-                                    if belongsToTutor {
-                                        Text("Send to tutor saves these pages for this prompt in the original conversation’s session. Your assistant can access them when you ask it to review your work.")
-                                        Text("When the tutor reads them, the page images are shared with that assistant and its AI provider. You can also copy or export the saved pages on your Mac and paste them yourself.")
-                                        Text("Received on Mac means your work is saved and waiting. Available to tutor means the assistant has accessed a page; it does not promise feedback or send a chat message.")
-                                        Text("Follow tutor saves your working before the next published prompt appears. Hints and discussion keep the same sheet. Reconnecting leaves your current work open; turn Follow tutor on to continue.")
-                                    } else {
-                                        Text("Send to Mac saves your pages in Tutor Pad on your Mac. Copy a page there, then paste it into any app or conversation with ⌘V.")
-                                        Text("Review the attachment and press Send yourself. Tutor Pad does not select a chat, paste automatically or send messages.")
-                                    }
-                                    Text("Keep the Mac receiver running. Offline work waits safely on this iPad. No Recall card or handwriting assessment is used.").font(.footnote).foregroundStyle(.secondary)
-                                }.padding(24).frame(maxWidth: 360)
-                            }
-                    } else {
-                        Toggle("Follow Mac", isOn: $followMac).toggleStyle(.button)
-                        Button { navigateQuestion(-1) } label: { Image(systemName: "chevron.left") }.accessibilityLabel("Previous saved question")
-                        Button { navigateQuestion(1) } label: { Image(systemName: "chevron.right") }.accessibilityLabel("Next saved question")
-                    }
-                    Spacer()
-                    Button(document.mode == .study ? "Send for feedback" : belongsToTutor ? "Send to tutor" : "Send to Mac", systemImage: "paperplane") {
-                        if document.mode == .study && !disclosureAccepted { showDisclosure = true } else { submit() }
-                    }.buttonStyle(.borderedProminent).disabled(drawing.strokes.isEmpty)
-                    }
-                    if document.mode == .tutor {
-                        if let latestSubmission {
-                            Button { preview = latestSubmission } label: {
-                                Label(tutorDeliverySummary(latestSubmission.state), systemImage: latestSubmission.state == .needsAttention ? "exclamationmark.circle" : "doc.badge.clock")
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }.buttonStyle(.plain).accessibilityLabel("View latest submission: \(latestSubmission.state.title)")
-                        } else {
-                            Text(belongsToTutor ? "This sheet stays linked to its original tutor prompt" : "Copy on Mac, then paste anywhere · receiver required").font(.caption).foregroundStyle(.secondary)
-                        }
-                        if belongsToTutor {
-                            Text("Pages reach your assistant and its AI provider when the tutor reads them.").font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                }.padding(16).background(.bar)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(PadPalette.border, lineWidth: 1))
+                    .padding(.horizontal, 12)
+                    .accessibilityIdentifier("paper-writing-canvas")
+                answerStrip
             }
+            .background(PadPalette.background)
             .navigationTitle(document.title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(PadPalette.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { Button("Done") { if saveNow() { dismiss() } } }
+                ToolbarItem(placement: .topBarLeading) { Button("Done") { if saveNow() { dismiss() } }.accessibilityIdentifier("paper-editor-done") }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if document.mode == .tutor { Button(belongsToTutor ? "Blank sheet" : "New sheet", systemImage: "doc.badge.plus") { newSheet() } }
+                    Button { exportCurrent() } label: { Image(systemName: "square.and.arrow.up") }
+                        .disabled(drawing.strokes.isEmpty)
+                        .accessibilityLabel("Preview and export current work")
+                        .accessibilityIdentifier("paper-export-work")
                     Menu {
                         Button("Rename sheet", systemImage: "pencil") { sheetName = document.title; showRename = true }
                         ForEach(store.attempts.filter { $0.documentId == document.id }) { attempt in
@@ -125,7 +91,9 @@ struct PaperEditor: View {
                         Button("Export current work") { exportCurrent() }.disabled(drawing.strokes.isEmpty)
                         Divider()
                         Button { pendingDeletion = document } label: { Label("Delete sheet…", systemImage: "trash").foregroundStyle(.red) }
-                    } label: { Image(systemName: "ellipsis.circle") }.accessibilityLabel("Sheet options, submissions and export")
+                    } label: { Image(systemName: "ellipsis.circle") }
+                        .accessibilityLabel("Sheet options, submissions and export")
+                        .accessibilityIdentifier("paper-sheet-options")
                 }
             }
             .task { load(initialDocument); if document.mode == .tutor && bridge.connected { await connectTutor() } }
@@ -168,21 +136,155 @@ struct PaperEditor: View {
             .sheetDeletionConfirmation(item: $pendingDeletion, onDelete: deleteSheet)
     }
 
+    private func promptCard(html: String) -> some View {
+        PaperPromptCard(html: html, mode: document.mode, expanded: $promptExpanded)
+    }
+
+    private var answerStrip: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    sessionControls.fixedSize(horizontal: true, vertical: false)
+                    Spacer(minLength: 8)
+                    sendButton.fixedSize(horizontal: true, vertical: false)
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    sessionControls
+                    sendButton.frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            }
+            if let latestSubmission {
+                Button { preview = latestSubmission } label: {
+                    Label(document.mode == .tutor ? tutorDeliverySummary(latestSubmission.state) : latestSubmission.state.title,
+                          systemImage: latestSubmission.state == .needsAttention ? "exclamationmark.circle" : "doc.badge.clock")
+                        .font(.caption)
+                        .foregroundStyle(PadPalette.muted)
+                        .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("View latest submission: \(latestSubmission.state.title)")
+                .accessibilityIdentifier("paper-latest-submission")
+            } else if document.mode == .tutor && !belongsToTutor {
+                Text("Copy on Mac, then paste anywhere · receiver required")
+                    .font(.caption)
+                    .foregroundStyle(PadPalette.muted)
+            }
+            if belongsToTutor {
+                Text(horizontalSizeClass == .compact ? "Tutor access shares pages with its AI provider." : "Pages reach your assistant and its AI provider when the tutor reads them.")
+                    .font(.caption)
+                    .foregroundStyle(PadPalette.muted)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+        .background(.thinMaterial)
+        .overlay(alignment: .top) { Rectangle().fill(PadPalette.border).frame(height: 1) }
+        .accessibilityIdentifier("paper-send-strip")
+    }
+
+    @ViewBuilder private var sessionControls: some View {
+        if document.mode == .tutor {
+            HStack(spacing: 10) {
+                Label(belongsToTutor ? document.tutorTitle ?? "Your tutor" : "Mac page tray", systemImage: belongsToTutor ? "bubble.left.and.bubble.right" : "macbook")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(PadPalette.text)
+                    .lineLimit(1)
+                    .frame(maxWidth: 200, alignment: .leading)
+                if belongsToTutor {
+                    Toggle("Follow tutor", isOn: $followTutor)
+                        .toggleStyle(.button)
+                        .font(.caption.weight(.medium))
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("paper-follow-tutor")
+                }
+                Button { showTutorHelp = true } label: {
+                    Image(systemName: "info.circle").frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Sending pages to your Mac")
+                .accessibilityIdentifier("paper-delivery-help")
+                .popover(isPresented: $showTutorHelp) { tutorHelp }
+            }
+        } else {
+            HStack(spacing: 6) {
+                Toggle("Follow Mac", isOn: $followMac)
+                    .toggleStyle(.button)
+                    .font(.subheadline.weight(.medium))
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("paper-follow-mac")
+                Button { navigateQuestion(-1) } label: {
+                    Image(systemName: "chevron.left").frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Previous saved question")
+                .accessibilityIdentifier("paper-previous-question")
+                Button { navigateQuestion(1) } label: {
+                    Image(systemName: "chevron.right").frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Next saved question")
+                .accessibilityIdentifier("paper-next-question")
+            }
+        }
+    }
+
+    private var sendButton: some View {
+        Button {
+            if document.mode == .study && !disclosureAccepted { showDisclosure = true } else { submit() }
+        } label: {
+            Label(sendTitle, systemImage: "arrow.up")
+                .font(.subheadline.weight(.semibold))
+                .frame(minHeight: 32)
+                .padding(.horizontal, 4)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.roundedRectangle(radius: 12))
+        .tint(PadPalette.accent)
+        .foregroundStyle(drawing.strokes.isEmpty ? PadPalette.muted : PadPalette.accentInk)
+        .disabled(drawing.strokes.isEmpty)
+        .accessibilityIdentifier("paper-send-work")
+    }
+
+    private var tutorHelp: some View {
+        ScrollView {
+        VStack(alignment: .leading, spacing: 14) {
+            Label(belongsToTutor ? "Your tutor. This prompt." : "Write here. Paste anywhere.", systemImage: belongsToTutor ? "bubble.left.and.bubble.right" : "doc.on.clipboard")
+                .font(.system(.headline, design: .serif))
+            if belongsToTutor {
+                Text("Send to tutor saves these pages for this prompt in the original conversation’s session. Your assistant can access them when you ask it to review your work.")
+                Text("When the tutor reads them, the page images are shared with that assistant and its AI provider. You can also copy or export the saved pages on your Mac and paste them yourself.")
+                Text("Received on Mac means your work is saved and waiting. Available to tutor means the assistant has accessed a page; it does not promise feedback or send a chat message.")
+                Text("Follow tutor saves your working before the next published prompt appears. Hints and discussion keep the same sheet. Reconnecting leaves your current work open; turn Follow tutor on to continue.")
+            } else {
+                Text("Send to Mac saves your pages in Tutor Pad on your Mac. Copy a page there, then paste it into any app or conversation with ⌘V.")
+                Text("Review the attachment and press Send yourself. Tutor Pad does not select a chat, paste automatically or send messages.")
+            }
+            Text("Keep the Mac receiver running. Offline work waits safely on this iPad. No Recall card or handwriting assessment is used.")
+                .font(.footnote)
+                .foregroundStyle(PadPalette.muted)
+        }
+        .padding(24)
+        .frame(maxWidth: 360)
+        .foregroundStyle(PadPalette.text)
+        }
+        .frame(maxHeight: 520)
+        .scrollBounceBehavior(.basedOnSize)
+        .presentationCompactAdaptation(.popover)
+    }
+
     private var writingToolbar: some View {
         HStack(spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     Picker("Writing tool", selection: $tool) {
                         Image(systemName: "pencil.tip").accessibilityLabel("Pen").tag(PaperTool.pen)
                         Image(systemName: "eraser").accessibilityLabel("Eraser").tag(PaperTool.eraser)
                         Image(systemName: "lasso").accessibilityLabel("Select strokes").tag(PaperTool.select)
                     }.pickerStyle(.segmented).frame(width: 156, height: 44)
+                        .accessibilityIdentifier("paper-writing-tools")
                     if tool != .select {
                         Button { showToolSettings.toggle() } label: {
                             HStack(spacing: 5) {
                                 if tool == .pen {
-                                    Circle().fill(inkColor.displayColor(for: colorScheme)).frame(width: 15, height: 15)
-                                        .overlay(Circle().strokeBorder(.primary.opacity(0.2), lineWidth: 1))
+                                    Circle().fill(inkColor.displayColor(for: colorScheme)).frame(width: 18, height: 18)
+                                        .overlay(Circle().strokeBorder(PadPalette.border, lineWidth: 1))
                                 } else {
                                     Image(systemName: "eraser")
                                     Text(eraserWidth.formatted(.number.precision(.fractionLength(0))))
@@ -193,6 +295,7 @@ struct PaperEditor: View {
                         }
                         .accessibilityLabel(tool == .pen ? "Ink color and pen thickness" : "Eraser size")
                         .accessibilityValue(tool == .pen ? "\(inkColor.name), \(penWidth.formatted(.number.precision(.fractionLength(1)))) points" : "\(eraserWidth.formatted(.number.precision(.fractionLength(0)))) points")
+                        .accessibilityIdentifier("paper-tool-settings")
                         .popover(isPresented: $showToolSettings) {
                             toolSettings.padding(20).frame(width: 320)
                                 .presentationCompactAdaptation(.popover)
@@ -200,34 +303,49 @@ struct PaperEditor: View {
                     }
                     Button { command = .init(id: UUID(), undo: true) } label: {
                         Image(systemName: "arrow.uturn.backward").frame(width: 44, height: 44)
-                    }.accessibilityLabel("Undo")
+                    }.accessibilityLabel("Undo").accessibilityIdentifier("paper-undo")
                     Button { command = .init(id: UUID(), undo: false) } label: {
                         Image(systemName: "arrow.uturn.forward").frame(width: 44, height: 44)
-                    }.accessibilityLabel("Redo")
+                    }.accessibilityLabel("Redo").accessibilityIdentifier("paper-redo")
                     Menu {
                         ForEach(PaperStyle.allCases, id: \.self) { style in
-                            Button(style.rawValue.capitalized) { document.paperStyle = style; scheduleSave() }
+                            Button { document.paperStyle = style; scheduleSave() } label: {
+                                if style == document.paperStyle {
+                                    Label(style.rawValue.capitalized, systemImage: "checkmark")
+                                } else {
+                                    Text(style.rawValue.capitalized)
+                                }
+                            }
                         }
                     } label: {
                         Image(systemName: "square.grid.3x3").frame(width: 44, height: 44)
-                    }.accessibilityLabel("Paper style")
+                    }.accessibilityLabel("Paper style").accessibilityIdentifier("paper-style-menu")
                 }
-            }
+            }.frame(height: 44)
             ViewThatFits(in: .horizontal) {
-                Label(bridge.connected ? "Mac connected" : "Saved on iPad", systemImage: bridge.connected ? "link" : "checkmark.circle")
-                Image(systemName: bridge.connected ? "link" : "checkmark.circle")
+                Label(dirty ? "Saving ink…" : bridge.connected ? "Mac connected" : "Saved on iPad", systemImage: dirty ? "pencil.tip" : bridge.connected ? "link" : "checkmark.circle")
+                Image(systemName: dirty ? "pencil.tip" : bridge.connected ? "link" : "checkmark.circle")
             }
-            .font(.caption).foregroundStyle(.secondary)
-            .accessibilityLabel(bridge.connected ? "Mac connected" : "Saved on iPad")
+            .font(.caption).foregroundStyle(PadPalette.muted)
+            .padding(.trailing, 8)
+            .accessibilityLabel(dirty ? "Saving your ink" : bridge.connected ? "Mac connected" : "Saved on iPad")
+            .accessibilityIdentifier("paper-connection-status")
         }
-        .padding(.horizontal, 16).padding(.vertical, 5).background(.bar)
+        .buttonStyle(.plain)
+        .foregroundStyle(PadPalette.text)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(PadPalette.border, lineWidth: 1))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .onChange(of: tool) { _, _ in showToolSettings = false }
     }
 
     @ViewBuilder private var toolSettings: some View {
         if tool == .pen {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Ink color").font(.headline)
+                Text("Ink & line").font(.system(.headline, design: .serif))
                 HStack(spacing: 2) {
                     ForEach(PaperInkColor.allCases, id: \.self) { color in
                         Button { inkColorName = color.rawValue } label: {
@@ -278,7 +396,7 @@ struct PaperEditor: View {
                 Slider(value: eraserWidthBinding, in: PaperToolSizing.eraserRange, step: 1)
                     .frame(minHeight: 44).accessibilityLabel("Eraser diameter")
                     .accessibilityValue("\(eraserWidth.formatted(.number.precision(.fractionLength(0)))) points")
-                Text("Erase just the ink you touch.").font(.footnote).foregroundStyle(.secondary)
+                Text("Erase just the ink you touch.").font(.footnote).foregroundStyle(PadPalette.muted)
             }
         }
     }
@@ -294,6 +412,7 @@ struct PaperEditor: View {
     private func load(_ item: PaperDocument) {
         do {
             drawing = try store.drawing(for: item)
+            if document.id != item.id { promptExpanded = true }
             document = item
             followTutor = item.tutorProblem != nil && bridge.connected
                 && bridge.currentTutorSession?.handoffId == item.tutorProblem?.sessionId
@@ -438,6 +557,54 @@ struct PaperEditor: View {
     }
 }
 
+struct PaperPromptCard: View {
+    let html: String
+    let mode: PaperMode
+    @Binding var expanded: Bool
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Button { expanded.toggle() } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: mode == .study ? "rectangle.on.rectangle" : "text.bubble")
+                        .font(.subheadline)
+                        .foregroundStyle(PadPalette.accent)
+                    Text(mode == .study ? "The question" : "Tutor prompt")
+                        .font(.system(.headline, design: .serif))
+                        .foregroundStyle(PadPalette.text)
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
+                    Text(expanded ? "Hide" : "Show")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(PadPalette.muted)
+                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(PadPalette.muted)
+                }
+                .padding(.horizontal, 16)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(expanded ? "Collapse question prompt" : "Expand question prompt")
+            .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+            .accessibilityHint("Makes more room for your writing without changing the sheet")
+            .accessibilityIdentifier("paper-prompt-toggle")
+            if expanded {
+                Divider().overlay(PadPalette.border)
+                QuestionView(html: html)
+                    .frame(height: horizontalSizeClass == .compact ? 92 : 116)
+                    .accessibilityIdentifier("paper-question-prompt")
+            }
+        }
+        .background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(PadPalette.border, lineWidth: 1))
+        .padding(.horizontal, 12)
+        .padding(.top, 6)
+    }
+}
+
 struct AttemptPreview: View {
     let attempt: PaperAttempt
     @ObservedObject var store: DocumentStore
@@ -449,11 +616,37 @@ struct AttemptPreview: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    Text(currentAttempt.mode == .study && currentAttempt.state == .needsResume ? "Continue on Mac" : currentAttempt.state.title).font(.headline)
-                    Text(currentAttempt.state.detail(for: currentAttempt.mode, boundToTutor: currentAttempt.deliveryTarget == "assistant")).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("REVISION \(currentAttempt.documentRevision)", systemImage: "doc.text")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(PadPalette.accent)
+                        Text(currentAttempt.mode == .study && currentAttempt.state == .needsResume ? "Continue on Mac" : currentAttempt.state.title)
+                            .font(.system(.title2, design: .serif).weight(.semibold))
+                            .foregroundStyle(PadPalette.text)
+                        Text(currentAttempt.state.detail(for: currentAttempt.mode, boundToTutor: currentAttempt.deliveryTarget == "assistant"))
+                            .font(.subheadline)
+                            .foregroundStyle(PadPalette.muted)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(20)
+                    .background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(PadPalette.border, lineWidth: 1))
                     ForEach(Array(store.pageURLs(for: attempt).enumerated()), id: \.offset) { index, url in
-                        if let image = UIImage(contentsOfFile: url.path) { VStack(alignment: .leading) { Text("Page \(index + 1)").font(.caption); Image(uiImage: image).resizable().scaledToFit().background(.white).clipShape(RoundedRectangle(cornerRadius: 12)) } }
+                        if let image = UIImage(contentsOfFile: url.path) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Page \(index + 1)")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(PadPalette.muted)
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .background(.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(PadPalette.border, lineWidth: 1))
+                                    .accessibilityLabel("Submitted work, page \(index + 1)")
+                            }
+                        }
                     }
                     if let detail = store.attempts.first(where: { $0.id == attempt.id })?.lastError { Text(detail).foregroundStyle(.secondary) }
                     if let current = store.attempts.first(where: { $0.id == attempt.id }), current.state == .needsAttention, current.lastError != nil {
@@ -463,13 +656,22 @@ struct AttemptPreview: View {
                         }.buttonStyle(.bordered)
                     }
                     if let error { Text(error).foregroundStyle(.red) }
-                }.padding(24)
-            }.navigationTitle("Your working").navigationBarTitleDisplayMode(.inline).toolbar {
+                }.padding(24).frame(maxWidth: 820).frame(maxWidth: .infinity)
+            }
+            .background(PadPalette.background)
+            .navigationTitle("Your working")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(PadPalette.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
                 ToolbarItem(placement: .topBarLeading) { Menu {
                     Button("Share PNG pages") { share(store.pageURLs(for: attempt)) }
                     Button("Share PDF") { do { share([try store.pdf(for: attempt)]) } catch { self.error = error.localizedDescription } }
-                } label: { Image(systemName: "square.and.arrow.up") } }
+                } label: { Image(systemName: "square.and.arrow.up") }
+                    .accessibilityLabel("Share submitted pages or PDF")
+                    .accessibilityIdentifier("paper-preview-share")
+                }
             }
         }
     }

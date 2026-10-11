@@ -6,3 +6,5 @@ description: "Search, inspect, create or update concepts in a configured local M
 # Source
 
 Read [knowledge operations](references/knowledge.md) and [quality rules](references/quality.md). Resolve the active profile with `recall doctor`. Search the selected scope before writing. Preview changes, respect configured write permission, use revision checks, and verify actual results. For Notion use connected tools plus the outbox/acknowledgment workflow; a pending request is not a saved page.
+
+For handwritten notebook snapshots explicitly sent from Recall Pad, read [notebook processing](references/notebooks.md). Review the immutable selected pages before updating concepts/cards, and return separate source, KB and Recall receipts. Private notebook edits never trigger capture.

@@ -45,7 +45,7 @@ struct SheetDeletionConfirmation: View {
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityFocused($titleFocused)
             }
-            Text(document.title).font(.headline).textSelection(.disabled)
+            Text(document.title).font(.headline).foregroundStyle(PadPalette.text).textSelection(.disabled)
             Text("Its ink, saved submissions and anything waiting to send will be removed from this iPad. This can’t be undone.")
                 .foregroundStyle(.secondary)
             Text("Copies on your Mac or in a chat will stay there.")
@@ -59,9 +59,10 @@ struct SheetDeletionConfirmation: View {
                 Button(action: onCancel) {
                     Text("Cancel").fontWeight(.semibold)
                         .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                        .background(PadPalette.sunken, in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
+                .keyboardShortcut(.cancelAction)
                 .accessibilityIdentifier("cancel-sheet-deletion")
                 Button(role: .destructive, action: confirm) {
                     Text("Delete sheet").fontWeight(.semibold)
@@ -76,7 +77,7 @@ struct SheetDeletionConfirmation: View {
         .padding(24)
         .fixedSize(horizontal: false, vertical: true)
         .background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 24))
-        .overlay(RoundedRectangle(cornerRadius: 24).stroke(.primary.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: 24).stroke(PadPalette.border))
         .shadow(color: .black.opacity(0.15), radius: 24, y: 8)
     }
 

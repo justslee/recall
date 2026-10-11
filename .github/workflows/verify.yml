@@ -40,6 +40,7 @@ jobs:
       - run: npm run test:handwriting
       - run: npm run test:tutor-workspace
       - run: npm run test:paper-learning
+      - run: npm run test:notebooks
       - run: npm run test:pad-lifecycle
       - run: npm run audit:release
       - run: npm run package
@@ -81,6 +82,9 @@ jobs:
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:paper-learning
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:notebooks
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:pad-lifecycle

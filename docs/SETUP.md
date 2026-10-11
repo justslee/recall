@@ -186,6 +186,10 @@ This is a Codex-first beta. One physical-iPad submission has been inspected in a
 
 **Manual fallback:** tap **Send to Mac**, open **File → Tutor Pad** on the Mac, choose **Copy page**, then paste with **⌘V** into any chat. Review the attachment and press Send yourself. This needs no Accessibility access or timed handoff. PNG/PDF export and sharing are also available on the iPad.
 
+### Keep private notebooks
+
+**Private notebooks (new source builds):** open **Notebooks** in Recall Pad to keep notebooks, notes and pages separately from live sessions. They stay on the iPad until you explicitly **Send to Recall**. On the Mac, finish the selected snapshot with Codex or Claude in **Learning connections → From your notebooks**. [Notebook walkthrough →](NOTEBOOKS.md)
+
 ## Update an existing installation
 
 Mac updates are manual in this beta:

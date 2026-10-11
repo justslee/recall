@@ -73,7 +73,7 @@ function preview(folder, cards) {
   if (!config(folder).captureEnabled) throw Error("Learning capture is paused");
   const item = inbox
     .read(folder)
-    .items.filter((i) => i.status === "pending")
+    .items.filter((i) => i.status === "pending" && i.type !== "notebook")
     .reverse()[0];
   if (!item) return null;
   return context(folder, item, cards);
@@ -130,7 +130,7 @@ async function prepare(
     recover(folder);
     const item = inbox
       .read(folder)
-      .items.filter((i) => i.status === "pending")
+      .items.filter((i) => i.status === "pending" && i.type !== "notebook")
       .reverse()[0];
     if (!item) return { prepared: 0 };
     const agent = connections.settings(folder).agent;

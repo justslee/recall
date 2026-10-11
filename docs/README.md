@@ -14,6 +14,7 @@ Each walkthrough follows one task with real app screenshots and demonstration co
 | Turn today's questions into a Self Test            | [Capture learning](demos/LEARNING.md) |
 | Explain something clearly to an audience           | [Practise in Speak](demos/SPEAK.md)   |
 | Write on iPad and get feedback on your Mac         | [Use Recall Pad](demos/PAPER.md)      |
+| Keep private notes and add chosen pages to Recall  | [Notebook walkthrough](NOTEBOOKS.md)  |
 
 [All walkthroughs →](demos/README.md)
 
@@ -38,6 +39,7 @@ Use these references when you need more detail; they are not extra setup steps.
 
 ## Customize or contribute
 
+- [Make Recall yours with Codex or Claude](CUSTOMIZE.md): shorter answers, brighter diagrams, personal defaults and safe revisions without an app update.
 - [Author cards](AUTHORING.md), [create interactive diagrams](WIDGETS.md), or inspect the [learning skill kit](../skills/) and its [shared contracts](../skills/recall-source/references/).
 - [Contribute](../CONTRIBUTING.md) and read the [implementation reference](IMPLEMENTATION.md), [product plan](PRODUCT_PLAN.md) or [pad protocol](PAD_PROTOCOL.md).
 - Review [publication evidence](PUBLIC_REVIEW.md) and the [release checklist](RELEASE_CHECKLIST.md). Publishers can use the [distribution procedure](DISTRIBUTION.md) and [unfilled submission templates](submission/README.md); these are contributor references, not additional user setup steps.

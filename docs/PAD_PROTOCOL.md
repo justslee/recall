@@ -42,6 +42,18 @@ An offline blank Tutor sheet may use a client-created UUID handoff. Its authenti
 
 ## Trusted Mac renderer IPC
 
+### Private notebook snapshots
+
+Version `3` adds `mode:"notebook"` with `questionId:null`, `handoffId:null`, `evaluate:false` and no chat target. It uses the same authenticated staged upload and durable commit endpoints without a live question grant. Each immutable per-note manifest contains `notebook:{id,title,noteId,noteTitle,revision,selectedPageIds,sourcePages:[{id,revision,hash}],contentHash}`. Ordered image descriptors additionally carry `sourcePageId`, `sourceRevision` and `sourceHash`; `drawings:[{sourcePageId,hash,bytes}]` preserves each selected page's editable ink. Source lineage and hashes must agree; every selected source page has images and one drawing. The 20-page / 64-MiB submission limits include all selected drawings. Ordinary Study/Tutor manifests remain unchanged.
+
+The iPad's separate notebook index/outbox is additive. Private edits never create an upload. An explicit snapshot retains its recipient installation identity, so re-pairing cannot redirect queued notebook work. Pairing changes are blocked during transfers. Whole-notebook preparation is atomic locally; each note's upload and preparation retains a separate receipt. Deleting a source page cancels unreceived snapshots containing it; active uploads cannot be deleted.
+
+The Mac queues an immutable `type:"notebook"` inbox source after commit. Recovery reconciles a commit interrupted before enqueue without executing an assistant or calling a provider. Capture pause and backup restore gates remain effective. The restricted text worker skips notebook items; the full assistant [notebook workflow](../skills/recall-source/references/notebooks.md) reviews their images, performs scoped KB writes and submits validated captures/cards with page-coverage proof.
+
+Notebook receipts use `state:"notebook_received"|"notebook_added"|"notebook_reviewed"|"notebook_needs_attention"`, plus `notebook:{noteId,revision,contentHash,selectedPageIds,inboxId,status,processedAt?,cardIds?,knowledge?}`. A durable upload alone reports received/awaiting-assistant. Added requires a successfully applied exact-source result; partial KB outcomes report needs-attention even when cards imported. Device receipts contain only that device's own submission outcomes, never arbitrary notes, references, API keys or review controls. Older live clients keep their existing receipt contract.
+
+`notebookInspect(id)` and `notebookPage(id,index)` are main-window-only bounded read APIs. The CLI mirrors them as `notebook list|inspect|page|export`; export creates a private selected image file without overwriting an existing one. The Tutor window cannot inspect notebook submissions.
+
 - `padStatus()` -> `{version,enabled,endpoint,installationId,devices:[{id,name,lastSeen,connected}],pendingPairings:[{id,name,expiresAt}],model,assessmentConsent,loginAtStartup,study,helper,assessmentBusy}`.
 - `padConfigure({enabled?,model?,assessmentConsent?,loginAtStartup?})` -> status.
 - `padPairing()` -> `{payload,qrDataUrl,expiresAt}`. `padConfirmPairing({id,allow})`; `padRevokeDevice(id)`.
@@ -59,14 +71,14 @@ Feedback: `{verdict:"solid"|"partial"|"needs_work"|"unclear",summary,strengths:[
 
 The optional stdio MCP server runs through `recall paper mcp`. It connects an invoking assistant to a scoped paper session; it is distinct from device pairing, manual clipboard copying and Recall's handwriting assessor. See [Paper learning](PAPER_LEARNING.md) for setup and use.
 
-| MCP tool | Input beyond session authorization |
-| :------- | :--------------------------------- |
-| `paper_start_session` | `{title}`; returns `sessionId` and `capability`. Client metadata comes from the configured launcher. |
-| `paper_publish_prompt` | `{title,prompt,kind:"problem"|"note",expectedRevision?}`. |
-| `paper_session_status` | Inspect the current prompt and submitted-work metadata. |
-| `paper_wait_submission` | `{after?,timeoutMs}`; `timeoutMs` is bounded to at most 30,000. |
+| MCP tool                | Input beyond session authorization                                                                                                                                         |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `paper_start_session`   | `{title}`; returns `sessionId` and `capability`. Client metadata comes from the configured launcher.                                                                       |
+| `paper_publish_prompt`  | `{title,prompt,kind:"problem"\|"note",expectedRevision?}`.                                                                                                                 |
+| `paper_session_status`  | Inspect the current prompt and submitted-work metadata.                                                                                                                    |
+| `paper_wait_submission` | `{after?,timeoutMs}`; `timeoutMs` is bounded to at most 30,000.                                                                                                            |
 | `paper_read_submission` | `{submissionId,pageIndexes?}`; up to three selected zero-based indexes, or up to two pages by default within the byte limit, with `nextPageIndexes` for progressive reads. |
-| `paper_end_session` | End the active session while preserving saved work. |
+| `paper_end_session`     | End the active session while preserving saved work.                                                                                                                        |
 
 All operations after start require both `sessionId` and its `capability`. A capability scopes authorization to that paper session; conversation metadata cannot grant cross-session reads. The caller retains the raw capability privately in its session context. The Mac stores authority hashes in private `paper-authority/` files and local runtime discovery/authentication in `paper-runtime/`; neither folder belongs in profile backups. No transcript scanning reconstructs a binding. Restores clear active session authority and require new authorization while retaining prompts, drawings and submissions.
 

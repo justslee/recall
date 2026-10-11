@@ -1,6 +1,6 @@
 # Authoring and content packs
 
-[Documentation](README.md) · [Interactive visuals](WIDGETS.md)
+[Documentation](README.md) · [Customize with an assistant](CUSTOMIZE.md) · [Interactive visuals](WIDGETS.md)
 
 Create one clear learning objective per card. Add math or coding when it tests that objective;
 record each disposition and its rationale rather than forcing all three formats.

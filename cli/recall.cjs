@@ -28,7 +28,7 @@ const folder = dataDir(option("data"));
 const apply = flag("apply"),
   json = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const usage =
-  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/search/link/trust | kb scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | paper connect codex/claude [--apply] | paper connection-status | paper mcp | paper start/publish/status/wait/read/end JSON_FILE | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
+  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/search/link/trust | kb scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | paper connect codex/claude [--apply] | paper connection-status | paper mcp | paper start/publish/status/wait/read/end JSON_FILE | notebook list/inspect/page/export | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
 function withStore(fn) {
   const { Store } = require("../electron/store.cjs");
   const s = new Store(folder);
@@ -302,6 +302,24 @@ function readonly(fn) {
           json(rest[0]),
         );
       else throw Error(usage);
+    } else if (command === "notebook") {
+      const notebooks = require("../electron/notebook-intake.cjs");
+      if (action === "list") result = notebooks.list(folder);
+      else if (action === "inspect")
+        result = notebooks.inspect(folder, rest[0]);
+      else if (action === "page")
+        result = notebooks.page(folder, rest[0], Number(rest[1]));
+      else if (action === "export")
+        result = notebooks.exportPage(
+          folder,
+          rest[0],
+          Number(rest[1]),
+          rest[2],
+        );
+      else
+        throw Error(
+          "notebook list | inspect ATTEMPT_ID | page ATTEMPT_ID INDEX | export ATTEMPT_ID INDEX ABSOLUTE_IMAGE_PATH",
+        );
     } else if (command === "catch-up" && action === "scan") {
       result = require("../electron/catch-up.cjs").scan(folder);
     } else if (command === "inbox") {

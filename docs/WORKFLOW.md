@@ -83,7 +83,7 @@ The [skill kit](../skills/) covers concepts, quick questions, deep dives, learni
 
 **Check:** the receipt distinguishes reused, newly imported and blocked objectives. Inspect actual rendered content and interactions. Math and coding questions have their own review state.
 
-[Authoring guide →](AUTHORING.md)
+[Authoring guide →](AUTHORING.md) · [Customize answers, visuals and personal defaults →](CUSTOMIZE.md)
 
 ## 5. Prepare and take the daily Self Test
 

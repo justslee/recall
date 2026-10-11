@@ -9,7 +9,30 @@ struct HomeView: View {
     @State private var error: String?
     @State private var pendingDeletion: PaperDocument?
     @State private var deletingSheet = false
+    @State private var recentFilter: RecentFilter = .all
+    @State private var workspace: Workspace = .live
+
+    private enum Workspace: String, CaseIterable, Identifiable {
+        case live = "Live", notebooks = "Notebooks"
+        var id: String { rawValue }
+    }
+
+    private enum RecentFilter: String, CaseIterable, Identifiable {
+        case all = "All", study = "Study", tutor = "Tutor"
+        var id: String { rawValue }
+    }
+
     private var hasTutorSheet: Bool { store.documents.contains { $0.mode == .tutor && $0.tutorProblem == nil } }
+    private var recentDocuments: [PaperDocument] {
+        store.documents.filter { item in
+            switch recentFilter {
+            case .all: return true
+            case .study: return item.mode == .study
+            case .tutor: return item.mode == .tutor
+            }
+        }
+    }
+    private let rowInsets = EdgeInsets(top: 6, leading: 24, bottom: 6, trailing: 24)
     private var tutorSession: StudySession? {
         guard let session = bridge.tutorQuestionsSession, session.hasValidTutorBinding else { return nil }
 
@@ -17,91 +40,135 @@ struct HomeView: View {
     }
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 28) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("A little space to think.").font(.system(.largeTitle, design: .serif)).bold()
-                        Text("Write it out. Keep the working. Send it when you’re ready.").foregroundStyle(.secondary)
-                    }.padding(.top, 24)
-                    HStack(alignment: .top, spacing: 18) {
-                        modeCard(title: "Recall Study", subtitle: "A question from your study desk", icon: "rectangle.on.rectangle.angled") {
-                            if let session = bridge.studyQuestionsSession, let question = bridge.deskQuestions.first {
-                                open(.study, question: question, handoffId: session.handoffId)
-                            } else { error = "Open a math or concept card in Recall on your Mac and choose Write on iPad. Cached questions remain available offline." }
+            VStack(spacing: 0) {
+                Picker("Writing workspace", selection: $workspace) {
+                    ForEach(Workspace.allCases) { item in Text(item.rawValue).tag(item) }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 340)
+                .padding(.horizontal, 24)
+                .padding(.top, 12)
+                .padding(.bottom, 4)
+                .accessibilityIdentifier("pad-workspace-picker")
+
+                if workspace == .live {
+                    List {
+                deskIntroduction
+                    .listRowInsets(EdgeInsets(top: 22, leading: 24, bottom: 16, trailing: 24))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+
+                modeCards
+                    .listRowInsets(rowInsets)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+
+                if let session = tutorSession, let problems = session.problems, !problems.isEmpty {
+                    sectionHeading(session.tutorTitle ?? "Your tutor session", label: "IN CONVERSATION")
+                        .listRowInsets(EdgeInsets(top: 24, leading: 24, bottom: 4, trailing: 24))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+
+                    ForEach(problems) { problem in
+                        Button { openTutor(problem: problem, title: session.tutorTitle) } label: {
+                            questionRow(title: problem.title, icon: problem.kind == "note" ? "note.text" : "pencil.and.scribble", status: problem.id == session.currentProblemId ? "Current" : "Earlier", isCurrent: problem.id == session.currentProblemId, isTutor: true)
                         }
-                        modeCard(title: "Tutor Pad", subtitle: tutorSession?.currentTutorProblem != nil ? tutorSession?.tutorTitle ?? "Your tutor conversation" : hasTutorSheet ? "Continue your latest sheet" : "Write on iPad. Paste into any app on your Mac.", icon: "pencil.and.scribble", actionTitle: tutorSession?.currentTutorProblem != nil || hasTutorSheet ? "Continue" : "Open") { openTutor() }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("tutor-problem-\(problem.id)")
+                        .listRowInsets(rowInsets)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     }
-                    if let session = tutorSession, let problems = session.problems, !problems.isEmpty {
-                        Text(session.tutorTitle ?? "Your tutor session").font(.headline)
-                        ForEach(problems) { problem in
-                            Button { openTutor(problem: problem, title: session.tutorTitle) } label: {
-                                HStack {
-                                    Image(systemName: problem.kind == "note" ? "note.text" : "pencil.and.scribble")
-                                    Text(problem.title)
-                                    Spacer()
-                                    Text(problem.id == session.currentProblemId ? "Current" : "Earlier").font(.caption).foregroundStyle(.secondary)
-                                    Image(systemName: "chevron.right")
-                                }.padding(16)
-                            }.buttonStyle(.bordered)
+                }
+
+                if let session = bridge.studyQuestionsSession, !bridge.deskQuestions.isEmpty {
+                    sectionHeading(bridge.connected ? "Questions on your desk" : "Saved questions · offline", label: "RECALL STUDY")
+                        .listRowInsets(EdgeInsets(top: 24, leading: 24, bottom: 4, trailing: 24))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+
+                    ForEach(bridge.deskQuestions) { question in
+                        Button { open(.study, question: question, handoffId: session.handoffId) } label: {
+                            questionRow(title: question.title, icon: question.kind == "math" ? "function" : "book.closed", status: question.id == session.currentQuestionId ? "Current" : "Up next", isCurrent: question.id == session.currentQuestionId, isTutor: false)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("desk-question-\(question.id)")
+                        .listRowInsets(rowInsets)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     }
-                    if let session = bridge.studyQuestionsSession, !bridge.deskQuestions.isEmpty {
-                        Text(bridge.connected ? "Questions on your desk" : "Saved questions · offline").font(.headline)
-                        ForEach(bridge.deskQuestions) { question in
-                            Button { open(.study, question: question, handoffId: session.handoffId) } label: {
-                                HStack {
-                                    Image(systemName: question.kind == "math" ? "function" : "book.closed")
-                                    Text(question.title)
-                                    Spacer()
-                                    Text(question.id == session.currentQuestionId ? "Current" : "Up next").font(.caption).foregroundStyle(.secondary)
-                                    Image(systemName: "chevron.right")
-                                }.padding(16)
-                            }.buttonStyle(.bordered)
+                }
+
+                recentHeading
+                    .listRowInsets(EdgeInsets(top: 26, leading: 24, bottom: 8, trailing: 24))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+
+                if recentDocuments.isEmpty {
+                    ContentUnavailableView(store.documents.isEmpty ? "Your working belongs here" : "No \(recentFilter.rawValue.lowercased()) sheets yet", systemImage: "pencil.tip.crop.circle", description: Text(store.documents.isEmpty ? "Start a study question or a blank tutor sheet. Work saves on this iPad, even offline." : "Choose All to see your other saved work, or open a sheet above."))
+                        .listRowInsets(rowInsets)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+
+                ForEach(recentDocuments) { item in
+                    recentSheet(item)
+                        .listRowInsets(rowInsets)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button { confirmDeletion(of: item) } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            .tint(.red)
+                            .accessibilityLabel("Delete \(item.title)")
+                            .accessibilityIdentifier("swipe-delete-sheet-\(item.id)")
                         }
-                    }
-                    Text("Recent sheets").font(.headline)
-                    if store.documents.isEmpty {
-                        ContentUnavailableView("Your working belongs here", systemImage: "pencil.tip.crop.circle", description: Text("Start a study question or a blank tutor sheet. Work saves on this iPad, even offline."))
-                    }
-                    ForEach(store.documents) { item in
-                        HStack(spacing: 12) {
-                            Button { document = item } label: {
-                                HStack(spacing: 18) {
-                                    if let image = store.thumbnail(for: item) { Image(uiImage: image).resizable().scaledToFit().frame(width: 64, height: 58).background(.white).clipShape(RoundedRectangle(cornerRadius: 8)) }
-                                    else { Image(systemName: item.mode == .study ? "book.closed" : "pencil.and.scribble").frame(width: 64, height: 58).background(.thinMaterial).clipShape(RoundedRectangle(cornerRadius: 8)) }
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text(item.title).foregroundStyle(.primary)
-                                        Text(sheetCategory(item)).font(.caption).foregroundStyle(PadPalette.accent)
-                                        Text(item.state.title).font(.caption).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Text(item.updatedAt, style: .date).font(.caption).foregroundStyle(.secondary)
-                                }
-                                .contentShape(Rectangle())
-                            }.buttonStyle(.plain)
-                            Menu {
-                                Button("Open sheet", systemImage: "doc.text") { document = item }
-                                Button { confirmDeletion(of: item) } label: { Label("Delete sheet…", systemImage: "trash").foregroundStyle(.red) }
-                            } label: { Image(systemName: "ellipsis").frame(width: 36, height: 44) }
-                            .accessibilityLabel("Options for \(item.title)")
+                        .contextMenu {
+                            Button("Open sheet", systemImage: "doc.text") { document = item }
+                            Button(role: .destructive) { confirmDeletion(of: item) } label: { Label("Delete sheet…", systemImage: "trash") }
                         }
-                        .padding(12).background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 16))
-                        .accessibilityElement(children: .contain)
-                        .accessibilityIdentifier("recent-sheet-\(item.id)")
-                        .contextMenu { Button { confirmDeletion(of: item) } label: { Label("Delete sheet…", systemImage: "trash").foregroundStyle(.red) } }
+                        .accessibilityAction(named: "Open sheet") { document = item }
+                        .accessibilityAction(named: "Delete sheet") { confirmDeletion(of: item) }
                         .disabled(deletingSheet)
-                    }
-                }.padding(32).frame(maxWidth: 1000, alignment: .leading).frame(maxWidth: .infinity)
+                }
+
+                Label("Swipe a sheet for actions, or touch and hold.", systemImage: "hand.draw")
+                    .font(.footnote)
+                    .foregroundStyle(PadPalette.muted)
+                    .padding(.vertical, 8)
+                    .listRowInsets(rowInsets)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .environment(\.defaultMinListRowHeight, 0)
+            .frame(maxWidth: 1040)
+            .frame(maxWidth: .infinity)
+            .background(PadPalette.background)
+                } else {
+                    NotebookLibraryView()
+                }
             }
             .background(PadPalette.background)
             .navigationTitle("Recall Pad")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showHelp = true } label: { Label("Help & Privacy", systemImage: "questionmark.circle") }
                         .accessibilityIdentifier("help-and-privacy")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showPairing = true } label: { Label(bridge.connected ? "Connected" : bridge.pairedMac == nil ? "Pair with Mac" : "Offline", systemImage: bridge.connected ? "link" : "link.badge.plus") }
+                    Button { showPairing = true } label: {
+                        Label(bridge.connected ? "Connected" : bridge.pairedMac == nil ? "Pair with Mac" : "Offline", systemImage: bridge.connected ? "link" : "link.badge.plus")
+                            .font(.subheadline.weight(.medium))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(PadPalette.accentSoft, in: Capsule())
+                    }
+                    .accessibilityIdentifier("mac-connection")
+                    .accessibilityHint("Open pairing and connection settings")
                 }
             }
             .fullScreenCover(item: $document) { PaperEditor(initialDocument: $0).environmentObject(store).environmentObject(bridge) }
@@ -110,15 +177,202 @@ struct HomeView: View {
             .alert("Your work is kept", isPresented: Binding(get: { error != nil || store.storageError != nil }, set: { if !$0 { error = nil; store.storageError = nil } })) { Button("OK") { error = nil; store.storageError = nil } } message: { Text(error ?? store.storageError ?? "") }
         }.sheetDeletionConfirmation(item: $pendingDeletion, onDelete: delete)
     }
-    private func modeCard(title: String, subtitle: String, icon: String, actionTitle: String = "Open", action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 18) {
-                Image(systemName: icon).font(.title).padding(12).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14))
-                Text(title).font(.system(.title2, design: .serif)).bold()
-                Text(subtitle).foregroundStyle(.secondary)
-                HStack { Text(actionTitle); Image(systemName: "arrow.right") }.font(.subheadline).bold()
-            }.frame(maxWidth: .infinity, alignment: .leading).padding(24).background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 24)).overlay(RoundedRectangle(cornerRadius: 24).stroke(.primary.opacity(0.08)))
-        }.buttonStyle(.plain)
+
+    private var deskIntroduction: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("YOUR WRITING DESK")
+                .font(.system(.caption2, design: .monospaced).weight(.medium))
+                .tracking(2)
+                .foregroundStyle(PadPalette.accent)
+            Text("A little space to think.")
+                .font(.system(.largeTitle, design: .serif))
+                .foregroundStyle(PadPalette.text)
+                .accessibilityAddTraits(.isHeader)
+            Text("Write it out. Keep the working. Send it when you’re ready.")
+                .font(.subheadline)
+                .foregroundStyle(PadPalette.muted)
+        }
+    }
+
+    private var modeCards: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 16) {
+                studyModeCard.frame(minWidth: 290)
+                tutorModeCard.frame(minWidth: 290)
+            }
+            VStack(spacing: 12) {
+                studyModeCard
+                tutorModeCard
+            }
+        }
+    }
+
+    private var studyModeCard: some View {
+        modeCard(title: "Recall Study", subtitle: "A question from your study desk", icon: "rectangle.on.rectangle.angled", index: "01", isTutor: false, actionTitle: "Open study") {
+            if let session = bridge.studyQuestionsSession, let question = bridge.deskQuestions.first {
+                open(.study, question: question, handoffId: session.handoffId)
+            } else {
+                error = "Open a math or concept card in Recall on your Mac and choose Write on iPad. Cached questions remain available offline."
+            }
+        }
+        .accessibilityIdentifier("open-recall-study")
+    }
+
+    private var tutorModeCard: some View {
+        modeCard(title: "Tutor Pad", subtitle: tutorSession?.currentTutorProblem != nil ? tutorSession?.tutorTitle ?? "Your tutor conversation" : hasTutorSheet ? "Continue your latest sheet" : "A blank sheet, or a problem from your tutor.", icon: "pencil.and.scribble", index: "02", isTutor: true, actionTitle: tutorSession?.currentTutorProblem != nil || hasTutorSheet ? "Continue writing" : "Open pad") { openTutor() }
+            .accessibilityIdentifier("open-tutor-pad")
+    }
+
+    private func modeCard(title: String, subtitle: String, icon: String, index: String, isTutor: Bool, actionTitle: String, action: @escaping () -> Void) -> some View {
+        let ink = isTutor ? PadPalette.blueInk : PadPalette.accent
+        let tint = isTutor ? PadPalette.bluePaper : PadPalette.accentSoft
+
+        return Button(action: action) {
+            VStack(alignment: .leading, spacing: 15) {
+                HStack {
+                    Image(systemName: icon)
+                        .font(.system(size: 20, weight: .regular))
+                        .frame(width: 40, height: 40)
+                        .background(tint, in: RoundedRectangle(cornerRadius: 10))
+                        .accessibilityHidden(true)
+                    Spacer()
+                    Text(index)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(PadPalette.muted)
+                        .accessibilityHidden(true)
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title).font(.system(.title2, design: .serif)).foregroundStyle(PadPalette.text)
+                    Text(subtitle).font(.subheadline).foregroundStyle(PadPalette.muted)
+                }
+                Divider().overlay(PadPalette.border)
+                HStack {
+                    Text(actionTitle).font(.subheadline.weight(.medium))
+                    Spacer()
+                    Image(systemName: "arrow.right").font(.subheadline)
+                }
+            }
+            .foregroundStyle(ink)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
+            .background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(alignment: .top) { RoundedRectangle(cornerRadius: 2).fill(ink.opacity(0.55)).frame(width: 44, height: 3).padding(.top, 1) }
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(PadPalette.border))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func sectionHeading(_ title: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label).font(.system(.caption2, design: .monospaced)).tracking(1.5).foregroundStyle(PadPalette.muted)
+            Text(title).font(.system(.title3, design: .serif)).foregroundStyle(PadPalette.text).accessibilityAddTraits(.isHeader)
+        }
+    }
+
+    private func questionRow(title: String, icon: String, status: String, isCurrent: Bool, isTutor: Bool) -> some View {
+        let ink = isTutor ? PadPalette.blueInk : PadPalette.accent
+        let tint = isTutor ? PadPalette.bluePaper : PadPalette.accentSoft
+
+        return HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundStyle(ink)
+                .frame(width: 38, height: 38)
+                .background(tint, in: RoundedRectangle(cornerRadius: 9))
+                .accessibilityHidden(true)
+            Text(title).font(.subheadline.weight(.medium)).foregroundStyle(PadPalette.text)
+            Spacer(minLength: 8)
+            Text(status)
+                .font(.caption)
+                .foregroundStyle(isCurrent ? ink : PadPalette.muted)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(isCurrent ? tint : Color.clear, in: Capsule())
+            Image(systemName: "chevron.right").font(.caption2).foregroundStyle(PadPalette.muted).accessibilityHidden(true)
+        }
+        .padding(12)
+        .background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(PadPalette.border))
+        .contentShape(Rectangle())
+    }
+
+    private var recentHeading: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .bottom, spacing: 24) {
+                sectionHeading("Recent sheets", label: "YOUR SAVED WORK").fixedSize(horizontal: true, vertical: false)
+                Spacer(minLength: 16)
+                recentFilterPicker.frame(width: 250)
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                sectionHeading("Recent sheets", label: "YOUR SAVED WORK")
+                recentFilterPicker
+            }
+        }
+    }
+
+    private var recentFilterPicker: some View {
+        Picker("Recent sheet type", selection: $recentFilter) {
+            ForEach(RecentFilter.allCases) { filter in Text(filter.rawValue).tag(filter) }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("recent-sheet-filter")
+    }
+
+    private func recentSheet(_ item: PaperDocument) -> some View {
+        HStack(spacing: 12) {
+            Button { document = item } label: {
+                HStack(spacing: 14) {
+                    sheetThumbnail(item)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(item.title).font(.subheadline.weight(.medium)).foregroundStyle(PadPalette.text)
+                        Text(sheetCategory(item)).font(.caption).foregroundStyle(item.mode == .study ? PadPalette.accent : PadPalette.blueInk)
+                        Text(item.state.title).font(.caption).foregroundStyle(PadPalette.muted)
+                    }
+                    Spacer(minLength: 4)
+                    Text(item.updatedAt, style: .date).font(.caption2).foregroundStyle(PadPalette.muted)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Open saved work. Swipe left or touch and hold for more actions.")
+            Menu {
+                Button("Open sheet", systemImage: "doc.text") { document = item }
+                Button(role: .destructive) { confirmDeletion(of: item) } label: { Label("Delete sheet…", systemImage: "trash") }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .foregroundStyle(PadPalette.muted)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Options for \(item.title)")
+        }
+        .padding(12)
+        .background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(PadPalette.border))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("recent-sheet-\(item.id)")
+    }
+
+    @ViewBuilder
+    private func sheetThumbnail(_ item: PaperDocument) -> some View {
+        if let image = store.thumbnail(for: item) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 52, height: 62)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(PadPalette.border))
+                .accessibilityHidden(true)
+        } else {
+            Image(systemName: item.mode == .study ? "book.closed" : "pencil.and.scribble")
+                .font(.title3)
+                .foregroundStyle(item.mode == .study ? PadPalette.accent : PadPalette.blueInk)
+                .frame(width: 52, height: 62)
+                .background(item.mode == .study ? PadPalette.accentSoft : PadPalette.bluePaper, in: RoundedRectangle(cornerRadius: 6))
+                .accessibilityHidden(true)
+        }
     }
     private func open(_ mode: PaperMode, question: QuestionPackage? = nil, handoffId: String? = nil) {
         do { var item = try store.open(mode: mode, question: question); item.handoffId = handoffId ?? item.handoffId; document = item }

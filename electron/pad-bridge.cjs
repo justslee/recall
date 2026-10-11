@@ -787,7 +787,10 @@ class PadBridge {
         if (method === "POST" && action === "manifest") {
           const m = contract.manifest(await this.json(req));
           if (m.id !== id) throw Error("Submission IDs differ.");
-          let grant = this.grant(d.id, m.handoffId);
+          let grant =
+            m.mode === "notebook"
+              ? { mode: "notebook", questions: [] }
+              : this.grant(d.id, m.handoffId);
           if (grant && grant.mode !== m.mode)
             throw Error("Submission mode conflicts with its issued handoff.");
           // A blank Tutor Pad can originate offline. It conveys no question access
@@ -860,6 +863,12 @@ class PadBridge {
               ws.send(JSON.stringify({ type: "receipt", receipt }));
           if (!prior) {
             this.emit({ type: "attempt", id });
+            Promise.resolve(this.received(this.paper.attempt(id))).catch(
+              () => {},
+            );
+          } else if (this.paper.attempt(id).mode === "notebook") {
+            // A prior commit may have survived an interrupted intake enqueue.
+            // Notebook recovery is idempotent and never calls a provider.
             Promise.resolve(this.received(this.paper.attempt(id))).catch(
               () => {},
             );
