@@ -107,7 +107,10 @@ function sourceApp(root, candidate) {
   return app;
 }
 
-function inspectBundleLayout(app) {
+function inspectBundleLayout(
+  app,
+  { verifyStapledTicket = false, run = defaultRun } = {},
+) {
   const contents = path.join(app, "Contents");
   const allowed = new Set([
     "Info.plist",
@@ -117,6 +120,37 @@ function inspectBundleLayout(app) {
     "Frameworks",
     "Resources",
   ]);
+  if (verifyStapledTicket === true) {
+    // Apple stapler adds this separate binary ticket after signing. A matching
+    // filename or header is insufficient: Apple must validate the ticket too.
+    const ticket = path.join(contents, "CodeResources");
+    let metadata, header;
+    try {
+      metadata = fs.lstatSync(ticket);
+      if (!metadata.isFile() || metadata.size < 16 || metadata.size > 65536)
+        throw Error("invalid ticket");
+
+      const fd = fs.openSync(
+        ticket,
+        fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW,
+      );
+      try {
+        header = Buffer.alloc(4);
+        if (fs.readSync(fd, header, 0, 4, 0) !== 4)
+          throw Error("invalid ticket");
+      } finally {
+        fs.closeSync(fd);
+      }
+    } catch {
+      throw failure(
+        "The stapled ticket must be a regular, bounded binary file.",
+      );
+    }
+    if (!header.equals(Buffer.from("s8ch")))
+      throw failure("The stapled ticket has an unexpected binary format.");
+
+    allowed.add("CodeResources");
+  }
   if (fs.readdirSync(contents).some((name) => !allowed.has(name)))
     throw failure(
       "The app has an unexpected loose bundle item; review it before distribution.",
@@ -182,6 +216,10 @@ function inspectBundleLayout(app) {
     }
   }
   walk(contents);
+  if (verifyStapledTicket === true)
+    run("/usr/bin/xcrun", ["stapler", "validate", app], {
+      releaseError: "Apple could not validate the app's stapled ticket.",
+    });
 }
 
 function configForSigning(root, app, identity) {
@@ -659,9 +697,7 @@ async function prepare({
         releaseError:
           "Notarization passed but stapling failed; do not publish the current ZIP.",
       });
-      run("/usr/bin/xcrun", ["stapler", "validate", stagedApp], {
-        releaseError: "The app's stapled ticket could not be validated.",
-      });
+      inspectBundleLayout(stagedApp, { verifyStapledTicket: true, run });
       verifySigned(stagedApp, run);
       run(
         "/usr/sbin/spctl",

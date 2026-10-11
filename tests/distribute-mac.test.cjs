@@ -9,6 +9,7 @@ const {
   prepare,
   configForSigning,
   defaultRun,
+  inspectBundleLayout,
   BUNDLE_ID,
 } = require("../scripts/distribute-mac.cjs");
 const sourceRoot = path.resolve(__dirname, "..");
@@ -128,6 +129,15 @@ function fixture(t, overrides = {}) {
         }),
         stderr: "",
       };
+    if (
+      command === "/usr/bin/xcrun" &&
+      args[0] === "stapler" &&
+      args[1] === "staple"
+    ) {
+      const ticket = Buffer.alloc(32);
+      ticket.write("s8ch");
+      fs.writeFileSync(path.join(args[2], "Contents/CodeResources"), ticket);
+    }
     return { stdout: "", stderr: "" };
   };
   const sign = async (options) => {
@@ -257,6 +267,72 @@ test("Loose private files and bundle symlinks escaping the app stop before audit
   fs.symlinkSync(f.root, extra);
   await assert.rejects(f.execute({ sign: true }), /outside the candidate/);
   assert.equal(f.signed.length, 0);
+});
+
+test("Stapled ticket inspection is explicit and always crosses Apple's validation boundary", (t) => {
+  const f = fixture(t),
+    ticket = Buffer.alloc(32),
+    ticketPath = path.join(f.app, "Contents/CodeResources"),
+    calls = [];
+  ticket.write("s8ch");
+  fs.writeFileSync(ticketPath, ticket);
+  assert.throws(() => inspectBundleLayout(f.app), /unexpected loose/);
+  inspectBundleLayout(f.app, {
+    verifyStapledTicket: true,
+    run(command, args) {
+      calls.push({ command, args });
+    },
+  });
+  assert.deepEqual(calls, [
+    { command: "/usr/bin/xcrun", args: ["stapler", "validate", f.app] },
+  ]);
+  assert.throws(
+    () =>
+      inspectBundleLayout(f.app, {
+        verifyStapledTicket: true,
+        run() {
+          throw Error("Apple rejected the ticket");
+        },
+      }),
+    /Apple rejected/,
+  );
+});
+
+test("Ticket-shaped names cannot admit arbitrary, oversized or linked content", (t) => {
+  for (const value of [
+    Buffer.from("private data masquerading as a ticket"),
+    Buffer.from("s8ch"),
+    Buffer.concat([Buffer.from("s8ch"), Buffer.alloc(65536)]),
+  ]) {
+    const f = fixture(t);
+    fs.writeFileSync(path.join(f.app, "Contents/CodeResources"), value);
+    assert.throws(
+      () =>
+        inspectBundleLayout(f.app, {
+          verifyStapledTicket: true,
+          run() {
+            assert.fail("Invalid ticket reached Apple validation");
+          },
+        }),
+      /regular, bounded|unexpected binary/,
+    );
+  }
+  const f = fixture(t),
+    target = path.join(f.root, "linked-ticket"),
+    bytes = Buffer.alloc(32);
+  bytes.write("s8ch");
+  fs.writeFileSync(target, bytes);
+  fs.symlinkSync(target, path.join(f.app, "Contents/CodeResources"));
+  assert.throws(
+    () =>
+      inspectBundleLayout(f.app, {
+        verifyStapledTicket: true,
+        run() {
+          assert.fail("Linked ticket reached Apple validation");
+        },
+      }),
+    /regular, bounded/,
+  );
 });
 
 test("Signing stages a copy, disables inspector, keeps bridge RunAsNode and writes hashes without uploading", async (t) => {
