@@ -60,3 +60,21 @@ test('native Xcode project and locked web-resource preparation are distributable
   assert.match(script, /CODE_SIGNING_ALLOWED=NO/);
   assert.doesNotMatch(script, /curl|npm install|npx/);
 });
+
+test('native help links are public HTTPS destinations without pairing or session credentials', () => {
+  const home = native('HomeView.swift');
+  const links = home.match(/enum PadHelpLinks \{([\s\S]*?)\n\}/)?.[1];
+  assert.ok(links, 'The app must offer public help destinations');
+  const destinations = [...links.matchAll(/URL\(string: "([^"]+)"\)/g)].map(match => new URL(match[1]));
+  assert.equal(destinations.length, 4);
+  assert.ok(destinations.some(url => url.pathname.endsWith('/docs/PRIVACY.md')));
+  for (const url of destinations) {
+    assert.equal(url.protocol, 'https:');
+    assert.equal(url.hostname, 'github.com');
+    assert.ok(url.pathname.startsWith('/justslee/recall'));
+    assert.equal(url.username, '');
+    assert.equal(url.password, '');
+    assert.equal(url.search, '');
+  }
+  assert.doesNotMatch(links, /\\\(|recall-pad:|deviceId|sessionId|bootstrapSecret|token/i);
+});

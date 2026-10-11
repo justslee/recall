@@ -48,8 +48,9 @@ Use original, nonsensitive sample work. Do not submit private pairing codes, API
 2. Close the app and reopen the sheet from **Recent sheets**. Confirm the drawing is editable and light/dark appearance keeps all ink visible.
 3. Use **… → Export current work**. Check ordered pages, offscreen ink and PNG/PDF sharing. In-app export shares the submission limits: 20 pages, 12 MiB per image and 64 MiB total including editable drawing data.
 4. Delete a disposable sheet through **… → Delete sheet…**. Cancel once, then confirm; the Recent sheets row should disappear. Copies already transferred or shared remain at their destination.
-5. With the tested Mac companion, pair, transfer a short sheet, then interrupt/reconnect the local connection. Confirm work remains saved and appears once in the Mac tray. Arrival must not change the clipboard or send a chat message.
-6. For Recall Study, confirm the iPad shows only the question. Changing questions preserves unfinished work; sending does not flip or rate the Mac card.
+5. Open **Help & Privacy** from the home screen. Confirm the privacy, setup and support links open the public pages without including pairing or session information.
+6. With the tested Mac companion, pair, transfer a short sheet, then interrupt/reconnect the local connection. Confirm work remains saved and appears once in the Mac tray. Arrival must not change the clipboard or send a chat message.
+7. For Recall Study, confirm the iPad shows only the question. Changing questions preserves unfinished work; sending does not flip or rate the Mac card.
 
 Report the Recall/Recall Pad version, device model, OS version, steps and expected/actual behavior. TestFlight's feedback may include screenshots and diagnostic information under Apple's service; review it before submitting. [TestFlight feedback](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/).
 
@@ -59,6 +60,8 @@ Recall Pad has no Recall sign-in, subscription or in-app purchase. No demo crede
 
 **Without a Mac:** open **Tutor Pad**, write with Apple Pencil, select **Done**, reopen it under **Recent sheets**, then use **… → Export current work** for PNG/PDF sharing. A blank sheet works before granting camera or local-network permission. Camera access is used only to scan a temporary pairing QR code; it is not used as a document camera or retained recording.
 
+**Privacy and help:** choose **Help & Privacy** on the home screen for the public privacy policy, setup guide and support links.
+
 **Companion features:** these require Recall for Mac on the same local network. The exact tested, signed and notarized Mac download must be supplied here before submission: **owner/release operator must add the actual candidate download URL and checksum**. Setup instructions are at `https://github.com/justslee/recall/blob/main/docs/demos/PAPER.md`.
 
 Open Recall on the Mac and choose **Settings & backups → iPad & handwriting → Enable companion**. Generate a pairing QR, open **Pair with Mac → Scan pairing QR code** on the iPad, allow local-network/camera access when asked, and approve the iPad on the Mac. Each QR expires after five minutes and can be used once; generate it locally rather than using an embedded sample credential.
@@ -67,7 +70,7 @@ For manual transfer, open **File → Tutor Pad** on the Mac and choose **Start r
 
 For Recall Study, choose **Try demo** on a fresh Mac profile, open the math card and choose **Write on iPad**. The front appears on the iPad with the answer hidden. The Mac owns the reference and review schedule. Handwriting AI assessment requires explicit Mac consent and the user's own OpenAI API account; ordinary writing, local transfer and export need no API key.
 
-Paper-learning tools and AI assessment are optional integrations, not required to evaluate the writing and transfer beta. Do not claim those integrations as reviewed merely because setup exists. Supply separately verified client instructions and safe test access if they are included in the review scope. No reviewer should need the developer's personal account, private KB, pairing secret or live paper-session capability.
+Paper-learning tools and AI assessment are optional integrations. Reviewers must be able to inspect every shipped feature, including these integrations; omitting a feature from marketing does not remove that requirement. Supply verified client instructions and safe test access before submitting. Do not claim assessment quality or client compatibility merely because setup exists. No reviewer should need the developer's personal account, private KB, pairing secret or live paper-session capability.
 
 ## Store description later
 

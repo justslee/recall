@@ -5,6 +5,7 @@ struct HomeView: View {
     @EnvironmentObject private var bridge: BridgeClient
     @State private var document: PaperDocument?
     @State private var showPairing = false
+    @State private var showHelp = false
     @State private var error: String?
     @State private var pendingDeletion: PaperDocument?
     @State private var deletingSheet = false
@@ -95,12 +96,17 @@ struct HomeView: View {
             .background(PadPalette.background)
             .navigationTitle("Recall Pad")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showHelp = true } label: { Label("Help & Privacy", systemImage: "questionmark.circle") }
+                        .accessibilityIdentifier("help-and-privacy")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showPairing = true } label: { Label(bridge.connected ? "Connected" : bridge.pairedMac == nil ? "Pair with Mac" : "Offline", systemImage: bridge.connected ? "link" : "link.badge.plus") }
                 }
             }
             .fullScreenCover(item: $document) { PaperEditor(initialDocument: $0).environmentObject(store).environmentObject(bridge) }
             .sheet(isPresented: $showPairing) { PairingView().environmentObject(bridge) }
+            .sheet(isPresented: $showHelp) { HelpPrivacyView() }
             .alert("Your work is kept", isPresented: Binding(get: { error != nil || store.storageError != nil }, set: { if !$0 { error = nil; store.storageError = nil } })) { Button("OK") { error = nil; store.storageError = nil } } message: { Text(error ?? store.storageError ?? "") }
         }.sheetDeletionConfirmation(item: $pendingDeletion, onDelete: delete)
     }
@@ -145,6 +151,72 @@ struct HomeView: View {
         deletingSheet = true
         defer { deletingSheet = false }
         try bridge.deleteSheet(item, from: store)
+    }
+}
+
+enum PadHelpLinks {
+    static let privacy = URL(string: "https://github.com/justslee/recall/blob/main/docs/PRIVACY.md")!
+    static let setup = URL(string: "https://github.com/justslee/recall/blob/main/docs/SETUP.md#optional-ipad-companion")!
+    static let overview = URL(string: "https://github.com/justslee/recall#recall")!
+    static let support = URL(string: "https://github.com/justslee/recall/issues")!
+}
+
+private struct HelpPrivacyView: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Image(systemName: "book.closed").font(.title).foregroundStyle(PadPalette.accent)
+                        Text("A little help for your desk.").font(.system(.title, design: .serif)).bold()
+                        Text("Write offline. Connect when you need to. Keep control of your work.").foregroundStyle(.secondary)
+                    }
+                    VStack(alignment: .leading, spacing: 16) {
+                        Label("Saved on this iPad", systemImage: "lock.shield").font(.headline)
+                        Text("Your editable sheets and queued submissions are stored locally, including offline. Recall Pad has no required account or analytics.")
+                        Divider()
+                        Label("You choose what to send", systemImage: "paperplane").font(.headline)
+                        Text("Pairing connects to your Mac over an authenticated local connection. Selected work transfers when you tap Send; queued submissions resume when the apps reconnect. You can also export or share your pages yourself.")
+                        Divider()
+                        Label("Feedback stays with your tutor", systemImage: "text.bubble").font(.headline)
+                        Text("Recall Study feedback happens on your Mac. Tutor Pad work goes to your connected tutor session or Mac page tray. Optional AI feedback may send the selected work to your provider when you request it; API credentials are never sent to this iPad.")
+                    }
+                    .font(.subheadline)
+                    .padding(22)
+                    .background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 20))
+                    VStack(spacing: 0) {
+                        helpLink("Privacy policy", icon: "hand.raised", destination: PadHelpLinks.privacy)
+                        Divider().padding(.horizontal, 20)
+                        helpLink("Set up & pair your Mac", icon: "ipad.and.arrow.forward", destination: PadHelpLinks.setup)
+                        Divider().padding(.horizontal, 20)
+                        helpLink("Explore Recall", icon: "book", destination: PadHelpLinks.overview)
+                        Divider().padding(.horizontal, 20)
+                        helpLink("Get help or report a problem", icon: "questionmark.bubble", destination: PadHelpLinks.support)
+                    }
+                    .background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 20))
+                    Text("These links open in your browser. For public support, leave out private work, pairing codes and credentials.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                .padding(28)
+                .frame(maxWidth: 640, alignment: .leading)
+                .frame(maxWidth: .infinity)
+            }
+            .background(PadPalette.background)
+            .navigationTitle("Help & Privacy")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+    private func helpLink(_ title: String, icon: String, destination: URL) -> some View {
+        Link(destination: destination) {
+            HStack(spacing: 14) {
+                Image(systemName: icon).frame(width: 24)
+                Text(title)
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(.secondary)
+            }.padding(20).contentShape(Rectangle())
+        }
     }
 }
 
