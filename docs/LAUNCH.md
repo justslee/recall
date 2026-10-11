@@ -2,7 +2,7 @@
 
 [Documentation](README.md) / Launch
 
-The source-build beta is published at [justslee/recall](https://github.com/justslee/recall). The next distribution work is about easier installation and a verified first-user journey.
+Recall's source is published at [justslee/recall](https://github.com/justslee/recall); Mac app downloads are listed under [GitHub Releases](https://github.com/justslee/recall/releases). Distribution work follows the checks below, with evidence for each exact build kept separately from the public source.
 
 ## Already available
 
@@ -14,11 +14,11 @@ The source-build beta is published at [justslee/recall](https://github.com/justs
 - Full-history privacy checks and [hosted verification](https://github.com/justslee/recall/actions/workflows/verify.yml).
 - [Private vulnerability reporting](https://github.com/justslee/recall/security/advisories/new), dependency alerts and secret scanning/push protection.
 
-## Next distribution milestones
+## Distribution and acceptance
 
-### 1. A signed Mac download
+### 1. Verify each signed Mac download
 
-Build a versioned Apple Silicon release, sign and notarize it, then test the actual download on a clean Mac. The goal is an app that opens through normal OS checks and studies without a separate Node installation.
+For each versioned Apple Silicon release, sign and notarize the app, then test the actual download on a clean Mac. It should open through normal OS checks and study without a separate Node installation. Publish only the tested artifact and its final checksum; repeat this for later releases.
 
 Use [Electron's distribution guidance](https://www.electronjs.org/docs/latest/tutorial/distribution-overview). Apple Developer/signing credentials belong in maintainer release configuration, never in the repository. A working source build or unsigned archive is not a notarized download.
 

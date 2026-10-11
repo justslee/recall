@@ -17,28 +17,21 @@ It does not replace Recall's Mac library, coding editor, review ratings or progr
 
 ![Recall's compact handwriting controls on a synthetic demonstration card](../public/recall-pad-study.png)
 
-_Mac study controls, shown with synthetic demonstration content. The iPad writing surface requires a native device build._
+_Mac study controls, shown with synthetic demonstration content. Recall Pad is installed separately on the iPad._
 
 ## Set up once
 
-Ordinary [Mac setup](SETUP.md) is unchanged. For the companion, you need iPadOS 17 or later, an Apple Pencil for writing, and both devices on the same local network. Building the iPad app requires full Xcode; Apple's Command Line Tools can build the Mac's Bonjour discovery helper.
+Install Recall on your Mac using the [setup guide](SETUP.md). For the companion, you need iPadOS 17 or later, an Apple Pencil for writing, and both devices on the same local network.
 
-From your Recall checkout:
-
-```sh
-npm run build:pad-helper
-npm run build:ipad
-```
-
-The first command builds the Bonjour helper. The second bundles the locked question-rendering resources and builds an **unsigned device app**; it does not install Recall Pad on a physical iPad. Use `npm run build:ipad -- --simulator` to compile against the simulator SDK; running that app or its native tests requires an installed simulator runtime. Follow the [native build guide](IPAD_NATIVE.md) to configure your own signing identity and install through Xcode. A public TestFlight build is a separate distribution step.
-
-Rebuild and reopen Recall from the checkout, or [replace your packaged app](SETUP.md#update-an-existing-installation). Keep the same Mac profile.
+Invited testers install Recall Pad through **TestFlight**. There is no public beta invitation yet. You can also [build and install it through Xcode](IPAD_NATIVE.md). The published Mac app includes its discovery helper; source users can [build that helper separately](SETUP_REFERENCE.md#optional-ipad-companion).
 
 1. In **Settings & backups → iPad & handwriting**, enable the companion and choose **Pair an iPad**.
 2. Open Recall Pad on the iPad, choose **Pair with Mac**, and scan the QR code.
 3. Confirm your iPad on the Mac. Allow the iPad's local-network access; camera access is used to scan the pairing code.
 
 The code is private, single-use and expires after five minutes. **Pair once per device.** Subsequent sessions reconnect to the pinned Mac identity. Removing a device, replacing the Mac identity or clearing pairing data requires pairing again; ordinary app updates do not.
+
+For updates, keep both apps installed and follow the [Mac and iPad update steps](SETUP.md#update-an-existing-installation). Save an open sheet first. Deleting the iPad app can remove its local work; export important sheets before significant upgrades.
 
 ## Study with your Pencil
 

@@ -28,14 +28,16 @@ _Appearance follows your Mac. All documentation screenshots use original demo or
 
 ## Get started
 
-You need an **Apple Silicon Mac, macOS 13 or later, and Node.js 22.18 or later**. Install Node first; it includes npm. Recall's setup checks Node but does not install it.
+You need an **Apple Silicon Mac running macOS 13 or later**.
 
-The [illustrated setup guide](docs/SETUP.md) takes you from **Download ZIP → build → open Recall** to your first study session. It keeps the knowledge base, assistant connections and iPad setup on the same page, with screenshots and optional sections.
+Download the **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases), unzip it, move **Recall.app** to **Applications**, and open it. The signed, notarized app includes its runtime: **no Node, Terminal or source build is needed**.
+
+The [illustrated setup guide](docs/SETUP.md) takes you from download to your first study session. It keeps the knowledge base, assistant connections and iPad setup on the same page, with screenshots and optional sections. Developers can still [build from source](docs/SETUP_REFERENCE.md#install-and-open-recall); that route requires **Node.js 22.18 or later**, installed separately.
 
 Choose **Try demo** for three original sample cards, **Import cards** for a compatible Anki deck, or **Connect learning** to make the system yours. You can study without an account, API key, knowledge base or iPad. Setup needs internet; ordinary study works offline afterward.
 
 > [!NOTE]
-> This is a source-build beta. There is no signed, notarized Mac download or automatic updater yet. The installed **Recall.app** includes its own runtime; Node and npm are needed for setup and rebuilding, rather than daily use. Recall Pad currently needs a separate personal installation through Xcode; there is no public TestFlight download yet.
+> This is a beta. Mac updates are manual. Recall Pad is a separate iPad app: invited testers use TestFlight, and a [personal Xcode build](docs/IPAD_NATIVE.md) remains available. There is no public TestFlight invitation yet.
 
 ## Choose the practice you have room for
 
@@ -77,10 +79,12 @@ Voice transcription, Speak evaluation and Recall's handwriting assessment use an
 ## Get the latest update
 
 1. Back up in **Settings & backups → Library & backups**, finish recordings or evaluations, then quit Recall.
-2. Download the latest ZIP and repeat the [build steps](docs/SETUP.md#install-and-open-recall), or follow the [Git update instructions](docs/SETUP_REFERENCE.md#update-an-existing-installation).
-3. Replace **Recall.app** in its existing Applications location and reopen it. Refresh assistant instructions when the update changes them, then start fresh assistant chats.
+2. Download the newest **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases) and unzip it.
+3. Move **Recall.app** to its existing Applications location, choose **Replace**, and reopen it. Follow any release notes about refreshing assistant connections.
 
-Your library lives separately from the source code. Updating the app preserves your cards and study history. **New cards appear while Recall is open**; an app-code update requires restarting. Source users and custom profiles have [detailed update instructions](docs/SETUP_REFERENCE.md#update-an-existing-installation).
+Your library lives separately from the app. Updating preserves your cards, study history and configuration. **New cards appear while Recall is open**; an app-code update requires restarting. There is no automatic Mac updater yet. Source users and custom profiles have [detailed update instructions](docs/SETUP_REFERENCE.md#update-an-existing-installation).
+
+**Recall Pad:** open **TestFlight → Recall Pad → Update**, or enable **Automatic Updates** on its TestFlight page. Save an open sheet before updating. Keep the app installed so its local sheets remain available. [iPad update details →](docs/SETUP.md#update-recall-pad)
 
 ## Your data stays yours
 

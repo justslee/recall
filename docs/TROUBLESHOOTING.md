@@ -8,6 +8,12 @@ Find the symptom, check its cause, then retry. Repairing the app does not requir
 
 ## Installation
 
+### The downloaded app will not open
+
+Check that you downloaded the **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases), rather than GitHub's Source code ZIP, and that your Mac uses Apple Silicon with macOS 13 or later. Unzip it, move **Recall.app** to Applications, and open it there. The release app does not need Node.
+
+If macOS reports a damaged app or an unidentified developer, download the release again and check its release notes. Do not disable Gatekeeper or remove quarantine to bypass the warning. If it persists, [report the message](#reporting-a-problem) with the version you downloaded; keep your profile intact.
+
 ### Setup stops before installing
 
 From the cloned Recall folder, run:
@@ -17,7 +23,7 @@ npm run setup -- --check
 node --version
 ```
 
-The beta requires Apple Silicon, macOS 13 or later and Node 22.18 or later. Install a supported version from [Node.js](https://nodejs.org/en/download), reopen Terminal and check again. An older macOS version must be updated before this Electron build can run.
+Source builds require Apple Silicon, macOS 13 or later and Node 22.18 or later. Install a supported version from [Node.js](https://nodejs.org/en/download), reopen Terminal and check again. An older macOS version must be updated before this Electron build can run.
 
 If you already use nvm, the checkout's `.nvmrc` selects the tested baseline:
 
@@ -40,7 +46,9 @@ Setup uses `npm ci` and the committed lockfile. Do not change the lockfile just 
 
 ### The app will not open after an update
 
-Quit Recall, then rebuild the checkout:
+For a GitHub Release download, quit Recall, download and unzip the current **Mac app ZIP**, then replace the app in its existing Applications location. Follow [download help](#the-downloaded-app-will-not-open) if macOS shows a warning.
+
+For a source build, quit Recall, then rebuild the checkout:
 
 ```sh
 npm run setup

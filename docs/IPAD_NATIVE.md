@@ -4,6 +4,8 @@
 
 Recall Pad is an optional native iPad companion. Ordinary Recall setup does not require Xcode, an iPad or an Apple Developer account. The source includes a real SwiftUI/PencilKit app and a checked-in Xcode project; no project generator or hosted service is required.
 
+**Invited testers can use TestFlight instead.** See the [installation and update guide](SETUP.md#optional-ipad-companion). This page is for people building their own app; there is no public TestFlight invitation yet.
+
 ## Requirements
 
 - A Mac with **full Xcode**, including the iOS SDK. Command Line Tools alone cannot build an iPad app.
@@ -51,7 +53,13 @@ The committed AppIcon uses Recall’s existing public SVG brand on an opaque war
 
 The scanner shows camera permission and interruption messages instead of silently failing. Use **Open Settings** if camera access is denied, or open Recall Pad full screen if another foreground app prevents camera access. You can also close the scanner and paste the pairing code. An ordinary app update does not require pairing again.
 
-Free personal development signing can expire and require reinstalling through Xcode. A future TestFlight beta needs a paid Apple Developer membership and App Store Connect distribution configuration. This repository does not imply that a public TestFlight build is available.
+Free personal development signing can expire and require reinstalling through Xcode. Distributing your own TestFlight beta needs a paid Apple Developer membership and App Store Connect configuration. Ordinary invited testers need neither; this repository does not itself grant a beta invitation.
+
+## Updating an existing development installation
+
+Tap **Done** to save an open sheet and export important work. Update the source and locked dependencies, prepare the resources again, then build and install with Xcode using the **same team and bundle identifier** as the existing app. Install over the app rather than deleting it. A different bundle identifier creates a separate app with a separate local library.
+
+Keep `Local.xcconfig` private and retain the existing Mac profile. Normal app updates preserve sheets and pairing. For an app installed through TestFlight, use **TestFlight → Recall Pad → Update** instead of Xcode. [All update steps](SETUP.md#update-an-existing-installation)
 
 ## What stays on each device
 

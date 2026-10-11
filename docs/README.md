@@ -24,7 +24,8 @@ Use these references when you need more detail; they are not extra setup steps.
 | I need help with…                           | Reference                                                                    |
 | :------------------------------------------ | :--------------------------------------------------------------------------- |
 | An installation or connection problem       | [Troubleshooting](TROUBLESHOOTING.md)                                        |
-| Updates, coding tools or command-line setup | [Advanced setup](SETUP_REFERENCE.md)                                         |
+| Updating my Mac or iPad app                 | [App updates](SETUP.md#update-an-existing-installation)                      |
+| Coding tools or command-line setup          | [Advanced setup](SETUP_REFERENCE.md)                                         |
 | Knowledge sources, permissions and mirrors  | [Knowledge bases](KNOWLEDGE.md)                                              |
 | Daily learning, catch-up and preparation    | [Learning workflow](WORKFLOW.md)                                             |
 | Spoken card answers                         | [Voice](VOICE.md)                                                            |

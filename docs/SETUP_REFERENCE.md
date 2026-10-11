@@ -8,7 +8,9 @@ Start with the [illustrated setup guide](SETUP.md) if you are new to Recall. Thi
 
 ## Install and open Recall
 
-**Requirements:** Apple Silicon Mac, macOS 13 or later, and Node 22.18 or later. A current Node 22 LTS release is recommended; `.nvmrc` records the tested baseline.
+The [signed Mac download](https://github.com/justslee/recall/releases) is the simplest installation path: unzip, move **Recall.app** to Applications, and open it. It includes its runtime and discovery helper. No Node or Terminal is needed.
+
+**To build from source:** Apple Silicon Mac, macOS 13 or later, and Node 22.18 or later. A current Node 22 LTS release is recommended; `.nvmrc` records the tested baseline.
 
 **Install Node before running setup.** Use the [Node.js 22 macOS installer](https://nodejs.org/en/download), which includes npm. Open a new Terminal window and run `node --version` and `npm --version` to verify installation. Recall's setup checks prerequisites; it does not install Node.
 
@@ -47,11 +49,23 @@ The packaged **Recall.app** includes its own Electron/Node runtime. Opening it a
 
 Launching the packaged app registers **Open in Recall** links. Development `npm start` alone does not install the macOS protocol handler.
 
-This is a source-build beta. A signed, notarized download is not yet available; Intel Macs and other operating systems do not have a verified setup path.
+Source builds are separate from the publisher's signed, notarized releases. Intel Macs and other operating systems do not have a verified setup path.
 
 ## Update an existing installation
 
-Updates are manual in this beta. Node and npm are needed to build an update, even though the installed app includes its own runtime.
+Mac updates are manual in this beta. Your library stays outside the app bundle, so replacing **Recall.app** does not replace your cards or study history.
+
+### If you installed the Mac download
+
+1. Back up in **Settings & backups → Library & backups**, finish recordings/evaluations, then **Quit Recall**. Closing its window may keep the receiver running.
+2. Download the newest **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases), read its release notes and unzip it.
+3. Move **Recall.app** to the same Applications folder as your current app, choose **Replace**, then open that installed copy.
+
+No Node or rebuild is needed. Preserve the profile at `~/Library/Application Support/Recall`; do not delete it or reimport your cards to update. Normal updates retain the iPad pairing. macOS may request fresh permission when moving from an older development build to the stable signed app; approve only the permissions for features you use.
+
+### If you build from source
+
+Node and npm are needed to build source updates, even though the installed app includes its own runtime. Updating Git alone does not update an app already in Applications.
 
 Finish recordings/evaluations, make a backup in **Settings & backups → Library & backups**, then quit Recall. Open Terminal in the source checkout you originally cloned. If you have edited the source, save and reconcile those changes before updating; do not discard them with a reset.
 
@@ -62,13 +76,13 @@ npm run setup -- --no-launch
 
 `git pull --ff-only` fetches the latest upstream commits without creating a merge commit. If either command fails, resolve its error before continuing. Setup installs the committed dependencies/runtime and rebuilds the interface without opening a second app.
 
-### If you run from the checkout
+#### If you run from the checkout
 
 ```sh
 npm start
 ```
 
-### If you use the app in Applications
+#### If you use a source-built app in Applications
 
 Build the updated Mac app:
 
@@ -80,7 +94,7 @@ In Finder, open `release/Recall-darwin-arm64` inside the checkout. Copy **Recall
 
 Your cards, schedules, reviews, attachments, drafts and paused session live in the selected profile, outside the checkout. The default is `~/Library/Application Support/Recall`; custom profiles should keep using their original `RECALL_DATA_DIR`. Do not delete or replace the profile to update the app, and do not reimport your library or recreate knowledge sources.
 
-### If you downloaded a ZIP
+#### If you downloaded a source ZIP
 
 Download a fresh ZIP from the repository's **Code → Download ZIP** menu and extract it into a new folder. Preserve any edits in your old folder. From the new folder, run `npm run setup -- --no-launch`, then follow the checkout or Applications steps above. A ZIP has no Git metadata, so `git pull` does not apply.
 
@@ -98,6 +112,10 @@ Only an app-code update needs a restart. Validated card imports and learning-inb
 
 Recall Pad is a separate native app for iPadOS 17 or later and Apple Pencil. Ordinary Mac setup does not require Xcode, an iPad, a local listener or Accessibility permission.
 
+**Invited TestFlight users:** accept the invitation on your iPad, install Recall Pad, then follow [pairing](SETUP.md#pair-once). Updates arrive through **TestFlight → Recall Pad → Update**, with optional Automatic Updates on its page. There is no public beta invitation yet. The published Mac app already includes its discovery helper; it needs no helper build. [iPad update details](SETUP.md#update-recall-pad)
+
+### Build the companion from source
+
 For the companion, build the Mac's Bonjour discovery helper and an unsigned device app from the checkout:
 
 ```sh
@@ -105,7 +123,7 @@ npm run build:pad-helper
 npm run build:ipad
 ```
 
-The Bonjour helper builds with Apple's Command Line Tools. If you use Recall from Applications, run `npm run package` after building the helper, then quit Recall and replace the app at its existing location so the installed copy includes it. The iPad build requires full Xcode and bundles the locked question-rendering resources; it does not install a signed physical-device app. Follow [Native iPad setup](IPAD_NATIVE.md) for personal signing and installation, then [Recall Pad](HANDWRITING.md#set-up-once) for pairing and study. Public TestFlight distribution has separate signing and verification gates.
+The Bonjour helper builds with Apple's Command Line Tools. If you use a source-built Recall from Applications, run `npm run package` after building the helper, then quit Recall and replace the app at its existing location so the installed copy includes it. The iPad build requires full Xcode and bundles the locked question-rendering resources; it does not install a signed physical-device app. Follow [Native iPad setup](IPAD_NATIVE.md) for personal signing and installation, then [Recall Pad](HANDWRITING.md#set-up-once) for pairing and study. Publishing a new TestFlight build has separate signing and verification gates.
 
 Enable **Settings & backups → iPad & handwriting** only when you want the local receiver. Pair on the same network with a single-use QR code, approve the device on the Mac, and allow local-network access on the iPad. Pairing persists across ordinary updates. Device removal or a changed Mac identity requires another pairing.
 

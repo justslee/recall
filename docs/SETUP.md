@@ -12,32 +12,33 @@ Only the Mac installation is required. You can study without an account, knowled
 
 ## Install and open Recall
 
-**You need:** an Apple Silicon Mac running macOS 13 or later, internet for setup, and Node 22.18 or later. Node 22 is the tested baseline. This is a source-build beta; a signed, notarized download is not available yet. Intel Macs and other operating systems do not have a verified installation path.
+**You need:** an Apple Silicon Mac running macOS 13 or later and internet to download the app. Intel Macs and other operating systems do not have a verified installation path.
 
-### 1. Download Node and Recall
+<a id="keep-recall-in-applications"></a>
 
-1. Install Node using the [official macOS installer](https://nodejs.org/en/download). It includes npm, the tool used by the commands below. Recall does not install Node for you.
-2. Open [Recall on GitHub](https://github.com/justslee/recall), choose **Code → Download ZIP**, and unzip it in Finder.
-3. Open a new **Terminal** window. Type `cd `, including the space, then drag the unzipped Recall folder into Terminal. Press Return. This tells Terminal which folder to work in.
+### Download, move, open
 
-### 2. Build the Mac app
+1. Open [Recall's GitHub Releases](https://github.com/justslee/recall/releases) and download the **Mac app ZIP** under the newest release's **Assets**. Choose the `macos-arm64` file; GitHub's **Source code** ZIP is for developers.
+2. Unzip the download in Finder and move **Recall.app** to **Applications**.
+3. Open **Recall.app from Applications** and confirm macOS's first-open prompt. Keep this as its permanent location before connecting assistants.
 
-Copy these commands into that Terminal window, one at a time:
+The download is signed and notarized. Its runtime and iPad discovery helper are included; you do not need Node, Terminal or Xcode for ordinary Mac use. Opening the installed app also enables **Open in Recall** links from your assistant. If macOS reports a damaged app or an unidentified developer, stop and use [installation help](TROUBLESHOOTING.md#the-downloaded-app-will-not-open); do not disable Gatekeeper.
+
+<details>
+<summary>Prefer to build from source?</summary>
+
+Install **Node 22.18 or later** using the [official macOS installer](https://nodejs.org/en/download); it includes npm. Recall checks Node but does not install it. Download the repository's **Code → Download ZIP** and unzip it, or clone it with Git.
+
+In a new Terminal window, type `cd `, drag the source folder into Terminal, and press Return. Run these commands one at a time:
 
 ```sh
 npm run setup -- --no-launch
 npm run package
 ```
 
-Let each command finish before starting the next. Setup downloads the locked dependencies and builds Recall; packaging creates the app. If either stops with an error, use [setup help](TROUBLESHOOTING.md#setup-stops-before-installing) before continuing.
+Let each command finish before starting the next. Then copy **release → Recall-darwin-arm64 → Recall.app** into Applications and open it there. Keep Node and the source folder if you want to build future updates. A local source build does not inherit the publisher's signing or notarization. [Detailed source setup](SETUP_REFERENCE.md#install-and-open-recall) · [Setup help](TROUBLESHOOTING.md#setup-stops-before-installing)
 
-### Keep Recall in Applications
-
-1. In the unzipped folder, open **release → Recall-darwin-arm64**.
-2. Copy **Recall.app** into your Mac’s **Applications** folder.
-3. Open **Recall.app from Applications**. Keep this as its permanent location before connecting assistants.
-
-The installed app includes its own runtime. You do not need Terminal or a separate Node installation to open it each day. Keep the source folder and Node if you want to build updates. Opening the installed app also enables **Open in Recall** links from your assistant.
+</details>
 
 ## Try your first cards
 
@@ -140,9 +141,9 @@ This is separate from a ChatGPT subscription: API billing and internet are requi
 
 ## Optional iPad companion
 
-**Recall Pad is a separate native iPad app**, for iPadOS 17 or later and Apple Pencil. The current beta requires a personal build and installation through full Xcode on your Mac, with your Apple account for signing. The Mac setup above does not install the iPad app, and there is no public App Store or TestFlight download yet.
+**Recall Pad is a separate native iPad app**, for iPadOS 17 or later and Apple Pencil. **Invited testers:** install [Apple's TestFlight](https://testflight.apple.com/), open your invitation on the iPad, and choose **Install** for Recall Pad. There is no public beta invitation yet. No Xcode or personal signing account is needed for TestFlight.
 
-Follow [Build and install Recall Pad](IPAD_NATIVE.md), plus the [Mac discovery-helper steps](SETUP_REFERENCE.md#optional-ipad-companion). You can leave this entire section for later.
+You can also [build and install Recall Pad through Xcode](IPAD_NATIVE.md). The published Mac app already includes its discovery helper; source users can follow the [helper build steps](SETUP_REFERENCE.md#optional-ipad-companion). You can leave this entire section for later.
 
 ### Pair once
 
@@ -187,11 +188,21 @@ This is a Codex-first beta. One physical-iPad submission has been inspected in a
 
 ## Update an existing installation
 
-Updates are manual in this beta. Back up from **Settings & backups → Library & backups**, finish recordings or evaluations, then quit Recall. Download the latest ZIP into a new folder and repeat the two build commands above. Replace the app in the **same Applications location** and reopen it.
+Mac updates are manual in this beta:
+
+1. Back up from **Settings & backups → Library & backups**, finish recordings or evaluations, then **Quit Recall**. Closing its window may leave the iPad receiver running.
+2. Download the newest **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases) and unzip it.
+3. Move **Recall.app** into the **same Applications location**, choose **Replace**, and open it again.
 
 Your library lives separately from the source folder. Replacing the app preserves cards, review history, drafts and configuration; do not delete its data folder or reimport your library to update. New cards appear while Recall is open and do not require an app restart.
 
 For Git checkouts, custom profiles or detailed ZIP steps, use [the update reference](SETUP_REFERENCE.md#update-an-existing-installation).
+
+### Update Recall Pad
+
+Save your open sheet with **Done**, then open **TestFlight → Recall Pad → Update** on the iPad. You can enable **Automatic Updates** under **App Information** on its TestFlight page. Apple makes each beta build available for up to 90 days; TestFlight shows its remaining time. [Apple's TestFlight guide](https://testflight.apple.com/)
+
+Update the existing app rather than deleting it: sheets are stored locally on the iPad. Normal updates preserve sheets and pairing; export important work before a significant upgrade. If either app asks for a newer companion, update both apps, then reopen them on the same network. Xcode users should rebuild and install with the same bundle identifier. [Native update reference](IPAD_NATIVE.md#updating-an-existing-development-installation)
 
 ### Refresh assistant instructions
 

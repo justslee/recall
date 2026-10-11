@@ -4,7 +4,7 @@
 
 **Goal:** use your iPad and Pencil as a notepad, then discuss the actual handwritten steps on your Mac.
 
-Recall Pad is optional. Its native iPad app needs a separate installation; the current personal development route uses Xcode. Follow the [iPad build guide](../IPAD_NATIVE.md) before this walkthrough.
+Recall Pad is optional and installed separately. Invited testers use TestFlight; a personal Xcode build is also available. Follow the [iPad setup guide](../SETUP.md#optional-ipad-companion) before this walkthrough.
 
 ## Pair once
 

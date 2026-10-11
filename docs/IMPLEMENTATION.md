@@ -2,7 +2,7 @@
 
 [Documentation](README.md) / Implementation
 
-Recall is an Apple Silicon macOS source-build beta. This page summarizes what is implemented and verified; the [implementation history](history/IMPLEMENTATION_LOG.md) preserves detailed, dated records.
+Recall is an Apple Silicon macOS beta. Install a published app from [GitHub Releases](https://github.com/justslee/recall/releases), or build from source. This page summarizes what is implemented and verified; the [implementation history](history/IMPLEMENTATION_LOG.md) preserves detailed, dated records.
 
 **Study → capture → prepare → self-test → revisit.**
 
@@ -114,7 +114,7 @@ The October 11 Tutor Pad entry update removes the initial destination dialog. Ho
 
 ## Still outside this beta
 
-- Signed, notarized Mac downloads and verified support for other platforms.
+- An automatic Mac updater and verified support for other platforms.
 - Production-verified handwriting grading and full spoken back-and-forth conversation.
 - Continuous knowledge-base synchronization and universal conversation capture.
 - A bundled Notion OAuth/API client or connector authentication.

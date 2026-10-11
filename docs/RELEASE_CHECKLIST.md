@@ -4,7 +4,7 @@
 
 **Distribution preparation:** [Mac download and iPad TestFlight](DISTRIBUTION.md) · [Submission packet](submission/README.md). Use a private copy of the [candidate record](submission/RELEASE_RECORD.md) to keep build, notarization and review evidence distinct. These guides do not close the checks below.
 
-**Candidate:** `0.6.0-beta.3`, matching `package.json`. Apple Silicon macOS source-build beta; code/docs are MIT, original demo content is CC0-1.0, and imported material retains its own terms.
+**Source version:** `0.6.0-beta.3`, matching `package.json`. Record each signed candidate's exact source commit and build separately; later documentation or tooling commits do not change an already signed app. Apple Silicon macOS beta; code/docs are MIT, original demo content is CC0-1.0, and imported material retains its own terms.
 
 Use actual candidate output as evidence. Earlier test counts or audits do not validate later changes. [Implementation](IMPLEMENTATION.md) records the reviewed baseline.
 

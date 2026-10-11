@@ -2,7 +2,7 @@
 
 [Documentation](README.md) / Public readiness
 
-**Status:** published Apple Silicon macOS source-build beta. The portable app, original demo and learning skill kit are available at [justslee/recall](https://github.com/justslee/recall).
+**Status:** Apple Silicon macOS beta. Source, original demo content and the learning skill kit are published at [justslee/recall](https://github.com/justslee/recall); installable Mac builds are listed under [GitHub Releases](https://github.com/justslee/recall/releases). The baseline below documents the October 5 source review, not every later release.
 
 ## Verified publication baseline
 
@@ -57,10 +57,10 @@ Study and the original demo require no account or knowledge base. Notion setup r
 
 ## Remaining acceptance work
 
-1. **Signed distribution:** provide a notarized Mac download and test it on a clean Mac.
+1. **Distribution validation:** check each notarized Mac download and its installation on a clean Mac. Keep exact-build evidence in a private release record; a published ZIP alone does not close every device or integration check.
 2. **Real first-user trial:** verify authenticated Codex/Claude, fresh-session capture, scoped Notion creation/write/mirror, blocked-item handoff and actual spoken feedback.
 3. **Ongoing releases:** check each exact commit's hosted results and re-review content before distributing it.
 
-The source-build beta is shareable today. Intel/other platforms, automatic handwriting grading and continuous KB synchronization remain outside its verified scope.
+The source and published Mac downloads are shareable. Intel/other platforms, live handwriting-grading quality and continuous KB synchronization remain outside the October 5 baseline's verified scope; later capabilities need their own evidence.
 
 **Next:** [Launch plan](LAUNCH.md) · [Release checklist](RELEASE_CHECKLIST.md) · [Privacy](PRIVACY.md)
