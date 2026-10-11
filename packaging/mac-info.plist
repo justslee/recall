@@ -3,4 +3,8 @@
 <plist version="1.0"><dict>
   <key>NSMicrophoneUsageDescription</key>
   <string>Recall uses your microphone only when you start recording, to transcribe a spoken study answer or explanation with OpenAI.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Recall connects to your paired iPad on your local network only when you enable Recall Pad, to receive your written study work.</string>
+  <key>NSBonjourServices</key>
+  <array><string>_recall-pad._tcp</string></array>
 </dict></plist>

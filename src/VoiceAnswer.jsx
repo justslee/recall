@@ -228,6 +228,8 @@ export function VoiceAnswer({
   onOpenSettings,
   onEvaluated,
   onBusyChange,
+  extraTools,
+  extraContent,
 }) {
   const [expanded, setExpanded] = useState(false),
     [status, setStatus] = useState(null),
@@ -473,6 +475,7 @@ export function VoiceAnswer({
               </button>
             </>
           )}
+          {extraTools}
         </div>
         <button
           className="text-button answer-info"
@@ -484,6 +487,7 @@ export function VoiceAnswer({
           <Info size={15} />
         </button>
       </div>
+      {extraContent}
       {infoOpen && (
         <div className="answer-strip-info" id={infoId}>
           <p>

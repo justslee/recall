@@ -21,6 +21,8 @@ const allowed = new Set([
   "docs",
   "public",
   "packaging",
+  "apps",
+  "native",
   ".github",
   ".codex-plugin",
 ]);
@@ -46,7 +48,10 @@ const excluded = new Set([
   "evidence",
   ".git",
   ".DS_Store",
+  "dist-native",
 ]);
+const generatedNative =
+  /^(?:apps\/ipad|native\/mac-handoff)\/(?:\.build|\.core-build|Build|DerivedData)(?:\/|$)|(?:^|\/)xcuserdata(?:\/|$)|^apps\/ipad\/Local\.xcconfig$|^apps\/ipad\/RecallPad\/Resources\/Web\/(?!\.gitkeep$)/;
 const failures = [];
 let count = 0,
   assets = 0,
@@ -66,6 +71,7 @@ function report(name, categories, prefix = "") {
     failures.push(prefix + displayName(name) + ": " + category);
 }
 function scan(file, relative) {
+  if (generatedNative.test(relative.replaceAll(path.sep, "/"))) return;
   const stat = fs.lstatSync(file);
   if (stat.isSymbolicLink()) return report(relative, ["symlink"]);
   if (stat.isDirectory()) {
@@ -111,7 +117,7 @@ try {
     for (const name of (tracked?.toString("utf8") || "")
       .split("\0")
       .filter(Boolean)) {
-      if (excluded.has(name.split("/")[0]))
+      if (excluded.has(name.split("/")[0]) || generatedNative.test(name))
         report(name, ["tracked file in excluded root"]);
     }
 

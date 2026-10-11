@@ -2,6 +2,8 @@
 
 [Documentation](README.md) · [Complete workflow](WORKFLOW.md#3-choose-your-knowledge-source) · [Connection help](TROUBLESHOOTING.md#my-knowledge-source-is-configured-but-not-ready)
 
+**Detailed reference.** Start with [illustrated setup](SETUP.md). The [Learning walkthrough](demos/LEARNING.md) shows how your chosen knowledge sources, assistant and Self Test fit together.
+
 Create a home for new concepts or connect notes you already keep. Choose the sources, scope and authoring permission; the skills use stable concept IDs to avoid treating copies as new concepts.
 
 [Create a KB](#create-your-first-knowledge-base) · [Connect existing notes](#connect-an-existing-source) · [Primary & mirrors](#primary-source-and-mirrors) · [CLI reference](#optional-cli-configuration)

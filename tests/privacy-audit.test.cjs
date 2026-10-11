@@ -123,6 +123,8 @@ test("private database, credential and export artifacts fail even with harmless 
     "examples/auth.json",
     "examples/.credentials.json",
     "examples/backups/snapshot.json",
+    "examples/paper-runtime/endpoint.json",
+    "examples/paper-authority/credentials.json",
   ])
     assert(
       inspectFile(name, "synthetic fixture").failures.includes(

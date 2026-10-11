@@ -2,6 +2,8 @@
 
 [Documentation](README.md) · [Speak practice](SPEAK.md)
 
+**Detailed reference.** Start with [illustrated setup](SETUP.md), then follow [Study a card](demos/STUDY.md) for the Answer Strip or [Practise in Speak](demos/SPEAK.md) for longer explanations.
+
 Use the compact **Answer Strip** to speak or type your answer, get optional feedback, and flip the
 card. You choose the recall rating; AI never rates a card or changes its schedule.
 
@@ -42,8 +44,8 @@ across restarts. Collapse the editor to focus on the card without losing text. *
 clears this draft. These are not a permanent attempt archive.
 
 The info button opens privacy details and a link to Voice settings. Coding cards keep their local
-editor and tests. Paper-photo assessment and automatic voice conversation are separate future
-features.
+editor and tests. Handwritten image assessment uses the separate [handwriting workflow](HANDWRITING.md).
+Automatic spoken back-and-forth conversation remains outside this beta.
 
 ## Connection and privacy
 

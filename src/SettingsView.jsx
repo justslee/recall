@@ -4,6 +4,7 @@ import { LearningConnections } from "./LearningConnections";
 import { KnowledgeSetup } from "./KnowledgeSetup";
 import { useAppearance } from "./appearance";
 import { VoiceSettings } from "./VoiceAnswer";
+import { HandwritingSettings } from "./Handwriting";
 
 function Setting({ title, description, value, action }) {
   return (
@@ -39,6 +40,7 @@ export function SettingsView({
         {[
           ["general", "General"],
           ["voice", "Voice & feedback"],
+          ["handwriting", "iPad & handwriting"],
           ["connections", "Learning connections"],
           ["library", "Library & backups"],
         ].map(([id, label]) => (
@@ -57,6 +59,9 @@ export function SettingsView({
           onBack={onBackToAnswer}
           backLabel={voiceBackLabel}
         />
+      </div>
+      <div hidden={section !== "handwriting"}>
+        <HandwritingSettings onOpenVoiceSettings={() => setSection("voice")} />
       </div>
       <div hidden={section !== "connections"}>
         <LearningSettings />
@@ -111,8 +116,12 @@ export function SettingsView({
           />
           <Setting
             title="Paper solution assessment"
-            description="Attach photos to a math card, compare with its worked solution, or export the assessment packet for Codex. Automatic grading and grade import are upcoming."
-            value="Self-review + export"
+            description="Save handwritten attempts, ask for feedback, or write on a paired iPad. Feedback stays separate from your review rating; worked solutions open only when you choose."
+            action={
+              <button onClick={() => setSection("handwriting")}>
+                iPad & handwriting
+              </button>
+            }
           />
           <Setting
             title="Interactive widgets"

@@ -1,6 +1,25 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const methods = [
   "snapshot",
+  "padStatus",
+  "padConfigure",
+  "padPairing",
+  "padConfirmPairing",
+  "padRevokeDevice",
+  "padStartStudy",
+  "padFollowStudy",
+  "paperAttempts",
+  "paperPage",
+  "paperImport",
+  "paperAttach",
+  "paperEvaluate",
+  "paperCancelAssessment",
+  "tutorStatus",
+  "tutorOpen",
+  "tutorStart",
+  "tutorCopyPage",
+  "paperConnections",
+  "paperConnect",
   "progress",
   "reviewHistory",
   "speakSources",
@@ -80,6 +99,11 @@ const methods = [
   "challengeSource",
 ];
 contextBridge.exposeInMainWorld("recall", {
+  onPadEvent: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("recall:pad-event", listener);
+    return () => ipcRenderer.removeListener("recall:pad-event", listener);
+  },
   ...Object.fromEntries(
     methods.map((name) => [
       name,

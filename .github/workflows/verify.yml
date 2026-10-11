@@ -16,6 +16,11 @@ jobs:
           node-version: "22.23.3"
           cache: npm
       - run: npm run setup -- --no-launch
+      - run: npm run docs:check
+      - run: npm run build:pad-helper
+      - run: swift test --package-path native/mac-handoff
+      - run: swift test --package-path apps/ipad
+      - run: npm run build:ipad
       - run: npm test
       - run: npm audit --audit-level=moderate
       - run: npm run test:security:native
@@ -31,6 +36,10 @@ jobs:
       - run: npm run test:knowledge-bootstrap
       - run: npm run test:voice
       - run: npm run test:speak
+      - run: npm run test:handwriting
+      - run: npm run test:tutor-workspace
+      - run: npm run test:paper-learning
+      - run: npm run test:pad-lifecycle
       - run: npm run audit:release
       - run: npm run package
       - run: npm run audit:package
@@ -62,5 +71,17 @@ jobs:
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:speak
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:handwriting
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:tutor-workspace
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:paper-learning
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:pad-lifecycle
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall

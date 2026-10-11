@@ -128,7 +128,7 @@ function restore(folder, input) {
         check.prepare("PRAGMA integrity_check").get().integrity_check !== "ok"
       )
         throw Error("Backup is corrupt");
-      if (check.prepare("PRAGMA user_version").get().user_version > 2)
+      if (check.prepare("PRAGMA user_version").get().user_version > 3)
         throw Error("Backup needs a newer app");
       if (
         check
@@ -153,6 +153,73 @@ function restore(folder, input) {
       executionApprovalsCleared = staged
         .prepare("DELETE FROM settings WHERE key GLOB 'validated-code:*'")
         .run().changes;
+      // Restored work is data, never authority to contact a provider or paste.
+      staged
+        .prepare(
+          "DELETE FROM settings WHERE key IN ('pad:session','pad:tutorArmed')",
+        )
+        .run();
+      if (
+        staged
+          .prepare(
+            "SELECT 1 FROM sqlite_schema WHERE type='table' AND name='paper_device_grants'",
+          )
+          .get()
+      )
+        staged.exec("DELETE FROM paper_device_grants");
+      if (
+        staged
+          .prepare(
+            "SELECT 1 FROM sqlite_schema WHERE type='table' AND name='paper_tutor_sessions'",
+          )
+          .get()
+      )
+        staged.exec("UPDATE paper_tutor_sessions SET status='restored'");
+      if (
+        staged.prepare("SELECT key FROM settings WHERE key='pad:enabled'").get()
+      )
+        staged
+          .prepare(
+            "INSERT OR REPLACE INTO settings VALUES('pad:enabled','false')",
+          )
+          .run();
+      if (
+        staged
+          .prepare(
+            "SELECT 1 FROM sqlite_schema WHERE type='table' AND name='paper_attempts'",
+          )
+          .get()
+      ) {
+        if (staged.prepare("SELECT 1 FROM paper_attempts LIMIT 1").get()) {
+          staged
+            .prepare(
+              "INSERT OR REPLACE INTO settings VALUES('pad:restoreNeedsResubmission','true')",
+            )
+            .run();
+          staged
+            .prepare(
+              "INSERT OR REPLACE INTO settings VALUES('pad:restoredAt',?)",
+            )
+            .run(JSON.stringify(new Date().toISOString()));
+        }
+        staged
+          .prepare(
+            "UPDATE paper_attempts SET status=CASE WHEN document_id IN (SELECT id FROM paper_documents WHERE mode='study') THEN 'interrupted' ELSE 'needs_resume' END WHERE status IN ('evaluating','pasting','queued')",
+          )
+          .run();
+      }
+      if (
+        staged
+          .prepare(
+            "SELECT 1 FROM sqlite_schema WHERE type='table' AND name='paper_assessments'",
+          )
+          .get()
+      )
+        staged
+          .prepare(
+            "UPDATE paper_assessments SET status='interrupted' WHERE status='evaluating'",
+          )
+          .run();
     } finally {
       staged.close();
     }

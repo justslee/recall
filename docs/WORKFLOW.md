@@ -1,6 +1,8 @@
 # Make Recall yours
 
-[Documentation](README.md) · [Quick start](../README.md#start-in-five-minutes) · [Get help](TROUBLESHOOTING.md)
+[Documentation](README.md) · [Illustrated setup](SETUP.md) · [Get help](TROUBLESHOOTING.md)
+
+**Detailed reference.** For a first visit, follow [Set up your Recall](SETUP.md). See the illustrated [Study](demos/STUDY.md) and [Learning](demos/LEARNING.md) walkthroughs for the everyday flow.
 
 Start with one study session. Add an assistant, a knowledge base and daily self-testing when you want them. Your accounts, notes and capture scope stay specific to your machine.
 
@@ -8,7 +10,7 @@ Start with one study session. Add an assistant, a knowledge base and daily self-
 
 ## 1. Get one study session working
 
-1. Follow the [quick start](../README.md#start-in-five-minutes) and choose **Try demo**.
+1. Follow the [setup guide](SETUP.md) and choose **Try demo**.
 2. Choose **Concepts**, **Math**, **Coding** or **Mixed**, independently of topic and collection. Coding tools are optional.
 3. Answer from memory, flip the card, then choose **Again / Hard / Good / Easy**.
 

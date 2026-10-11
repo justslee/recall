@@ -1,0 +1,10 @@
+.build/
+RecallPad/Resources/Web/*
+!RecallPad/Resources/Web/.gitkeep
+xcuserdata/
+*.xcuserstate
+*.ipa
+*.xcarchive
+Local.xcconfig
+.core-build/
+.swiftpm/

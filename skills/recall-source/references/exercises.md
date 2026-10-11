@@ -1,6 +1,6 @@
 # Math and coding validation
 
-Math: define the target skill, difficulty, assumptions, units and domain. Author the worked solution first, then independently recalculate the answer by another derivation or executed calculation. Include numbered steps and an interpretation. Current math cards accept `numeric: {value,tolerance,unit}`; do not claim automated proof or handwriting grading. Paper work can be attached and compared after explicit reveal.
+Math: define the target skill, difficulty, assumptions, units and domain. Author the worked solution first, then independently recalculate the answer by another derivation or executed calculation. Include numbered steps and an interpretation. Current math cards accept `numeric: {value,tolerance,unit}`. Paper work can be attached and compared after explicit reveal. Recall Pad optionally assesses selected images against the original Mac-held reference; this is formative AI feedback, not automated proof verification. Read [handwriting guidance](../../recall-math/references/handwriting.md) when evaluating or authoring for handwritten attempts.
 
 Coding: use Python and/or C++17 only where implementation reinforces the concept. Supply filename, imports/includes, stub, solution and harness. State input constraints, error behavior and runtime/dependencies. Tests should check meaningful edge cases and fail representative misconceptions, not merely mirror the reference code.
 

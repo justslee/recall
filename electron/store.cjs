@@ -28,7 +28,7 @@ class Store {
         throw Error("Unsafe database path");
       fs.chmodSync(this.file, 0o600);
       this.db = new DatabaseSync(this.file);
-      this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
+      this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;
  CREATE TABLE IF NOT EXISTS cards(id TEXT PRIMARY KEY, content TEXT NOT NULL, schedule TEXT NOT NULL, suspended INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY,card_id TEXT NOT NULL,at TEXT NOT NULL,rating TEXT NOT NULL,practice INTEGER NOT NULL,before_schedule TEXT NOT NULL,after_schedule TEXT NOT NULL,session_before TEXT,undone INTEGER NOT NULL DEFAULT 0);
@@ -46,7 +46,7 @@ class Store {
         "packs",
       ])
         privateFiles.protectTree(path.join(folder, name));
-      if (version > 2)
+      if (version > 3)
         throw Error("This library needs a newer Recall version.");
       if (version < 2)
         this.transaction(() => {
@@ -57,6 +57,11 @@ class Store {
         CREATE INDEX IF NOT EXISTS challenge_attempts_by_card ON challenge_attempts(card_id,id DESC);
         PRAGMA user_version=2;
       `);
+        });
+      if (version < 3)
+        this.transaction(() => {
+          require("./paper-store.cjs").migratePaper(this.db);
+          this.db.exec("PRAGMA user_version=3");
         });
     } catch (error) {
       this.db?.close();

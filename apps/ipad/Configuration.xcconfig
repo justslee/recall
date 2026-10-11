@@ -1,0 +1,3 @@
+// Shared defaults. Keep personal signing values in ignored Local.xcconfig.
+RECALL_PAD_BUNDLE_IDENTIFIER = org.recall.pad
+#include? "Local.xcconfig"

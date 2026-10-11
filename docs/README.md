@@ -1,49 +1,44 @@
-# Recall documentation
+# Recall guides
 
 [Back to Recall](../README.md)
 
-Choose the guide for what you want to do next. You can use Recall for ordinary study before connecting an assistant, knowledge base or API account.
+**New here? Start with [Set up your Recall](SETUP.md).** One illustrated guide covers the Mac app, your first cards, knowledge bases, assistants, optional voice and the iPad companion. You only need the parts you plan to use.
 
-## Start and study
+## See how it works
 
-| I want to…                                       | Open this guide                                                       |
-| ------------------------------------------------ | --------------------------------------------------------------------- |
-| Install Recall and try a card                    | [Quick start](../README.md#start-in-five-minutes)                     |
-| Keep the app in Applications or add coding tools | [Setup reference](SETUP.md)                                           |
-| Get the latest version without losing study data | [Update Recall](../README.md#get-the-latest-update)                   |
-| Connect the complete learning loop               | [Make Recall yours](WORKFLOW.md)                                      |
-| Prepare and revisit a day's learning             | [Daily Self Test](WORKFLOW.md#5-prepare-and-take-the-daily-self-test) |
-| Fix setup, capture or card-link problems         | [Troubleshooting](TROUBLESHOOTING.md)                                 |
+Each walkthrough follows one task with real app screenshots and demonstration content.
 
-## Connect and practise
+| Your goal                                          | Walkthrough                           |
+| :------------------------------------------------- | :------------------------------------ |
+| Remember an idea, solve a problem or practise code | [Study a card](demos/STUDY.md)        |
+| Turn today's questions into a Self Test            | [Capture learning](demos/LEARNING.md) |
+| Explain something clearly to an audience           | [Practise in Speak](demos/SPEAK.md)   |
+| Write on iPad and get feedback on your Mac         | [Use Recall Pad](demos/PAPER.md)      |
 
-- **[Knowledge bases](KNOWLEDGE.md):** create or connect Markdown, Obsidian and Notion; choose primary sources, mirrors and scoped access.
-- **[Spoken answers](VOICE.md):** dictate a card answer, edit its transcript and get reference-based feedback.
-- **[Speak practice](SPEAK.md):** explain a concept or your own topic to a chosen audience.
-- **[Articulation coaching](ARTICULATION.md):** understand the coaching rubric, evidence and measurement limits.
+[All walkthroughs →](demos/README.md)
 
-## Create and customize
+## Find an answer
 
-- **[Authoring](AUTHORING.md):** content packs, stable identities, worked math and tested coding exercises.
-- **[Interactive diagrams](WIDGETS.md):** inline HTML/SVG, theme styling and widget permissions.
-- **[Learning skills](../skills/):** reusable assistant instructions for concepts, cards, visuals, math, code and Self Tests.
-- **[Shared contracts](../skills/recall-source/references/):** detailed source, quality, inbox and validation rules.
+Use these references when you need more detail; they are not extra setup steps.
 
-## Protect your data
+| I need help with…                           | Reference                                                                    |
+| :------------------------------------------ | :--------------------------------------------------------------------------- |
+| An installation or connection problem       | [Troubleshooting](TROUBLESHOOTING.md)                                        |
+| Updates, coding tools or command-line setup | [Advanced setup](SETUP_REFERENCE.md)                                         |
+| Knowledge sources, permissions and mirrors  | [Knowledge bases](KNOWLEDGE.md)                                              |
+| Daily learning, catch-up and preparation    | [Learning workflow](WORKFLOW.md)                                             |
+| Spoken card answers                         | [Voice](VOICE.md)                                                            |
+| Longer explanations and coaching            | [Speak](SPEAK.md) · [Articulation](ARTICULATION.md)                          |
+| iPad pairing, writing or offline work       | [Recall Pad](HANDWRITING.md)                                                 |
+| Connecting handwriting to a tutor chat      | [Paper learning](PAPER_LEARNING.md) · [Manual page transfer](PAD_HANDOFF.md) |
+| Building and installing the native iPad app | [Native iPad installation](IPAD_NATIVE.md)                                   |
+| Moving, backing up or restoring my library  | [Migration](MIGRATION.md)                                                    |
+| What leaves my device                       | [Privacy](PRIVACY.md) · [Security](../SECURITY.md)                           |
 
-- **[Privacy and execution](PRIVACY.md):** what stays local, what optional providers receive and how execution is restricted.
-- **[Migration](MIGRATION.md):** preserve study history when upgrading or moving a profile.
-- **[Security reporting](../SECURITY.md):** report sensitive issues privately.
+## Customize or contribute
 
-Profile backups and library exports can contain private learning material. They are separate from the public source and should stay private.
+- [Author cards](AUTHORING.md), [create interactive diagrams](WIDGETS.md), or inspect the [learning skill kit](../skills/) and its [shared contracts](../skills/recall-source/references/).
+- [Contribute](../CONTRIBUTING.md) and read the [implementation reference](IMPLEMENTATION.md), [product plan](PRODUCT_PLAN.md) or [pad protocol](PAD_PROTOCOL.md).
+- Review [publication evidence](PUBLIC_REVIEW.md), the [release checklist](RELEASE_CHECKLIST.md) and [distribution plan](LAUNCH.md).
 
-## Maintain or contribute
-
-- **[Contributing](../CONTRIBUTING.md):** development expectations and required checks.
-- **[Implementation](IMPLEMENTATION.md):** current behavior, dated verification and limits.
-- **[Public review](PUBLIC_REVIEW.md):** publication and privacy evidence.
-- **[Release checklist](RELEASE_CHECKLIST.md):** verify a candidate and its fresh-clone journey.
-- **[Launch](LAUNCH.md):** distribution work and release acceptance.
-- **[Product plan](PRODUCT_PLAN.md):** product goals and design constraints.
-
-**New here?** Start with the [quick start](../README.md#start-in-five-minutes), then follow [Make Recall yours](WORKFLOW.md) at your own pace.
+Documentation images contain original demo or synthetic data. See [screenshot provenance and refresh instructions](images/README.md). Private profiles, backups and exports do not belong in the public repository.

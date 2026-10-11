@@ -39,6 +39,7 @@ import { HistoryView } from "./HistoryView";
 import { ProgressView } from "./ProgressView";
 import { SpeakView } from "./SpeakView";
 import { SettingsView } from "./SettingsView";
+import { PadStudyFollower, TutorPadWorkspace } from "./Handwriting";
 import { WelcomeGuide } from "./WelcomeGuide";
 import { AuthorForm, NewDeck } from "./AuthorForm";
 import "./styles.css";
@@ -245,6 +246,15 @@ function App() {
           (c) => c.id === activeSession?.ids[activeSession.index],
         )
       : detail;
+  useEffect(() => {
+    if (!api?.onPadEvent) return;
+
+    return api.onPadEvent((event) => {
+      if (event?.type === "tutor" && event.openSettings) {
+        api.tutorOpen?.().catch(fail);
+      }
+    });
+  }, []);
   const go = (where) => {
     setVoiceReturn(null);
     if (where === "settings") setSettingsSection("general");
@@ -270,6 +280,10 @@ function App() {
     const origin = { view, detail, wide, scroll: window.scrollY };
     go("settings");
     setVoiceReturn(origin);
+  };
+  const openHandwritingSettings = () => {
+    go("settings");
+    setSettingsSection("handwriting");
   };
   const openLearningSettings = () => {
     go("settings");
@@ -817,6 +831,17 @@ function App() {
             onNewCard={() => author(null)}
           />
         )}
+        <PadStudyFollower
+          card={current}
+          sessionId={view === "review" ? activeSession?.id : undefined}
+          cardIds={
+            view === "review"
+              ? activeSession?.ids.slice(activeSession.index)
+              : current
+                ? [current.id]
+                : []
+          }
+        />
         {view === "review" && !current && (
           <Completion
             session={activeSession}
@@ -854,6 +879,11 @@ function App() {
                   onVoiceBusyChange={setAnswerBusy}
                   fail={fail}
                   onOpenVoiceSettings={openVoiceSettings}
+                  onOpenHandwritingSettings={openHandwritingSettings}
+                  studyContext={{
+                    sessionId: activeSession.id,
+                    cardIds: activeSession.ids.slice(activeSession.index),
+                  }}
                   challengeState={data.challengeStates?.[current.id]}
                   onChallengeState={updateChallengeState}
                   practice={activeSession.selection.practice}
@@ -941,6 +971,8 @@ function App() {
               onVoiceBusyChange={setAnswerBusy}
               fail={fail}
               onOpenVoiceSettings={openVoiceSettings}
+              onOpenHandwritingSettings={openHandwritingSettings}
+              studyContext={{ cardIds: [current.id] }}
               challengeState={data.challengeStates?.[current.id]}
               onChallengeState={updateChallengeState}
               onExport={(id) =>
@@ -1069,4 +1101,6 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(
+  window.location.hash === "#tutor-pad" ? <TutorPadWorkspace /> : <App />,
+);

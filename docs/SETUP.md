@@ -1,279 +1,204 @@
-# Setup reference
+# Set up your Recall
 
-[Documentation](README.md) · [Quick start](../README.md#start-in-five-minutes) · [Complete workflow](WORKFLOW.md)
+[Documentation](README.md) · [Troubleshooting](TROUBLESHOOTING.md) · [Advanced reference](SETUP_REFERENCE.md)
 
-Use this page for installation, optional coding tools and advanced CLI setup. For a first study session, start with the [README](../README.md#start-in-five-minutes).
+**A study desk for what you want to remember.** Start with a few cards, then add the connections that fit how you learn.
 
-[Install](#install-and-open-recall) · [Applications](#keep-recall-in-applications) · [Updates](#update-an-existing-installation) · [Coding tools](#optional-coding-runtimes) · [CLI & profiles](#cli-and-profiles) · [Capture](#learning-capture) · [Catch-up](#catch-up-and-preparation-controls)
+Only the Mac installation is required. You can study without an account, knowledge base, assistant or API key.
+
+| Start here                                                                                 | Add when you want it                                                                                                                                                     |
+| :----------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Install Recall](#install-and-open-recall) → [Try your first cards](#try-your-first-cards) | [Knowledge base](#choose-a-home-for-your-knowledge) · [Assistant learning](#learning-capture) · [Voice](#optional-voice-and-feedback) · [iPad](#optional-ipad-companion) |
 
 ## Install and open Recall
 
-**Requirements:** Apple Silicon Mac, macOS 13 or later, and Node 22.18 or later. A current Node 22 LTS release is recommended; `.nvmrc` records the tested baseline.
+**You need:** an Apple Silicon Mac running macOS 13 or later, internet for setup, and Node 22.18 or later. Node 22 is the tested baseline. This is a source-build beta; a signed, notarized download is not available yet. Intel Macs and other operating systems do not have a verified installation path.
 
-**Install Node before running setup.** Use the [Node.js 22 macOS installer](https://nodejs.org/en/download), which includes npm. Open a new Terminal window and run `node --version` and `npm --version` to verify installation. Recall's setup checks prerequisites; it does not install Node.
+### 1. Download Node and Recall
 
-From the cloned Recall folder:
+1. Install Node using the [official macOS installer](https://nodejs.org/en/download). It includes npm, the tool used by the commands below. Recall does not install Node for you.
+2. Open [Recall on GitHub](https://github.com/justslee/recall), choose **Code → Download ZIP**, and unzip it in Finder.
+3. Open a new **Terminal** window. Type `cd `, including the space, then drag the unzipped Recall folder into Terminal. Press Return. This tells Terminal which folder to work in.
 
-```sh
-npm run setup
-```
+### 2. Build the Mac app
 
-Setup installs the committed lockfile and locked Electron runtime, builds Recall and opens it. It needs internet. Ordinary study works offline afterward; no assistant connection, Python packages or compiler are installed by this command.
-
-To build without launching:
+Copy these commands into that Terminal window, one at a time:
 
 ```sh
 npm run setup -- --no-launch
-npm start
-```
-
-A fresh profile offers **Try demo**, **Import cards** and **Connect learning**. Existing profiles bypass the welcome demo. A knowledge base and API key are optional.
-
-If setup stops, follow [Troubleshooting](TROUBLESHOOTING.md#setup-stops-before-installing).
-
-## Keep Recall in Applications
-
-1. From the checkout, build the Mac app:
-
-   ```sh
-   npm run package
-   ```
-
-2. Move `release/Recall-darwin-arm64/Recall.app` into Applications.
-3. Quit a running development copy, then open the packaged app.
-4. Install assistant connections from this final app location. Reconnect if you move it later.
-
-The packaged **Recall.app** includes its own Electron/Node runtime. Opening it and using its installed assistant bridge do not require a separate Node installation. Keep Node and npm available if you want to rebuild, update from source or run checkout CLI commands.
-
-Launching the packaged app registers **Open in Recall** links. Development `npm start` alone does not install the macOS protocol handler.
-
-This is a source-build beta. A signed, notarized download is not yet available; Intel Macs and other operating systems do not have a verified setup path.
-
-## Update an existing installation
-
-Updates are manual in this beta. Node and npm are needed to build an update, even though the installed app includes its own runtime.
-
-Finish recordings/evaluations, make a backup in **Settings & backups → Library & backups**, then quit Recall. Open Terminal in the source checkout you originally cloned. If you have edited the source, save and reconcile those changes before updating; do not discard them with a reset.
-
-```sh
-git pull --ff-only
-npm run setup -- --no-launch
-```
-
-`git pull --ff-only` fetches the latest upstream commits without creating a merge commit. If either command fails, resolve its error before continuing. Setup installs the committed dependencies/runtime and rebuilds the interface without opening a second app.
-
-### If you run from the checkout
-
-```sh
-npm start
-```
-
-### If you use the app in Applications
-
-Build the updated Mac app:
-
-```sh
 npm run package
 ```
 
-In Finder, open `release/Recall-darwin-arm64` inside the checkout. Copy **Recall.app** to the same Applications folder as your current app and choose **Replace**, then open that installed copy. Updating source or rebuilding the interface alone leaves the installed app unchanged. Keeping the same app path preserves the destination of existing assistant launchers.
+Let each command finish before starting the next. Setup downloads the locked dependencies and builds Recall; packaging creates the app. If either stops with an error, use [setup help](TROUBLESHOOTING.md#setup-stops-before-installing) before continuing.
 
-Your cards, schedules, reviews, attachments, drafts and paused session live in the selected profile, outside the checkout. The default is `~/Library/Application Support/Recall`; custom profiles should keep using their original `RECALL_DATA_DIR`. Do not delete or replace the profile to update the app, and do not reimport your library or recreate knowledge sources.
+### Keep Recall in Applications
 
-### If you downloaded a ZIP
+1. In the unzipped folder, open **release → Recall-darwin-arm64**.
+2. Copy **Recall.app** into your Mac’s **Applications** folder.
+3. Open **Recall.app from Applications**. Keep this as its permanent location before connecting assistants.
 
-Download a fresh ZIP from the repository's **Code → Download ZIP** menu and extract it into a new folder. Preserve any edits in your old folder. From the new folder, run `npm run setup -- --no-launch`, then follow the checkout or Applications steps above. A ZIP has no Git metadata, so `git pull` does not apply.
+The installed app includes its own runtime. You do not need Terminal or a separate Node installation to open it each day. Keep the source folder and Node if you want to build updates. Opening the installed app also enables **Open in Recall** links from your assistant.
 
-### Refresh assistant instructions
+## Try your first cards
 
-An app replacement at the same path updates its CLI, but installed assistant instructions and the portable skill kit are separate copies. When an update changes those skills, or you move the app/checkout:
+Your empty study desk offers three starting points:
 
-1. Open the updated app from its final location.
-2. In **Settings & backups → Learning connections**, choose **Disconnect**, then **Connect → Install connection** for each assistant you use. Review the proposed paths before installing. This backs up and replaces Recall's managed instructions; it preserves unrelated instructions and skills, capture preferences and study data.
-3. Start fresh Codex/Claude sessions. Use **Check readiness** and **Verify learning** to confirm the connection.
+![Recall’s welcome screen with Try demo, Import cards and Connect learning](images/setup-welcome.png)
 
-Only an app-code update needs a restart. Validated card imports and learning-inbox submissions appear while the app stays open; they do not require these update steps.
+| Action               | What it does                                                                                     |
+| :------------------- | :----------------------------------------------------------------------------------------------- |
+| **Try demo**         | Adds three original sample cards: a concept, a calculation and a coding exercise.                |
+| **Import cards**     | Opens Anki import in **Library**. Your original deck stays unchanged; inspect the import report. |
+| **Connect learning** | Opens settings for your knowledge sources and assistants. You can do this later.                 |
 
-## Optional coding runtimes
+<details>
+<summary>Bringing cards from Anki?</summary>
 
-Concept and math study work without coding tools. Standard Python and C++ use runtimes resolved by Apple's `xcrun`. Install Apple's Command Line Tools if missing, then check Recall's detection:
+Import a compatible **.apkg** package containing the older `collection.anki2` format. Basic Front/Back cards are the supported starting point. Some previously reviewed or unsupported cards are kept as drafts for inspection. This beta does not extract Anki archive media or convert Anki schedules into Recall’s review history; keep your original deck and inspect the report before studying.
 
-```sh
-xcode-select --install
-node cli/recall.cjs doctor
-```
+</details>
 
-### Scientific Python
+Choose **Try demo** for a first look. Existing libraries open directly without this welcome screen.
 
-Most exercises use only the standard library. Cards marked `scientific-python` use `python/bin/python3` inside the selected profile. To create that environment explicitly with NumPy for the default profile:
+![Recall’s study desk with collections and separate study formats](images/setup-study-desk.png)
 
-```sh
-recall_profile="$HOME/Library/Application Support/Recall"
-xcrun python3 -m venv "$recall_profile/python"
-"$recall_profile/python/bin/python3" -m pip install numpy
-node cli/recall.cjs doctor
-```
+On **Study desk**, choose a collection or topic and a study format: **Concepts**, **Math**, **Coding** or **Mixed**. You can keep a session to concepts when you have no paper or time for code.
 
-For a custom profile, use its absolute path and pass `--data "$recall_profile"` to the CLI. Choose a Python version supported by the exercise's dependencies. Additional packages must be reviewed and installed explicitly; nothing downloads when you open a card.
+Start a review. Answer from memory, then **Flip card** or reveal the worked solution. Choose **Again**, **Hard**, **Good** or **Easy** yourself; that rating schedules the next review. Solutions stay hidden until you choose to see them. Interactive explanations appear on cards where they help.
 
-npm manages the application through its lockfile. uv is not required or installed by Recall. Optional runtimes live outside the checkout and are excluded from profile backups; recreate them on a new machine.
+**Library** is where you browse, search, edit and import. **Progress** and **Review history** reflect your actual study. [Study walkthrough →](demos/STUDY.md)
 
-### Exercise validation
+### Optional coding runtimes
 
-The validator uses the selected profile through `RECALL_DATA_DIR` or `--data`:
+Concept and math study need no additional tools. Running Python or C++ exercises may require Apple’s Command Line Tools; some scientific Python exercises need a separate environment. Follow the [coding runtime instructions](SETUP_REFERENCE.md#optional-coding-runtimes) when you want to run those cards. Nothing downloads just because you open a coding card.
 
-```sh
-node scripts/validate-card-exercises.cjs cards.json mutants.json validation.json --data "$recall_profile"
-```
+## Choose a home for your knowledge
 
-Inspect the source and tests before validation. A report does not grant execution trust: follow the separate [local review and trust workflow](AUTHORING.md).
+**Optional.** A knowledge base holds longer explanations and related notes. Recall holds the questions you use to test yourself. You can connect existing notes or create your first knowledge base without editing configuration files.
 
-## CLI and profiles
+Open **Settings & backups → Learning connections → Knowledge sources**.
 
-In these guides, `recall` means the installed profile launcher or the optional short command from `npm link`. Every example also works from the checkout as `node cli/recall.cjs …`.
+![Knowledge source setup with choices for Local Markdown, Obsidian and Notion](images/setup-knowledge-base.png)
 
-```sh
-node cli/recall.cjs doctor
-```
+### Create your first knowledge base
 
-Doctor reports the active profile, configured sources and runtime availability. Start the app once, or use `recall init`, to initialize a profile.
+1. Choose **Create my first knowledge base**. With sources already connected, the button is **Create knowledge base**.
+2. Select **Local Markdown**, **Obsidian**, **Notion**, or several of them.
+3. Pick **one primary home**. Choose **Mirror notes to…** for the additional destinations you want the assistant to update; leave it off for a read-only reference.
+4. Choose the homes: a parent folder and a new folder name locally, or an accessible parent page in Notion.
+5. Choose **Review creation**, inspect the plan, then select **Let my assistants build this knowledge base → Create knowledge base**.
 
-| Profile choice                 | How to select it                               |
-| ------------------------------ | ---------------------------------------------- |
-| Default Mac profile            | `~/Library/Application Support/Recall`         |
-| An explicit CLI profile        | Add `--data /absolute/profile` to the command. |
-| An isolated app or CLI profile | Set `RECALL_DATA_DIR` before launching.        |
+| Your choice        | What to expect                                                                                           |
+| :----------------- | :------------------------------------------------------------------------------------------------------- |
+| **Local Markdown** | Recall creates a notes folder you can open in any Markdown editor. No other app is needed.               |
+| **Obsidian**       | Recall creates a local vault folder. Install Obsidian separately and use **Open folder as vault**.       |
+| **Notion**         | Your connected assistant creates the database through its Notion connector. Finish the extra step below. |
 
-```sh
-RECALL_DATA_DIR=/absolute/test-profile npm start
-node cli/recall.cjs --data /absolute/test-profile doctor
-```
+**For Notion:** connect your assistant as described in the next section, ensure its Notion connector can access the chosen parent, then choose **Finish Notion with assistant → Copy setup prompt**. Paste it into a fresh assistant chat. After it creates and reads back the new database, choose **Refresh setup** in Recall. Selecting a Notion URL alone does not verify live access; Recall has no separate Notion login or token field.
 
-> [!IMPORTANT]
-> Card imports and inbox submissions work while Recall is open; its writer applies them and the interface refreshes automatically. Confirm queued imports with `recall cards import-status REQUEST_ID`. Quit Recall before backup, restore or other exclusive CLI writes.
+### Use notes you already have
 
-Card links identify a card in the receiving app's local library. They do not transfer content or encode a custom data profile. Opening a card is read-only; a study rating is a separate action.
+Choose **Add knowledge source**, select Markdown, Obsidian or Notion, then choose the exact notes folder or Notion scope. For an existing Obsidian vault, select its KB folder rather than creating a second vault inside it.
 
-## Knowledge sources
+Choose **Read-only** if the assistant should consult notes. Choose **Scoped authoring** if it may create or update notes there. Select **Test connection**, inspect the result, then **Save source**. A Notion check also needs a real assistant connector request.
 
-Use **Settings & backups → Learning connections → Knowledge sources** to create a KB or connect existing notes. Choose Markdown, Obsidian, Notion or several destinations, with explicit scope and access.
+![Choose read-only or scoped authoring access, then test the connection](images/setup-knowledge-scope.png)
 
-For scripted configuration, see [Optional CLI configuration](KNOWLEDGE.md#optional-cli-configuration). Source roots must already exist. Reading is the default; enable `write:true` only when you want scoped authoring. Passwords and tokens do not belong in configuration, and source folders need not live in this repository. Remote assets are not downloaded automatically.
+Your primary is the source of truth; mirrors receive the same concepts after a verified primary write. These roles guide the assistant rather than running continuous two-way sync. Creating or connecting a KB does not enable learning capture or create flashcards by itself. [Knowledge base guide →](KNOWLEDGE.md)
 
 ## Learning capture
 
-1. Open **Settings & backups → Learning connections**.
-2. Connect Codex, Claude Code or both, review the installation, and choose **Install connection**.
-3. Enable capture, choose your learning timezone and save.
-4. Start a fresh assistant session and [verify a learning receipt](WORKFLOW.md#2-connect-the-assistants-you-use).
+**Optional.** Connect the assistants you use so meaningful learning can reach Recall from other local projects, too.
 
-The installer preserves unrelated skills and instructions. Disconnect removes its managed section only. Daily scheduling is a separate opt-in through a supported assistant host; setup does not create an automation.
+Open **Settings & backups → Learning connections**.
 
-For scripted installation, preview the connection before applying it:
+![Learning connections with capture preferences and assistant setup](images/setup-learning-connections.png)
 
-```sh
-recall connections connect codex
-recall connections connect codex --apply
-```
+1. Choose **Connect** for Codex, Claude Code, or both. Review the installation plan, then choose **Install connection**.
+2. Select **Allow learning capture from my configured skills**. Check **Learning date & privacy** for your timezone, then choose **Save learning settings**.
+3. Start a **fresh assistant chat** so it loads the installed instructions.
+4. Return to Recall and choose **Check readiness**. Then choose **Verify learning → Create verification prompt → Copy prompt** and use that prompt in your fresh chat.
+5. Check Recall for the learning receipt. **Learning verified** confirms that the verification reached this library.
 
-Use `claude` instead of `codex` for Claude Code. Enable capture and choose the learning timezone separately; installing instructions is not capture consent.
+![Assistant readiness showing instructions, local CLI, sign-in and learning receipt separately](images/setup-assistant-readiness.png)
 
-### Manual capture example
+**Skills installed** means setup files are present. CLI readiness and a learning receipt are separate checks. If sign-in needs attention, use [connection troubleshooting](TROUBLESHOOTING.md); do not assume the receipt exists from the badge alone.
 
-Use only learning that actually happened. Replace the IDs and timestamp with the real session values:
+Now ask questions as you read or work. The assistant searches existing concepts, reuses suitable questions, and prepares genuinely missing cards, including useful math or coding variants. Ask it to respect your chosen knowledge sources and permissions. Routine operations are not learning, and exposure is not mastery.
 
-```json
-{
-  "id": "session-id/weighted-mean/1",
-  "sessionId": "session-id",
-  "title": "Weighted mean",
-  "objective": "Explain the role of weights",
-  "context": "Worked through a course score example",
-  "at": "2026-09-13T12:00:00Z",
-  "evidence": "discussed",
-  "cardIds": ["demo:weighted-mean:concept"]
-}
-```
+Open **Self Test** to review a learning day. You can revisit earlier days. If a captured objective is blocked, use **Finish with assistant**; **Retry** is useful after a temporary failure is resolved. Optional catch-up scans and daily scheduling are separate choices, not automatically enabled by installation. [Daily learning walkthrough →](demos/LEARNING.md)
 
-```sh
-recall capture capture.json
-recall self-test status
-recall self-test prepare
-```
+## Optional voice and feedback
 
-To connect a genuine gap after its card is imported:
+Open **Settings & backups → Voice & feedback** if you want dictation and answer evaluation, or explanation practice in **Speak**.
 
-```sh
-recall self-test link CAPTURE_ID CARD_ID
-```
+![Voice settings with optional OpenAI setup and privacy information](images/setup-voice-settings.png)
 
-Preserve capture IDs and timestamps on retries. New captures store their learning date and timezone; changing the profile timezone does not move them. Legacy records without these fields use the profile timezone, so retain the original timezone during migration.
+Enter your own **OpenAI API key → Save key**. Recall keeps it on this device across restarts, outside library exports and backups. It uses a local owner-only file without Keychain prompts; see [credential storage](PRIVACY.md#api-key-storage) before deciding whether to save it.
 
-### Review a learning day
+This is separate from a ChatGPT subscription: API billing and internet are required for these features. Recording sends audio to OpenAI; Recall saves no audio. You can edit the transcript before requesting feedback. Feedback does not rate the card for you. [Speak walkthrough →](demos/SPEAK.md) · [Voice reference →](VOICE.md)
 
-Open **Self Test**, choose **Learning day**, then **Review needs practice** or **Review all cards**.
+## Optional iPad companion
 
-- **Needs practice** uses the latest Again/Hard ratings.
-- Ratings update original card schedules, including early reviews. Starting a pass alone does not change them.
-- The page shows the latest non-practice rating since that learning day, rather than a frozen historical score.
-- Suspended, draft and missing cards cannot enter the queue. Skip/Undo leave questions untested.
-- Prior tested questions are not repeated solely because they were mentioned again. Completion means attempted, not mastered; due cards also return in Study Desk.
+**Recall Pad is a separate native iPad app**, for iPadOS 17 or later and Apple Pencil. The current beta requires a personal build and installation through full Xcode on your Mac, with your Apple account for signing. The Mac setup above does not install the iPad app, and there is no public App Store or TestFlight download yet.
 
-The app tests exact relevant card IDs, including questions not yet due. Discussed, independently explained and solved are evidence labels, not mastery scores.
+Follow [Build and install Recall Pad](IPAD_NATIVE.md), plus the [Mac discovery-helper steps](SETUP_REFERENCE.md#optional-ipad-companion). You can leave this entire section for later.
 
-## Active reading in Codex or Claude Code
+### Pair once
 
-The global connection points substantive learning to the selected profile. Skills are instructions an assistant follows, not hooks that observe every conversation. Start a fresh session after changing instructions already loaded by the current one.
+After installing Recall Pad:
 
-The [active-reading contract](../skills/recall-source/references/active-reading.md) covers reuse, genuine gaps, useful supplements and verified card links. Prefer the connection installer; it backs up existing global instructions.
+1. Connect your Mac and iPad to the same local network and open both apps.
+2. On the Mac, open **Settings & backups → iPad & handwriting** and select **Enable companion → Pair an iPad**.
+3. On the iPad, choose **Pair with Mac → Scan pairing QR code**. Allow camera and local-network access when requested.
+4. Scan the Mac’s code and choose **Pair this iPad** on the Mac to approve it.
 
-If configuring manually, install the skill kit, enable capture and add this instruction:
+![iPad settings with companion controls and paper learning connections](images/setup-ipad-settings.png)
 
-> For substantive reading questions and learning discussions, use the installed recall-self-test skill before ending the response. Search and reuse suitable cards; fill genuine gaps through recall-cards; assess meaningful math/coding supplements even when a concept card exists. Return verified Recall links and report capture outcomes. Respect opt-out; never infer mastery or change schedules from exposure.
+Normal restarts and updates keep the pairing. Your iPad can save work offline; reopen Recall Pad when the Mac is available to transfer it. Keep Recall running to receive pages. Closing its window leaves the enabled companion running; explicitly quitting Recall stops it.
 
-Generate a card link with:
+<img src="images/setup-ipad-home.png" alt="Recall Pad’s native home screen with Recall Study and Tutor Pad, captured in an empty iPad simulator" width="560">
 
-```sh
-recall cards link CARD_ID
-```
+_The native iPad app, shown in a simulator before pairing. It follows your iPad’s light or dark appearance._
 
-[Daily Self Test workflow →](WORKFLOW.md#5-prepare-and-take-the-daily-self-test)
+### Choose the right writing flow
 
-## Catch-up and preparation controls
+| **Recall Study**                                                                                                                    | **Tutor Pad**                                                                                                                   |
+| :---------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
+| Open a concept or math card on the Mac and choose **Write on iPad**. The iPad receives the question with its solution hidden.       | Start from a learning conversation, or open a blank sheet alongside any tutor. It does not need a Recall card.                  |
+| **Send for feedback** saves the attempt on the Mac. Feedback appears in Recall; you reveal the solution and rate the card yourself. | **Send to tutor** returns submitted pages through connected assistant tools. The manual **Send to Mac** flow is also available. |
+| Recall’s handwriting assessment needs your OpenAI API key and separate consent under **Handwriting feedback**.                      | Chat tutoring uses your assistant account; no separate OpenAI API key is required by Recall.                                    |
 
-### Select the scan scope
+### Learn on paper in your assistant chat
 
-Catch-up defaults off. Configure it in Learning connections, or use:
+In **iPad & handwriting → Learn on paper with your tutor**, choose **Connect Codex** or **Connect Claude Code**. If already installed, the button says **Refresh … tools**. These paper tools are separate from learning-capture connections.
 
-```sh
-recall connections config connection-options.json
-recall connections config connection-options.json --apply
-```
+Start a fresh chat and ask:
 
-The file accepts `agent` (`codex` or `claude`) and `catchUp` options: `enabled`, `allProjects`, `projects` (absolute paths), `exclude` (absolute paths), and `since` (ISO timestamp with timezone). For “today,” use local midnight with its actual UTC offset.
+> Start a paper-learning session for linear algebra. Give me one problem to solve on my iPad.
 
-A scope change re-inspects eligible records with stable identities to prevent duplicate queue items. Excluding a project stops future inspection; it does not erase previously queued or captured learning. Periodic scans require Recall to be open.
+Open **Tutor Pad** on the iPad, write your steps, then choose **Send to tutor**. If the assistant is no longer waiting, say **“Check my paper.”** Your discussion, hints and feedback stay in that conversation. The tools read submitted images when invoked; sending a page does not attach it to a chat draft, send a chat message or wake an idle assistant.
 
-### Understand scan coverage
+This is a Codex-first beta. One physical-iPad submission has been inspected in an existing Codex chat through an explicit tool fallback; fresh-client tool discovery and Claude/ChatGPT image flows still need separate verification. Supported ChatGPT desktop hosts can reuse the Codex registration; ordinary web chats need a separate connection. [Paper learning details →](PAPER_LEARNING.md)
 
-The scanner reads Codex `sessions/**/*.jsonl` and Claude `projects/**/*.jsonl` under the saved assistant home, including a selected custom Codex home. It retains byte checkpoints and incomplete turns, excludes tool payloads and subagent logs, and reports malformed, truncated or oversized records.
+![Tutor Pad’s Mac page tray with a labeled synthetic page and Copy page](images/setup-tutor-pad.png)
 
-A scan reads up to 100 changed files; later scans continue. Session formats can change and local files can be incomplete. Unavailable or unreadable records never establish coverage. Sensitive-text redaction is best-effort.
+**Manual fallback:** tap **Send to Mac**, open **File → Tutor Pad** on the Mac, choose **Copy page**, then paste with **⌘V** into any chat. Review the attachment and press Send yourself. This needs no Accessibility access or timed handoff. PNG/PDF export and sharing are also available on the iPad.
 
-The private inbox lives under `learning-inbox/`. Profile backups include it and connection preferences. Global instruction backups stay machine-local under `connections/backups/`; reconnect after moving Recall or restoring on another machine.
+## Update an existing installation
 
-### Prepare one item
+Updates are manual in this beta. Back up from **Settings & backups → Library & backups**, finish recordings or evaluations, then quit Recall. Download the latest ZIP into a new folder and repeat the two build commands above. Replace the app in the **same Applications location** and reopen it.
 
-```sh
-recall inbox inspect ID
-recall inbox preview
-recall inbox prepare DIGEST
-```
+Your library lives separately from the source folder. Replacing the app preserves cards, review history, drafts and configuration; do not delete its data folder or reimport your library to update. New cards appear while Recall is open and do not require an app restart.
 
-`inspect` lets your existing assistant process an item without another worker. `preview` selects the next pending item and shows its exact context and digest without contacting a provider. `prepare` requires that digest and refuses changed context.
+For Git checkouts, custom profiles or detailed ZIP steps, use [the update reference](SETUP_REFERENCE.md#update-an-existing-installation).
 
-Preparation needs a supported, signed-in Codex or Claude CLI on PATH; common Mac install locations are also checked. It uses the default provider and existing authentication, with tools, personal hooks, plugins and connector configuration disabled, inside an outer macOS filesystem sandbox. Unsupported CLI versions fail closed; update rather than weaken restrictions.
+### Refresh assistant instructions
 
-Preparation is limited to one item per action and at most fifteen minutes per item. Failures remain blocked for a later retry or **Finish with assistant** handoff. Editorial, visual, math and coding checks still apply; a blocked check cannot become a ready card. See the [inbox contract](../skills/recall-source/references/inbox.md).
+When an update changes assistant skills, or you move Recall, refresh its learning connections and paper tools from the updated app, then start fresh assistant chats. [Learning connection refresh steps](SETUP_REFERENCE.md#refresh-assistant-instructions) · [Paper tools](PAPER_LEARNING.md#connect-the-tools)
 
-**Next:** [Complete workflow](WORKFLOW.md) · [Knowledge sources](KNOWLEDGE.md) · [Troubleshooting](TROUBLESHOOTING.md)
+---
+
+**Ready to learn?** Pick a short [study](demos/STUDY.md), [daily learning](demos/LEARNING.md), [Speak](demos/SPEAK.md) or [paper](demos/PAPER.md) walkthrough. Add connections only when they help your routine.
+
+[Daily workflow](WORKFLOW.md) · [Troubleshooting](TROUBLESHOOTING.md) · [Advanced setup reference](SETUP_REFERENCE.md)

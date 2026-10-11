@@ -2,7 +2,7 @@
 
 [Documentation](README.md) / Releases
 
-**Candidate:** `0.6.0-beta.2`, matching `package.json`. Apple Silicon macOS source-build beta; code/docs are MIT, original demo content is CC0-1.0, and imported material retains its own terms.
+**Candidate:** `0.6.0-beta.3`, matching `package.json`. Apple Silicon macOS source-build beta; code/docs are MIT, original demo content is CC0-1.0, and imported material retains its own terms.
 
 Use actual candidate output as evidence. Earlier test counts or audits do not validate later changes. [Implementation](IMPLEMENTATION.md) records the reviewed baseline.
 
@@ -54,6 +54,32 @@ The [Verify workflow](https://github.com/justslee/recall/actions/workflows/verif
 - [ ] Capture a reused objective and genuine gap; verify ready cards and the Self Test.
 - [ ] Finish a blocked item through its assistant handoff and validated import contract. Retry must not bypass missing checks.
 - [ ] Verify pause/scope/catch-up, data location, backup/restore and interrupted preparation. Exposure/setup must not rate cards, infer mastery or change schedules.
+
+## Recall Pad release gates
+
+The companion is optional; a passing Mac build is not evidence of iPad, transfer or assessment quality. Keep the existing fresh-clone journey working without Xcode or companion permissions.
+
+```sh
+npm run build:pad-helper
+npm run build:ipad
+node --test tests/pad-handoff.test.cjs
+```
+
+- [ ] Run native Swift policy and simulator XCTest checks using full Xcode; record the exact build and simulator destination. [Native commands](IPAD_NATIVE.md).
+- [ ] On a real iPad, verify Pencil/palm handling, scroll/zoom, long equations, offscreen pagination, dark/light export readability, autosave, termination recovery and PNG/PDF sharing.
+- [ ] Verify real pairing through local-network permissions, QR expiry/replay, restart, changed IP, pinned identity mismatch, denied access and immediate device revocation.
+- [ ] Verify interrupted/duplicate uploads, changed digests, oversized/invalid images, disk failures, stale questions, offline receipts and backup/restore without automatic assessments or clipboard changes. Existing chat-specific manifests must retry unchanged.
+- [ ] Test the packaged Bonjour helper outside ASAR, ordered Tutor page delivery and explicit **Copy page**. Arrival, delayed reconnect and opening the tray must leave the clipboard unchanged. Verify manual attachment or iPad export/sharing into an application chosen by the tester; do not dispatch a chat message. No Accessibility permission or desktop adapter is required.
+- [ ] Verify paper-learning skill/MCP preview and managed installation without overwriting unrelated client configuration. In the intended Codex chat, publish a synthetic problem, receive a real iPad submission and inspect ordered MCP image content. Verify wrong capabilities, cross-session reads, ended/restored authority, prompt revision conflicts, stale submissions and bounded wait timeouts. A receipt or mocked MCP response does not prove real-client image delivery. Record Claude/ChatGPT support separately; do not claim automatic idle-chat wakeup or draft attachment.
+- [ ] Review a live handwriting benchmark covering alternate correct methods, sound partial work, arithmetic errors, ambiguous notation, unreadable pages and invalid references. Label mocked responses as mocks and require page-linked feedback with hidden solutions and unchanged schedules.
+- [ ] Audit native sources, question-rendering resources/licenses, privacy manifests, drawings, credential/TLS backup exclusions and the packaged helper. Use only synthetic public examples.
+- [ ] Before TestFlight publication, configure the owner's Apple Developer signing/distribution, review privacy declarations, archive a signed iPad build and test the actual distributed candidate. Do not describe an unsigned development build as an installable release.
+
+Unfinished live-device, transfer or grading checks remain open release gates. A successful source build or synthetic receipt does not close them. [Recall Pad setup](HANDWRITING.md) · [Protocol v1](PAD_PROTOCOL.md).
+
+**Development evidence, October 11, 2026:** 237 Node tests, six focused connection checks, the web build, 53 native simulator tests, 12 portable Swift tests and the signed device build passed. Actual source and packaged Electron/MCP journeys passed with synthetic device uploads and original image bytes; packaged Tutor UI and source handwriting/lifecycle checks passed. Source/history and packaged privacy audits passed. The in-place iPad update retained saved index/drawing/thumbnail bytes, and the Mac update and Codex/Claude Code registrations installed with existing learning data unchanged.
+
+The user confirmed the published note on the physical iPad, wrote a line and sent it. Its one-page image was durably saved, read through the installed MCP connection with the original prompt/revision, and inspected in the existing Codex chat using an explicit CLI/MCP fallback. This live roundtrip does not close the broader fresh-client MCP discovery/rendering, Claude/ChatGPT, full physical-device or grading gates above. No personal image or content is used as a public fixture.
 
 ## 4. Publish and verify
 

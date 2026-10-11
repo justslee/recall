@@ -28,7 +28,7 @@ const folder = dataDir(option("data"));
 const apply = flag("apply"),
   json = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const usage =
-  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/search/link/trust | kb scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
+  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/search/link/trust | kb scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | paper connect codex/claude [--apply] | paper connection-status | paper mcp | paper start/publish/status/wait/read/end JSON_FILE | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
 function withStore(fn) {
   const { Store } = require("../electron/store.cjs");
   const s = new Store(folder);
@@ -125,12 +125,10 @@ function readonly(fn) {
                   { db },
                   {
                     ...bundles.normalizePack(pack),
-                    cards: bundles
-                      .normalizePack(pack)
-                      .cards.map((c) => ({
-                        ...c,
-                        widgetsAllowed: widgets && c.widgetsAllowed === true,
-                      })),
+                    cards: bundles.normalizePack(pack).cards.map((c) => ({
+                      ...c,
+                      widgetsAllowed: widgets && c.widgetsAllowed === true,
+                    })),
                   },
                 ),
               );
@@ -277,6 +275,33 @@ function readonly(fn) {
         throw Error(
           "connections status | connect codex/claude [--apply] | disconnect codex/claude --apply | config FILE --apply",
         );
+    } else if (command === "paper") {
+      if (action === "mcp") {
+        require("./paper-mcp.cjs").servePaperMcp(folder, {
+          client: option("client") || "codex",
+        });
+        return;
+      }
+      if (action === "connect")
+        result = await require("../electron/paper-install.cjs").connectPaper(
+          folder,
+          rest[0],
+          { apply },
+        );
+      else if (action === "connection-status")
+        result =
+          await require("../electron/paper-install.cjs").paperConnectionStatus(
+            folder,
+          );
+      else if (
+        ["start", "publish", "status", "wait", "read", "end"].includes(action)
+      )
+        result = await require("../electron/paper-connection.cjs").paperRequest(
+          folder,
+          action,
+          json(rest[0]),
+        );
+      else throw Error(usage);
     } else if (command === "catch-up" && action === "scan") {
       result = require("../electron/catch-up.cjs").scan(folder);
     } else if (command === "inbox") {

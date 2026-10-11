@@ -1,5 +1,8 @@
 // Inspect the actual archive, without extracting private content into the checkout.
 const path = require("node:path");
+const fs = require("node:fs"),
+  crypto = require("node:crypto"),
+  { spawnSync } = require("node:child_process");
 const { inspectFile, displayName } = require("../shared/privacy-audit.cjs");
 (async () => {
   const asar = await import("@electron/asar");
@@ -22,6 +25,7 @@ const { inspectFile, displayName } = require("../shared/privacy-audit.cjs");
     "adapters",
     "cli",
     "dist",
+    "dist-native",
     "electron",
     "examples",
     "index.html",
@@ -43,6 +47,52 @@ const { inspectFile, displayName } = require("../shared/privacy-audit.cjs");
     const stat = asar.statFile(archive, name, false);
     if (stat.files) continue;
     if (name.startsWith("node_modules/")) continue;
+    if (name.startsWith("dist-native/")) {
+      if (name !== "dist-native/RecallPadHandoff" || !stat.unpacked) {
+        failures.push(displayName(name) + ": unexpected native artifact");
+        continue;
+      }
+      const built = path.resolve(__dirname, "../dist-native/RecallPadHandoff"),
+        shipped = path.join(path.dirname(archive), "app.asar.unpacked", name);
+      try {
+        const data = fs.readFileSync(shipped),
+          source = fs.readFileSync(built),
+          hash = (b) => crypto.createHash("sha256").update(b).digest("hex");
+        if (
+          !data.length ||
+          data.length > 5 * 1024 * 1024 ||
+          hash(data) !== hash(source)
+        )
+          throw Error();
+        const signature = spawnSync(
+          "/usr/bin/codesign",
+          ["--verify", "--strict", shipped],
+          { encoding: "utf8" },
+        );
+        if (signature.status !== 0) throw Error();
+        const metadata = spawnSync(
+          "/usr/bin/codesign",
+          ["-d", "--verbose=2", shipped],
+          { encoding: "utf8" },
+        );
+        if (
+          metadata.status !== 0 ||
+          !/^Identifier=com\.recall\.pad-handoff$/m.test(metadata.stderr)
+        )
+          throw Error();
+        for (const failure of require("../shared/privacy-audit.cjs").inspectText(
+          data.toString("utf8"),
+        ))
+          failures.push(displayName(name) + ": " + failure);
+        assets++;
+      } catch {
+        failures.push(
+          displayName(name) +
+            ": native build/signature audit failed or incomplete",
+        );
+      }
+      continue;
+    }
     if (stat.link) {
       failures.push(displayName(name) + ": first-party symlink");
       continue;

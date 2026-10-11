@@ -64,7 +64,7 @@ test("documented CLI bootstraps KB, imports cards, captures learning, backs up a
   assert.equal(
     run("skills", "install", path.join(root, "skills"), "--apply").skills
       .length,
-    11,
+    12,
   );
   const refused = spawnSync(
     process.execPath,

@@ -16,6 +16,6 @@ The reusable learning loop includes conceptual teaching and KB creation, source-
 
 ## Preservation and scope
 
-Existing users retain content, identifiers, diagrams, attempts, schedules, drafts and sessions. Imports are additive and conflicts are explicit. New profiles have an optional original demo. Other platforms, automatic handwriting grading, general content-revision editing and background KB synchronization require separate implementation and verification.
+Existing users retain content, identifiers, diagrams, attempts, schedules, drafts and sessions. Imports are additive and conflicts are explicit. New profiles have an optional original demo. [Recall Pad](HANDWRITING.md) adds an optional native iPad writing companion; library, feedback and scheduling remain on the Mac. Tutor Pad supports a [chat-bound paper-learning session](PAPER_LEARNING.md): publish a current prompt and read selected submitted pages through local assistant tools, with tutoring in the invoking chat. Manual copying into any application and iPad export/sharing remain available. Real-device recovery, transfer, intended-client image delivery and live grading verification are required before public distribution. Other platforms, general content-revision editing and background KB synchronization require separate implementation and verification.
 
 **Next:** [Implementation status](IMPLEMENTATION.md) · [Authoring](AUTHORING.md)

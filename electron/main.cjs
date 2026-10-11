@@ -8,6 +8,11 @@ const {
   shell,
   clipboard,
   nativeTheme,
+  nativeImage,
+  Tray,
+  Menu,
+  MenuItem,
+  powerMonitor,
 } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -39,7 +44,27 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
 }
-let store, win, pendingCardLink, voice, speak;
+let store,
+  win,
+  tutorWin,
+  pendingCardLink,
+  voice,
+  speak,
+  pad,
+  paperConnection,
+  paperConnectionError,
+  tray,
+  reopenWindow,
+  shutdownStarted = false,
+  shutdownComplete = false;
+const tutorMethods = new Set([
+  "tutorOpen",
+  "tutorStatus",
+  "tutorStart",
+  "tutorCopyPage",
+  "paperAttempts",
+  "paperPage",
+]);
 function acceptCardLink(url) {
   try {
     pendingCardLink = { id: parseCardLink(url) };
@@ -53,7 +78,7 @@ function acceptCardLink(url) {
     win.show();
     win.focus();
     win.webContents.send("recall:card-link");
-  }
+  } else reopenWindow?.();
 }
 // macOS can deliver a URL before ready or before the renderer subscribes.
 app.on("open-url", (event, url) => {
@@ -68,21 +93,37 @@ const runner = new Runner({
 app.on("second-instance", (_event, argv) => {
   const url = argv?.find((arg) => arg.startsWith("recall://"));
   if (url) acceptCardLink(url);
-  if (win) {
+  if (win && !win.isDestroyed()) {
     if (win.isMinimized()) win.restore();
     win.focus();
-  }
+  } else reopenWindow?.();
 });
 const handle = (name, fn) =>
   ipcMain.handle("recall:" + name, async (event, ...args) => {
-    if (
-      event.senderFrame !== win.webContents.mainFrame ||
-      !event.senderFrame.url.startsWith("recall://app/")
-    )
+    const mainRequest =
+      win &&
+      !win.isDestroyed() &&
+      event.senderFrame === win.webContents.mainFrame &&
+      event.senderFrame.url.startsWith("recall://app/");
+    const tutorRequest =
+      tutorWin &&
+      !tutorWin.isDestroyed() &&
+      event.senderFrame === tutorWin.webContents.mainFrame &&
+      event.senderFrame.url === "recall://app/#tutor-pad";
+    if (!mainRequest && (!tutorRequest || !tutorMethods.has(name)))
       throw Error("Untrusted request");
+    if (tutorRequest) {
+      if (name === "paperAttempts") return pad.paper.attempts(null, "tutor");
+      if (
+        ["paperPage", "tutorCopyPage"].includes(name) &&
+        pad.paper.attempt(name === "paperPage" ? args[0] : args[0]?.attemptId)
+          .mode !== "tutor"
+      )
+        throw Error("Choose a Tutor Pad sheet.");
+    }
     return fn(...args);
   });
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Packaged builds carry the icon in the bundle; `npm start` needs it set.
   if (process.platform === "darwin" && !app.isPackaged)
     app.dock?.setIcon(path.join(__dirname, "../packaging/icon.png"));
@@ -102,6 +143,150 @@ app.whenReady().then(() => {
   });
   const { SpeakService } = require("./speak.cjs");
   speak = new SpeakService({ store, voice });
+  const { PadService } = require("./pad-service.cjs");
+  const padEmit = (event) => {
+    if (win && !win.isDestroyed())
+      win.webContents.send("recall:pad-event", event);
+    // The tutor workspace only needs refresh signals, never study fronts,
+    // questions, references, feedback or device transport payloads.
+    if (
+      tutorWin &&
+      !tutorWin.isDestroyed() &&
+      ["tutor", "status", "attempt"].includes(event.type)
+    )
+      tutorWin.webContents.send("recall:pad-event", { type: event.type });
+  };
+  pad = new PadService({
+    store,
+    key: () => voice.key(),
+    decodeImage: (bytes) => {
+      const image = nativeImage.createFromBuffer(bytes);
+      return image.isEmpty() ? null : image.getSize();
+    },
+    copyImage: (bytes) => {
+      const image = nativeImage.createFromBuffer(bytes);
+      if (image.isEmpty())
+        throw Error("The handwriting image could not be opened.");
+      clipboard.writeImage(image);
+    },
+    emit: padEmit,
+    login: (enabled) => app.setLoginItemSettings({ openAtLogin: enabled }),
+  });
+  await pad.start();
+  try {
+    paperConnection =
+      await require("./paper-connection.cjs").startPaperConnection(
+        store.folder,
+        (operation, input) => pad.paperSessionCall(operation, input),
+      );
+  } catch {
+    paperConnectionError =
+      "The local assistant connection could not start. Quit and reopen Recall; saved sheets remain available.";
+  }
+  const updateTray = () => {
+    if (!pad.bridge.server) {
+      tray?.destroy();
+      tray = null;
+      return;
+    }
+    if (!tray) {
+      const icon = nativeImage
+        .createFromPath(path.join(__dirname, "pad-tray.png"))
+        .resize({ width: 18, height: 18 });
+      tray = new Tray(icon);
+      tray.setToolTip("Recall Pad");
+    }
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        {
+          label: "Open Recall",
+          click: () => {
+            if (!win || win.isDestroyed()) createWindow();
+            win.show();
+            win.focus();
+          },
+        },
+        {
+          label: "Tutor Pad",
+          click: () => openTutorWindow(),
+        },
+        { type: "separator" },
+        { label: "Quit Recall", click: () => app.quit() },
+      ]),
+    );
+  };
+  updateTray();
+  powerMonitor.on("suspend", () => pad.suspend().catch(() => {}));
+  handle("padStatus", () => pad.bridge.status());
+  handle("padConfigure", async (input) => {
+    const status = await pad.configure(input);
+    updateTray();
+    return status;
+  });
+  handle("padPairing", () => pad.bridge.pairing());
+  handle("padConfirmPairing", (input) => pad.bridge.confirm(input));
+  handle("padRevokeDevice", (id) => pad.bridge.revoke(id));
+  handle("padStartStudy", (input) => {
+    pad.requireEnabled();
+    return pad.bridge.startStudy(input);
+  });
+  handle("padFollowStudy", (input) => pad.bridge.followStudy(input));
+  handle("paperAttempts", (id, mode) => pad.paper.attempts(id, mode));
+  handle("paperPage", (id, index) => pad.paper.page(id, index));
+  handle("paperImport", (input) => {
+    const attempt = pad.paper.import(input.cardId, input.pages);
+    pad.event({ type: "attempt", id: attempt.id });
+    return attempt;
+  });
+  handle("paperAttach", async (id) => {
+    const result = await dialog.showOpenDialog(win, {
+      title: "Add handwritten work",
+      properties: ["openFile", "multiSelections"],
+      filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }],
+    });
+    if (result.canceled) return null;
+    if (result.filePaths.length > 20) throw Error("Choose up to 20 pages.");
+    const types = {
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".webp": "image/webp",
+    };
+    const pages = result.filePaths.map((file) => {
+      if (fs.statSync(file).size > 12 * 1024 * 1024)
+        throw Error("Each image must be at most 12 MB.");
+      return {
+        name: path.basename(file),
+        mime: types[path.extname(file).toLowerCase()],
+        bytes: fs.readFileSync(file),
+      };
+    });
+    const attempt = pad.paper.import(id, pages);
+    pad.event({ type: "attempt", id: attempt.id });
+    return attempt;
+  });
+  handle("paperEvaluate", (input) => pad.evaluate(input));
+  handle("paperCancelAssessment", () => pad.cancel());
+  handle("tutorStatus", () => pad.tutorStatus());
+  handle("tutorOpen", () => {
+    openTutorWindow();
+    return { opened: true };
+  });
+  handle("tutorStart", () => pad.tutorStart());
+  handle("tutorCopyPage", (input) => pad.copyPage(input));
+  handle("paperConnections", async () => ({
+    ...(await require("./paper-install.cjs").paperConnectionStatus(
+      store.folder,
+    )),
+    available: !!paperConnection,
+    verification: paperConnection ? "main_receiver_running" : "unavailable",
+    ...(paperConnectionError ? { error: paperConnectionError } : {}),
+  }));
+  handle("paperConnect", (host) =>
+    require("./paper-install.cjs").connectPaper(store.folder, host, {
+      apply: true,
+    }),
+  );
   handle("speakSources", (query) => speak.sources(query));
   handle("speakPreview", (config) => speak.preview(config));
   handle("speakDraft", () => speak.draft());
@@ -570,6 +755,7 @@ app.whenReady().then(() => {
       title: "Recall",
       backgroundColor: nativeTheme.shouldUseDarkColors ? "#111915" : "#f3f4ed",
       titleBarStyle: "hiddenInset",
+      icon: path.join(__dirname, "../packaging/icon.png"),
       webPreferences: {
         preload: path.join(__dirname, "preload.cjs"),
         nodeIntegration: false,
@@ -603,19 +789,121 @@ app.whenReady().then(() => {
     });
     win.loadURL("recall://app/");
   }
-  createWindow();
-  nativeTheme.on("updated", () => {
-    if (win && !win.isDestroyed())
-      win.setBackgroundColor(
-        nativeTheme.shouldUseDarkColors ? "#111915" : "#f3f4ed",
+  function openTutorWindow() {
+    if (!tutorWin || tutorWin.isDestroyed()) {
+      tutorWin = new BrowserWindow({
+        width: 940,
+        height: 820,
+        minWidth: 620,
+        minHeight: 560,
+        title: "Tutor Pad",
+        backgroundColor: nativeTheme.shouldUseDarkColors
+          ? "#111915"
+          : "#f3f4ed",
+        titleBarStyle: "hiddenInset",
+        icon: path.join(__dirname, "../packaging/icon.png"),
+        webPreferences: {
+          preload: path.join(__dirname, "preload.cjs"),
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true,
+        },
+      });
+      tutorWin.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+      tutorWin.webContents.on("will-navigate", (event) =>
+        event.preventDefault(),
       );
+      // Tutor Pad has no card widgets, navigation or privileged child frames.
+      tutorWin.webContents.on("will-frame-navigate", (event) => {
+        if (!event.isMainFrame) event.preventDefault();
+      });
+      tutorWin.on("closed", () => {
+        tutorWin = null;
+      });
+      tutorWin.loadURL("recall://app/#tutor-pad");
+    }
+    if (tutorWin.isMinimized()) tutorWin.restore();
+    tutorWin.show();
+    tutorWin.focus();
+  }
+  reopenWindow = () => {
+    if (!win || win.isDestroyed()) createWindow();
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+  };
+  createWindow();
+  const applicationMenu = Menu.getApplicationMenu();
+  if (applicationMenu) {
+    const fileMenu = applicationMenu.items.find(
+      (item) => item.label === "File",
+    );
+    if (fileMenu?.submenu) {
+      fileMenu.submenu.insert(
+        0,
+        new MenuItem({
+          label: "Tutor Pad",
+          accelerator: "CmdOrCtrl+Shift+T",
+          click: () => openTutorWindow(),
+        }),
+      );
+      Menu.setApplicationMenu(applicationMenu);
+    }
+  } else {
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate([
+        ...(process.platform === "darwin" ? [{ role: "appMenu" }] : []),
+        {
+          label: "File",
+          submenu: [
+            {
+              label: "Tutor Pad",
+              accelerator: "CmdOrCtrl+Shift+T",
+              click: () => openTutorWindow(),
+            },
+            { type: "separator" },
+            { role: "close" },
+          ],
+        },
+        { role: "editMenu" },
+        { role: "viewMenu" },
+        { role: "windowMenu" },
+      ]),
+    );
+  }
+  nativeTheme.on("updated", () => {
+    for (const window of [win, tutorWin])
+      if (window && !window.isDestroyed())
+        window.setBackgroundColor(
+          nativeTheme.shouldUseDarkColors ? "#111915" : "#f3f4ed",
+        );
   });
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
-app.on("window-all-closed", () => app.quit());
-app.on("before-quit", () => {
+app.on("window-all-closed", () => {
+  if (!pad?.bridge.server) app.quit();
+});
+app.on("before-quit", (event) => {
+  if (!shutdownComplete && pad) {
+    event.preventDefault();
+    if (shutdownStarted) return;
+    shutdownStarted = true;
+    voice?.cancel();
+    speak?.cancel();
+    runner.cancel();
+    require("./learning-worker.cjs").cancel();
+    Promise.resolve(paperConnection?.close())
+      .then(() => pad.close())
+      .finally(() => {
+        tray?.destroy();
+        tray = null;
+        shutdownComplete = true;
+        app.quit();
+      });
+    return;
+  }
   voice?.cancel();
   speak?.cancel();
   runner.cancel();

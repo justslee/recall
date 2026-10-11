@@ -8,7 +8,6 @@ import React, {
 } from "react";
 import {
   ArrowRight,
-  ImagePlus,
   Check,
   CircleAlert,
   Eye,
@@ -23,6 +22,7 @@ import { plain, formatLabel, spanLabel } from "./model";
 import { Kbd } from "./ui";
 import { ChallengeContext, ChallengeWork } from "./ChallengeDetail";
 import { VoiceAnswer } from "./VoiceAnswer";
+import { HandwritingAnswer } from "./Handwriting";
 const CodeWorkspace = lazy(() => import("./CodeWorkspace"));
 const api = window.recall;
 
@@ -61,7 +61,6 @@ function MathWork({ card, fail, onExport }) {
           },
     );
   };
-  const attach = () => api.attach(card.id).then(setPhotos).catch(fail);
   return (
     <section className="math-work">
       <div className="math-answer-input">
@@ -101,36 +100,38 @@ function MathWork({ card, fail, onExport }) {
         </p>
       )}
       <div className="paper-actions">
-        <button onClick={attach}>
-          <ImagePlus size={16} /> Attach paper solution
-        </button>
         {photos.length > 0 && (
           <button onClick={() => onExport(card.id)}>
             Export for Codex assessment
           </button>
         )}
-        <small>Photos stay on this Mac. No automatic grading yet.</small>
+        {photos.length > 0 && (
+          <small>Earlier attachments · saved before paper attempts</small>
+        )}
       </div>
       {photos.length > 0 && (
-        <div className="photos">
-          {photos.map((photo) => (
-            <figure key={photo.id}>
-              <img src={photo.url} alt={"Paper solution: " + photo.name} />
-              <figcaption>{photo.name}</figcaption>
-              <button
-                onClick={() =>
-                  api
-                    .removeAttachment(photo.id)
-                    .then(() => api.attachments(card.id))
-                    .then(setPhotos)
-                    .catch(fail)
-                }
-              >
-                Remove
-              </button>
-            </figure>
-          ))}
-        </div>
+        <details className="handwriting-earlier">
+          <summary>Earlier attachments · {photos.length}</summary>
+          <div className="photos">
+            {photos.map((photo) => (
+              <figure key={photo.id}>
+                <img src={photo.url} alt={"Paper solution: " + photo.name} />
+                <figcaption>{photo.name}</figcaption>
+                <button
+                  onClick={() =>
+                    api
+                      .removeAttachment(photo.id)
+                      .then(() => api.attachments(card.id))
+                      .then(setPhotos)
+                      .catch(fail)
+                  }
+                >
+                  Remove
+                </button>
+              </figure>
+            ))}
+          </div>
+        </details>
       )}
     </section>
   );
@@ -151,6 +152,8 @@ export function ReviewCard({
   onExport,
   onOpenVoiceSettings,
   onVoiceBusyChange,
+  onOpenHandwritingSettings,
+  studyContext,
 }) {
   const cardElement = useRef(null);
   const previousSide = useRef(revealed);
@@ -373,14 +376,24 @@ export function ReviewCard({
           </section>
         )}
         {flips && (
-          <VoiceAnswer
-            key={card.id}
+          <HandwritingAnswer
             card={card}
-            revealed={revealed}
-            onOpenSettings={onOpenVoiceSettings}
-            onEvaluated={() => reveal(true)}
-            onBusyChange={onVoiceBusyChange}
-          />
+            studyContext={studyContext}
+            onOpenSettings={onOpenHandwritingSettings}
+          >
+            {({ tools, content }) => (
+              <VoiceAnswer
+                key={card.id}
+                card={card}
+                revealed={revealed}
+                onOpenSettings={onOpenVoiceSettings}
+                onEvaluated={() => reveal(true)}
+                onBusyChange={onVoiceBusyChange}
+                extraTools={tools}
+                extraContent={content}
+              />
+            )}
+          </HandwritingAnswer>
         )}
       </article>
       {flips && flipControl}
