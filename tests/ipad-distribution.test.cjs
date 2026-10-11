@@ -410,6 +410,45 @@ test("IPA inspection rejects traversal, links, ambiguous apps and oversized expa
     assert.throws(() => release.inspectIpaEntries(entries));
 });
 
+test("IPA inspection rejects accidental private resources and accepts only reviewed export metadata", () => {
+  const entry = (name) => ({
+    entryName: name,
+    header: { size: 1, attr: 0 },
+  });
+  const payload = [
+    entry("Payload/"),
+    entry("Payload/RecallPad.app/"),
+    entry("Payload/RecallPad.app/RecallPad"),
+    entry("Payload/RecallPad.app/Info.plist"),
+    // The public distribution profile is required to verify the export. It
+    // contains no private signing key; arbitrary profiles are still blocked.
+    entry("Payload/RecallPad.app/embedded.mobileprovision"),
+    entry("Payload/RecallPad.app/Web/katex.min.js"),
+    entry("Payload/RecallPad.app/Web/fonts/KaTeX_Main-Regular.woff2"),
+    entry("Symbols/"),
+    entry("Symbols/00000000-0000-0000-0000-000000000000.symbols"),
+  ];
+  assert.doesNotThrow(() => release.inspectIpaEntries(payload));
+  for (const name of [
+    "Payload/RecallPad.app/Local.xcconfig",
+    "Payload/RecallPad.app/credentials.json",
+    "Payload/RecallPad.app/review-contact.txt",
+    "Payload/RecallPad.app/private-drawing.png",
+    "Payload/RecallPad.app/Web/private-note.md",
+    "Payload/RecallPad.app/Web/unknown.js",
+    "Payload/RecallPad.app/extra.mobileprovision",
+    "private/review-contacts.json",
+    "account.p8",
+    "Symbols/contacts.json",
+    "RecallPad.xcarchive/Info.plist",
+  ])
+    assert.throws(
+      () => release.inspectIpaEntries([...payload, entry(name)]),
+      /unexpected app resource or auxiliary artifact/,
+      name,
+    );
+});
+
 test("shipped offline math resources must match the installed locked packages", (t) => {
   const base = fixture(t);
   fs.symlinkSync(
@@ -437,6 +476,30 @@ test("shipped offline math resources must match the installed locked packages", 
     { recursive: true },
   );
   assert.doesNotThrow(() => release.assertBundledWeb(app, base));
+
+  const extraFont = path.join(web, "fonts/PrivateWork.ttf");
+  fs.writeFileSync(extraFont, "synthetic private canary");
+  assert.throws(() => release.assertBundledWeb(app, base), /unexpected file/);
+  fs.unlinkSync(extraFont);
+
+  const placeholder = path.join(web, ".gitkeep");
+  fs.writeFileSync(placeholder, "\n");
+  assert.doesNotThrow(() => release.assertBundledWeb(app, base));
+  fs.writeFileSync(placeholder, "synthetic private canary");
+  assert.throws(
+    () => release.assertBundledWeb(app, base),
+    /placeholder contains unexpected content/,
+  );
+  fs.unlinkSync(placeholder);
+
+  const font = path.join(web, "fonts/KaTeX_Main-Regular.woff2");
+  const actualFont = path.join(base, "fixture-original-font");
+  fs.renameSync(font, actualFont);
+  fs.symlinkSync(actualFont, font);
+  assert.throws(() => release.assertBundledWeb(app, base), /symbolic link/);
+  fs.unlinkSync(font);
+  fs.renameSync(actualFont, font);
+
   fs.appendFileSync(
     path.join(web, "purify.min.js"),
     "\n/* changed after dependency locking */",

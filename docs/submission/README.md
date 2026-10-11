@@ -1,8 +1,8 @@
-# Apple submission packet
+# Publisher submission templates
 
 [Distribution procedure](../DISTRIBUTION.md) · [Release checklist](../RELEASE_CHECKLIST.md)
 
-These are public-safe drafts for preparing **Recall Pad's first TestFlight beta** and the paired **Developer ID Mac download**. They are not completed App Store Connect forms or evidence of an upload.
+These are reusable drafts for publishers preparing **Recall Pad's TestFlight beta** and the paired **Developer ID Mac download**. They are not completed App Store Connect forms, private account records or evidence of an upload. Ordinary Recall users can skip this folder and follow the [setup guide](../SETUP.md).
 
 | Document                                 | Purpose                                                                                                                   |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -10,6 +10,12 @@ These are public-safe drafts for preparing **Recall Pad's first TestFlight beta*
 | [Privacy and encryption](APP_PRIVACY.md) | Source-based data flows and declaration decisions.                                                                        |
 | [Release record](RELEASE_RECORD.md)      | Template for candidate identity, artifact checks and unresolved release gates. Keep completed private records out of Git. |
 | [Support](SUPPORT.md)                    | Public troubleshooting and a safe way to ask for help.                                                                    |
+
+Copy forms that need completion to a private location. Keep actual contacts, signing configuration,
+Apple upload/notarization receipts, screenshots of account pages, archives and symbol bundles out of
+Git. The local build tools write outputs under ignored `release/` or `apps/ipad/.build/`; those folders
+are working storage, not public release assets. Inspect any manually created archive before sharing
+it. Public releases should contain the tested app, checksum and concise release notes only.
 
 ## Before anything is submitted
 

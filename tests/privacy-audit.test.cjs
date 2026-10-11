@@ -125,6 +125,20 @@ test("private database, credential and export artifacts fail even with harmless 
     "examples/backups/snapshot.json",
     "examples/paper-runtime/endpoint.json",
     "examples/paper-authority/credentials.json",
+    "examples/signing.p8",
+    "examples/signing.pem",
+    "examples/signing.key",
+    "examples/signing.cer",
+    "examples/signing.p12",
+    "examples/desktop.provisionprofile",
+    "examples/tablet.mobileprovision",
+    "examples/RecallPad.ipa",
+    "examples/RecallPad.symbols",
+    "examples/RecallPad.bcsymbolmap",
+    "examples/build.xcactivitylog",
+    "examples/RecallPad.xcarchive/Info.plist",
+    "examples/RecallPad.app.dSYM/Contents/Info.plist",
+    "examples/Test.xcresult/Info.plist",
   ])
     assert(
       inspectFile(name, "synthetic fixture").failures.includes(
@@ -132,6 +146,36 @@ test("private database, credential and export artifacts fail even with harmless 
       ),
       name,
     );
+});
+
+test("private signing and native distribution artifacts are ignored outside build folders", (t) => {
+  const folder = temporary(t);
+  git(folder, ["init", "--quiet"]);
+  write(folder, ".gitignore", fs.readFileSync(path.join(root, ".gitignore")));
+  const names = [
+    "signing.p8",
+    "signing.pem",
+    "signing.key",
+    "signing.cer",
+    "signing.p12",
+    "desktop.provisionprofile",
+    "tablet.mobileprovision",
+    "RecallPad.ipa",
+    "RecallPad.symbols",
+    "RecallPad.bcsymbolmap",
+    "build.xcactivitylog",
+    "RecallPad.xcarchive/Info.plist",
+    "RecallPad.app.dSYM/Contents/Info.plist",
+    "Test.xcresult/Info.plist",
+  ];
+  for (const name of names) write(folder, name, "Synthetic private artifact");
+  const result = spawnSync("git", ["check-ignore", "--stdin"], {
+    cwd: folder,
+    input: names.join("\n") + "\n",
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0);
+  assert.deepEqual(result.stdout.trim().split("\n"), names);
 });
 
 test("renamed SQLite and unsupported binaries cannot hide behind a permitted directory or image suffix", () => {

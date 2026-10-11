@@ -88,6 +88,8 @@ Recall has no hosted database or telemetry service. Cards, reviews, drafts and l
 
 Interactive widgets load only when requested inside a sandbox. Native coding runs require source review and an explicit **Run** action. Saved API keys stay in a local owner-only file and are excluded from Recall exports and profile backups.
 
+**A clone contains the reusable system:** app source, learning skills, original demo cards, setup guides and contributor tools. It does not include the author's cards, knowledge base, API keys, paired devices or completed Apple submission records. Your own library is created locally. Build archives, debug symbols and private release evidence stay outside Git; the [publisher templates](docs/submission/README.md) are optional references for people distributing their own build.
+
 [Privacy & execution](docs/PRIVACY.md) · [Security](SECURITY.md) · [Backups and migration](docs/MIGRATION.md)
 
 ## Go further

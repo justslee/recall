@@ -39,6 +39,6 @@ Use these references when you need more detail; they are not extra setup steps.
 
 - [Author cards](AUTHORING.md), [create interactive diagrams](WIDGETS.md), or inspect the [learning skill kit](../skills/) and its [shared contracts](../skills/recall-source/references/).
 - [Contribute](../CONTRIBUTING.md) and read the [implementation reference](IMPLEMENTATION.md), [product plan](PRODUCT_PLAN.md) or [pad protocol](PAD_PROTOCOL.md).
-- Review [publication evidence](PUBLIC_REVIEW.md) and the [release checklist](RELEASE_CHECKLIST.md), or prepare the [Mac download and iPad TestFlight build](DISTRIBUTION.md) with the [submission packet](submission/README.md).
+- Review [publication evidence](PUBLIC_REVIEW.md) and the [release checklist](RELEASE_CHECKLIST.md). Publishers can use the [distribution procedure](DISTRIBUTION.md) and [unfilled submission templates](submission/README.md); these are contributor references, not additional user setup steps.
 
-Documentation images contain original demo or synthetic data. See [screenshot provenance and refresh instructions](images/README.md). Private profiles, backups and exports do not belong in the public repository.
+Documentation images contain original demo or synthetic data. See [screenshot provenance and refresh instructions](images/README.md). Personal libraries, keys, completed Apple forms, build archives and debug symbols do not belong in the public source. See [what stays private](../SECURITY.md#what-belongs-in-the-public-repository).

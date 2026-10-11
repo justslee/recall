@@ -22,6 +22,12 @@ Start from a reviewed commit with a clean working tree. Use the locked dependenc
 
 Keep private decks, profiles, API keys, local signing configuration, device credentials, provisioning profiles, diagnostics and tester evidence outside public assets. Use original demo content for screenshots and reviewer examples. Build archives contain executable code and bundled resources; they must not contain a developer's Recall profile.
 
+Keep Xcode archives, debug symbols, exported symbol metadata and raw upload logs private. They can
+contain local source paths and account/device details. Apple's private processing or diagnostics
+uploads are separate from a public GitHub release; an accepted Apple upload does not make its
+intermediate files suitable for publication. Publish the reviewed installable app and checksum,
+rather than the archive used to produce it.
+
 Keep a private evidence record with the commit, app versions, build number, SDK, minimum OS, signing checks and exact artifact hashes. Do not commit account contacts, team identifiers, certificate names containing personal details or private device logs to that record.
 
 ## 2. Prepare the Mac download

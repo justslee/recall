@@ -17,7 +17,8 @@ function privateArtifact(name) {
     /(?:^|\/)(?:\.git|evidence|private|tasks|backups|credentials|learning-inbox|self-tests|pad-identity|pad-staging|pad-handoff|paper-runtime|paper-authority|xcuserdata)(?:\/|$)/i.test(
       normalized,
     ) ||
-    /\.(?:sqlite(?:3)?(?:-wal|-shm)?|db(?:-wal|-shm)?|apkg|anki|log|enc|bak|backup|zip|tar|tgz|gz|bz2|xz|7z|rar|p12|mobileprovision|xcuserstate)$/i.test(
+    /\.(?:xcarchive|dSYM|xcresult)(?:\/|$)/i.test(normalized) ||
+    /\.(?:sqlite(?:3)?(?:-wal|-shm)?|db(?:-wal|-shm)?|apkg|anki|log|enc|bak|backup|zip|tar|tgz|gz|bz2|xz|7z|rar|p12|p8|pem|key|cer|mobileprovision|provisionprofile|ipa|bcsymbolmap|symbols|xcactivitylog|xcuserstate)$/i.test(
       normalized,
     ) ||
     /(?:^|\/)\.env(?:\.[^/]*)?$|(?:^|\/)(?:auth\.json|\.credentials\.json|openai\.key|config\.local\.json|learning-connections\.json|presentations\.json|legacy-trust\.json|seed\.json)$/i.test(

@@ -504,6 +504,37 @@ function inspectIpaEntries(entries) {
     total += entry.header.size;
     if (total > 512 * 1024 * 1024)
       throw new Error("The expanded IPA exceeds the release inspection limit.");
+
+    // App Store exports may include private Apple symbol metadata alongside
+    // Payload. It is not an app resource and must never become a public asset.
+    // Keep the app resource list explicit so an accidental Xcode resource
+    // reference cannot quietly ship local configuration, drawings or notes.
+    const allowedDirectory = [
+      "Payload",
+      "Payload/RecallPad.app",
+      "Payload/RecallPad.app/_CodeSignature",
+      "Payload/RecallPad.app/Web",
+      "Payload/RecallPad.app/Web/fonts",
+      "Symbols",
+    ].includes(normalized);
+    const allowedFile =
+      /^Payload\/RecallPad\.app\/(?:RecallPad|Info\.plist|PkgInfo|Assets\.car|PrivacyInfo\.xcprivacy|embedded\.mobileprovision|AppIcon[A-Za-z0-9@~.-]*\.png)$/.test(
+        name,
+      ) ||
+      name === "Payload/RecallPad.app/_CodeSignature/CodeResources" ||
+      name === "Payload/RecallPad.app/Web/.gitkeep" ||
+      /^Payload\/RecallPad\.app\/Web\/(?:katex\.min\.js|katex\.min\.css|auto-render\.min\.js|purify\.min\.js|KATEX-LICENSE\.txt|DOMPURIFY-LICENSE\.txt)$/.test(
+        name,
+      ) ||
+      /^Payload\/RecallPad\.app\/Web\/fonts\/[A-Za-z0-9_-]+\.(?:woff2?|ttf)$/.test(
+        name,
+      ) ||
+      /^Symbols\/[a-f0-9-]{36}\.symbols$/i.test(name);
+    if (!(name.endsWith("/") ? allowedDirectory : allowedFile))
+      throw new Error(
+        "The IPA contains an unexpected app resource or auxiliary artifact; keep private files outside the shipping app.",
+      );
+
     const match = /^Payload\/([^/]+\.app)(?:\/|$)/.exec(name);
     if (match) apps.add(match[1]);
   }
@@ -525,6 +556,44 @@ function assertBundledWeb(app, base = root) {
   const fontFolder = path.join(base, "node_modules/katex/dist/fonts");
   for (const name of fs.readdirSync(fontFolder))
     expected.push([`katex/dist/fonts/${name}`, `fonts/${name}`]);
+
+  const web = path.join(app, "Web");
+  const allowed = new Set(expected.map(([, bundled]) => bundled));
+  allowed.add(".gitkeep");
+  const inspect = (directory, relative = "") => {
+    if (!fs.lstatSync(directory).isDirectory())
+      throw new Error("The exported offline web resource tree is invalid.");
+
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const file = path.join(directory, entry.name);
+      const name = relative ? `${relative}/${entry.name}` : entry.name;
+      if (entry.isSymbolicLink())
+        throw new Error(
+          "The exported offline web resources contain a symbolic link.",
+        );
+
+      if (entry.isDirectory()) {
+        inspect(file, name);
+        continue;
+      }
+
+      if (!entry.isFile() || !allowed.has(name))
+        throw new Error(
+          "The exported offline web resources contain an unexpected file.",
+        );
+
+      if (
+        name === ".gitkeep" &&
+        (fs.statSync(file).size > 1024 ||
+          !/^\s*$/.test(fs.readFileSync(file, "utf8")))
+      )
+        throw new Error(
+          "The exported offline resource placeholder contains unexpected content.",
+        );
+    }
+  };
+  inspect(web);
+
   for (const [source, bundled] of expected) {
     const local = path.join(base, "node_modules", source);
     const shipped = path.join(app, "Web", bundled);
@@ -694,6 +763,10 @@ function verifyExportedIpa(options, paths, dependencies) {
         infoAndPrivacyValidated: true,
         compiledIconPresent: true,
         lockedOfflineResourcesMatch: true,
+        appResourceLayoutReviewed: true,
+        privateAppleSymbolMetadataIncluded: zip
+          .getEntries()
+          .some((entry) => entry.entryName.startsWith("Symbols/")),
         immutableIpa: true,
       },
     };
