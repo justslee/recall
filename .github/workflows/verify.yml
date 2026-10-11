@@ -17,6 +17,7 @@ jobs:
           cache: npm
       - run: npm run setup -- --no-launch
       - run: npm run docs:check
+      - run: npm run release:ipad:check
       - run: npm run build:pad-helper
       - run: swift test --package-path native/mac-handoff
       - run: swift test --package-path apps/ipad

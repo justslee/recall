@@ -5,6 +5,18 @@
 Recall stores its library locally. No account, telemetry, hosted database or network AI provider is
 required to study.
 
+## At a glance
+
+- **Your work:** cards, drafts, handwritten sheets and feedback live on your devices. Recall has no developer-operated cloud library or advertising service.
+- **Your iPad connection:** pairing and selected questions/drawings travel to your own Mac over an authenticated local connection. The Recall publisher does not receive them through that connection.
+- **Optional AI:** deliberately recording, requesting assessment or letting an assistant read submitted pages sends the relevant content to the selected provider. This is separate from local storage; provider retention and billing follow your account's controls.
+- **Your choices:** camera access scans pairing QR codes; local-network access connects your Mac. Neither is required for a blank offline Tutor sheet. Delete sheets locally, forget/revoke pairings or disable integrations when you no longer want them.
+- **Copies:** deletion on one device does not remove earlier Mac submissions, backups, shared exports or chat attachments. Manage those copies at each destination.
+
+TestFlight feedback and beta diagnostics are handled through Apple's service; public GitHub support issues contain only what you choose to post. Review attachments before sending. Recall includes no third-party analytics or advertising SDK in its current iPad source. Ask general questions through [support](submission/SUPPORT.md); report vulnerabilities privately using [SECURITY.md](../SECURITY.md).
+
+The detailed flows below describe the source implementation. App Store privacy and encryption declarations require a separate review of the exact distributed candidate; an empty privacy manifest is not a promise of “Data Not Collected.” [Submission worksheet](submission/APP_PRIVACY.md).
+
 > Keep profile backups private. They can include learning logs, source configuration, drafts,
 > transcripts and Speak reference snapshots. Imports and exports do not automatically publish them.
 

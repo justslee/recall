@@ -39,6 +39,6 @@ Use these references when you need more detail; they are not extra setup steps.
 
 - [Author cards](AUTHORING.md), [create interactive diagrams](WIDGETS.md), or inspect the [learning skill kit](../skills/) and its [shared contracts](../skills/recall-source/references/).
 - [Contribute](../CONTRIBUTING.md) and read the [implementation reference](IMPLEMENTATION.md), [product plan](PRODUCT_PLAN.md) or [pad protocol](PAD_PROTOCOL.md).
-- Review [publication evidence](PUBLIC_REVIEW.md), the [release checklist](RELEASE_CHECKLIST.md) and [distribution plan](LAUNCH.md).
+- Review [publication evidence](PUBLIC_REVIEW.md) and the [release checklist](RELEASE_CHECKLIST.md), or prepare the [Mac download and iPad TestFlight build](DISTRIBUTION.md) with the [submission packet](submission/README.md).
 
 Documentation images contain original demo or synthetic data. See [screenshot provenance and refresh instructions](images/README.md). Private profiles, backups and exports do not belong in the public repository.
