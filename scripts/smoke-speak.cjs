@@ -518,8 +518,9 @@ async function run() {
       .getByRole("button", { name: "Settings & backups", exact: true })
       .click();
     await page
-      .getByRole("button", { name: "Voice & feedback", exact: true })
+      .getByRole("button", { name: "Connections", exact: true })
       .click();
+    await page.locator(".connection-voice").click();
     await page.getByLabel("OpenAI API key", { exact: true }).fill(fixtureKey);
     await page.getByRole("button", { name: "Save key", exact: true }).click();
     await expect(
