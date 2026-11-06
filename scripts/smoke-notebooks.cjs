@@ -183,7 +183,10 @@ const reviewRows = (store) =>
       .getByRole("button", { name: "Settings & backups", exact: true })
       .click();
     await main
-      .getByRole("button", { name: "Learning connections", exact: true })
+      .getByRole("button", { name: "Connections", exact: true })
+      .click();
+    await main
+      .getByRole("button", { name: "Open preparation queue", exact: true })
       .click();
     await expect(
       main.getByRole("heading", { name: "From your notebooks", exact: true }),
