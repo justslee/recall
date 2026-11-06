@@ -1,16 +1,28 @@
 name: Verify
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact source commit to verify for release
+        required: false
+        type: string
 permissions:
   contents: read
 jobs:
   verify:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          ref: ${{ inputs.source_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - run: git rev-parse HEAD && xcodebuild -version
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22.23.3"
