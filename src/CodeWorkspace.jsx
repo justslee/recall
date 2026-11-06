@@ -127,6 +127,7 @@ export default function CodeWorkspace({ card, revealed, onError }) {
   const container = useRef(),
     editor = useRef();
   const revision = useRef(0);
+  const activeRun = useRef(false);
   useEffect(() => {
     let active = true;
     setTrusted(false);
@@ -186,7 +187,7 @@ export default function CodeWorkspace({ card, revealed, onError }) {
   }, [card.id, language]);
   useEffect(
     () => () => {
-      window.recall.stop();
+      if (activeRun.current) window.recall.stop().catch(onError);
     },
     [],
   );
@@ -194,6 +195,7 @@ export default function CodeWorkspace({ card, revealed, onError }) {
     monaco.editor.setTheme("forest-" + appearance);
   }, [appearance]);
   const run = async () => {
+    activeRun.current = true;
     setRunning(true);
     setResult(null);
     const version = revision.current;
@@ -207,6 +209,7 @@ export default function CodeWorkspace({ card, revealed, onError }) {
     } catch (e) {
       onError(e);
     } finally {
+      activeRun.current = false;
       setRunning(false);
     }
   };

@@ -1,7 +1,7 @@
 {
   "name": "recall-local",
   "productName": "Recall",
-  "version": "0.6.0-beta.4",
+  "version": "0.6.0-beta.5",
   "private": true,
   "description": "A local study desk for concepts, mathematics and code",
   "type": "module",
