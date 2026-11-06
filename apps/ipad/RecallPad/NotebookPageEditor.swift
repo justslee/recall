@@ -371,39 +371,11 @@ struct NotebookPageEditor: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Shape style").font(.system(.headline, design: .serif))
                     if NotebookArrowGeometry.isConnector(shape) {
-                        Text(arrowConnectionDescription(shape)).font(.subheadline.weight(.medium))
-                        Text("Drag an endpoint circle near a shape to attach it, or away to disconnect. Filled circles show attached endpoints.")
-                            .font(.footnote).foregroundStyle(PadPalette.muted)
-                        if shape.startBinding != nil || shape.endBinding != nil {
-                            Button("Detach endpoints", systemImage: "link.badge.plus") { updateSelectedShape { $0.startBinding = nil; $0.endBinding = nil } }
-                                .frame(minHeight: 44).accessibilityIdentifier("notebook-arrow-detach")
-                        }
-                        Text("Drag the middle circle to bend. Connected ends stay anchored; detach them before rotating or resizing the entire line.")
-                            .font(.footnote).foregroundStyle(PadPalette.muted)
-                        if shape.bend != nil {
-                            Button("Straighten line", systemImage: "line.diagonal") { updateSelectedShape { $0.bend = nil } }
-                                .frame(minHeight: 44).accessibilityIdentifier("notebook-line-straighten")
-                        }
+                        connectorStyleControls(shape)
                     } else {
-                        HStack {
-                            Text("Rotation")
-                            Spacer()
-                            Text("\(((shape.rotation ?? 0) * 180 / .pi).formatted(.number.precision(.fractionLength(0))))°").monospacedDigit().foregroundStyle(PadPalette.muted)
-                        }
-                        Slider(value: Binding(get: { (selectedShape?.rotation ?? 0) * 180 / .pi }, set: { degrees in
-                            updateSelectedShape { $0.rotation = abs(degrees) < 0.001 ? nil : degrees * .pi / 180 }
-                        }), in: -180...180, step: 1).frame(minHeight: 44).accessibilityLabel("Shape rotation in degrees")
+                        rotationStyleControls(shape)
                     }
-                    HStack(spacing: 2) {
-                        ForEach(PaperInkColor.allCases, id: \.self) { color in
-                            Button { updateSelectedShape { $0.color = color.rawValue } } label: {
-                                Circle().fill(color.displayColor(for: colorScheme)).frame(width: 27, height: 27)
-                                    .overlay(Circle().strokeBorder(shape.color == color.rawValue ? PadPalette.text : PadPalette.border, lineWidth: shape.color == color.rawValue ? 3 : 1))
-                                    .frame(width: 44, height: 44)
-                            }.buttonStyle(.plain).accessibilityLabel("Shape color: \(color.name)")
-                                .accessibilityAddTraits(shape.color == color.rawValue ? [.isSelected] : [])
-                        }
-                    }
+                    shapeColorControls(shape)
                     if shape.kind != .text {
                         HStack { Text("Line thickness"); Spacer(); Text("\(shape.lineWidth.formatted(.number.precision(.fractionLength(1)))) pt").monospacedDigit().foregroundStyle(PadPalette.muted) }
                         Slider(value: shapePropertyBinding(\.lineWidth), in: 0.5...24, step: 0.5).frame(minHeight: 44).accessibilityLabel("Shape line thickness")
@@ -417,6 +389,48 @@ struct NotebookPageEditor: View {
                 }.foregroundStyle(PadPalette.text)
             }
         }.frame(maxHeight: 430)
+    }
+
+    @ViewBuilder
+    private func connectorStyleControls(_ shape: NotebookShape) -> some View {
+        Text(arrowConnectionDescription(shape)).font(.subheadline.weight(.medium))
+        Text("Drag an endpoint circle near a shape to attach it, or away to disconnect. Filled circles show attached endpoints.")
+            .font(.footnote).foregroundStyle(PadPalette.muted)
+        if shape.startBinding != nil || shape.endBinding != nil {
+            Button("Detach endpoints", systemImage: "link.badge.plus") { updateSelectedShape { $0.startBinding = nil; $0.endBinding = nil } }
+                .frame(minHeight: 44).accessibilityIdentifier("notebook-arrow-detach")
+        }
+        Text("Drag the middle circle to bend. Connected ends stay anchored; detach them before rotating or resizing the entire line.")
+            .font(.footnote).foregroundStyle(PadPalette.muted)
+        if shape.bend != nil {
+            Button("Straighten line", systemImage: "line.diagonal") { updateSelectedShape { $0.bend = nil } }
+                .frame(minHeight: 44).accessibilityIdentifier("notebook-line-straighten")
+        }
+    }
+
+    @ViewBuilder
+    private func rotationStyleControls(_ shape: NotebookShape) -> some View {
+        HStack {
+            Text("Rotation")
+            Spacer()
+            Text("\(((shape.rotation ?? 0) * 180 / .pi).formatted(.number.precision(.fractionLength(0))))°").monospacedDigit().foregroundStyle(PadPalette.muted)
+        }
+        Slider(value: Binding(get: { (selectedShape?.rotation ?? 0) * 180 / .pi }, set: { degrees in
+            updateSelectedShape { $0.rotation = abs(degrees) < 0.001 ? nil : degrees * .pi / 180 }
+        }), in: -180...180, step: 1).frame(minHeight: 44).accessibilityLabel("Shape rotation in degrees")
+    }
+
+    private func shapeColorControls(_ shape: NotebookShape) -> some View {
+        HStack(spacing: 2) {
+            ForEach(PaperInkColor.allCases, id: \.self) { color in
+                Button { updateSelectedShape { $0.color = color.rawValue } } label: {
+                    Circle().fill(color.displayColor(for: colorScheme)).frame(width: 27, height: 27)
+                        .overlay(Circle().strokeBorder(shape.color == color.rawValue ? PadPalette.text : PadPalette.border, lineWidth: shape.color == color.rawValue ? 3 : 1))
+                        .frame(width: 44, height: 44)
+                }.buttonStyle(.plain).accessibilityLabel("Shape color: \(color.name)")
+                    .accessibilityAddTraits(shape.color == color.rawValue ? [.isSelected] : [])
+            }
+        }
     }
 
     private func shapePropertyBinding(_ property: WritableKeyPath<NotebookShape, Double>) -> Binding<Double> {

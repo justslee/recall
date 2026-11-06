@@ -56,7 +56,7 @@
     "@peculiar/x509": "2.1.0",
     "adm-zip": "^0.6.1",
     "ajv": "^8.17.1",
-    "dompurify": "^3.4.14",
+    "dompurify": "^3.4.17",
     "katex": "^0.18.6",
     "lucide-react": "^1.41.0",
     "marked": "16.4.2",
@@ -76,9 +76,9 @@
     "@electron/packager": "^20.3.0",
     "@playwright/test": "^1.63.0",
     "@vitejs/plugin-react": "^6.1.1",
-    "electron": "^44.2.0",
+    "electron": "^44.10.2",
     "prettier": "^3.9.6",
-    "vite": "^8.2.2"
+    "vite": "^8.2.4"
   },
   "overrides": {
     "mermaid": {
@@ -86,6 +86,10 @@
     },
     "monaco-editor": {
       "dompurify": "$dompurify"
+    },
+    "@electron/asar": {
+      "glob": "^14.0.4",
+      "minimatch": "^11.0.5"
     }
   },
   "bin": {
