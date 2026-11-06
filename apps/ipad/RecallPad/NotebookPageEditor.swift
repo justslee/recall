@@ -410,14 +410,24 @@ struct NotebookPageEditor: View {
 
     @ViewBuilder
     private func rotationStyleControls(_ shape: NotebookShape) -> some View {
+        let radiansToDegrees = 180 / Double.pi
+        let degrees = (shape.rotation ?? 0) * radiansToDegrees
+        let label = degrees.formatted(.number.precision(.fractionLength(0))) + "°"
+        let rotation = Binding<Double>(
+            get: { (selectedShape?.rotation ?? 0) * radiansToDegrees },
+            set: { degrees in
+                updateSelectedShape { shape in
+                    shape.rotation = abs(degrees) < 0.001 ? nil : degrees / radiansToDegrees
+                }
+            }
+        )
         HStack {
             Text("Rotation")
             Spacer()
-            Text("\(((shape.rotation ?? 0) * 180 / .pi).formatted(.number.precision(.fractionLength(0))))°").monospacedDigit().foregroundStyle(PadPalette.muted)
+            Text(label).monospacedDigit().foregroundStyle(PadPalette.muted)
         }
-        Slider(value: Binding(get: { (selectedShape?.rotation ?? 0) * 180 / .pi }, set: { degrees in
-            updateSelectedShape { $0.rotation = abs(degrees) < 0.001 ? nil : degrees * .pi / 180 }
-        }), in: -180...180, step: 1).frame(minHeight: 44).accessibilityLabel("Shape rotation in degrees")
+        Slider(value: rotation, in: -180...180, step: 1)
+            .frame(minHeight: 44).accessibilityLabel("Shape rotation in degrees")
     }
 
     private func shapeColorControls(_ shape: NotebookShape) -> some View {
