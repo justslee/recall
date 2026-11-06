@@ -21,6 +21,42 @@ const take = (object, keys) =>
     keys.filter((k) => object[k] !== undefined).map((k) => [k, object[k]]),
   );
 const sessionKey = (id) => String(id || "").replace(/^(codex|claude)\//, "");
+// A process-local index, with exact source comparisons on every lookup. A card
+// edit invalidates only that card; a newly imported card is immediately found.
+// Executable widget/CSS source must not influence concept search.
+const indices = new Map();
+const answerText = (text) =>
+  String(text || "")
+    .replace(/```(?:widget|mermaid)[^\n]*\n[\s\S]*?```/g, " ")
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, " ");
+function indexFor(folder, cards) {
+  if (!indices.has(folder)) {
+    if (indices.size >= 4) indices.delete(indices.keys().next().value);
+    indices.set(folder, new Map());
+  }
+  const index = indices.get(folder),
+    seen = new Set();
+  for (const card of cards) {
+    if (card.status !== "ready" || card.suspended) continue;
+    seen.add(card.id);
+    const primaryText = [
+      card.title,
+      card.prompt,
+      ...(card.tags || []),
+      ...(card.aliases || []),
+    ].join(" ");
+    const old = index.get(card.id);
+    if (!old || old.primaryText !== primaryText || old.answer !== card.answer)
+      index.set(card.id, {
+        primaryText,
+        answer: card.answer,
+        primary: new Set(terms(primaryText)),
+        secondary: new Set(terms(answerText(card.answer))),
+      });
+  }
+  for (const id of index.keys()) if (!seen.has(id)) index.delete(id);
+  return index;
+}
 function context(folder, item, cards) {
   const input = item.input;
   const source =
@@ -58,17 +94,11 @@ function context(folder, item, cards) {
           .join(" "),
   );
   const explicit = new Set(input.capture?.cardIds || []);
+  const index = indexFor(folder, cards);
   const ranked = cards
     .filter((c) => c.status === "ready" && !c.suspended)
     .map((c) => {
-      const primary = new Set(
-        terms(
-          [c.title, c.prompt, ...(c.tags || []), ...(c.aliases || [])].join(
-            " ",
-          ),
-        ),
-      );
-      const secondary = new Set(terms(c.answer));
+      const { primary, secondary } = index.get(c.id);
       const hits = query.filter((t) => primary.has(t));
       const score = explicit.has(c.id)
         ? 10000
@@ -87,6 +117,7 @@ function context(folder, item, cards) {
   let remaining = 48000;
   const candidates = [];
   for (const { c } of ranked.slice(0, 12)) {
+    const readableAnswer = answerText(c.answer);
     const record = {
       ...take(c, [
         "id",
@@ -97,8 +128,9 @@ function context(folder, item, cards) {
         "tags",
         "prompt",
       ]),
-      answer: c.answer.slice(0, 6000),
-      answerTruncated: c.answer.length > 6000,
+      answer: readableAnswer.slice(0, 6000),
+      answerTruncated: readableAnswer.length > 6000,
+      visualSourceOmitted: readableAnswer !== c.answer,
     };
     const size = Buffer.byteLength(JSON.stringify(record));
     if (size > remaining) continue;
@@ -132,4 +164,4 @@ function context(folder, item, cards) {
       .digest("hex"),
   };
 }
-module.exports = { context };
+module.exports = { context, indexFor };

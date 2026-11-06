@@ -405,8 +405,9 @@ fs.mkdirSync(evidence, { recursive: true });
       .getByRole("button", { name: "Settings & backups", exact: true })
       .click();
     await p
-      .getByRole("button", { name: "Voice & feedback", exact: true })
+      .getByRole("button", { name: "Connections", exact: true })
       .click();
+    await p.locator(".connection-voice").click();
     await expect(
       p.getByRole("button", { name: "Back to your answer", exact: true }),
     ).toHaveCount(0);
@@ -442,8 +443,9 @@ fs.mkdirSync(evidence, { recursive: true });
       .getByRole("button", { name: "Settings & backups", exact: true })
       .click();
     await p
-      .getByRole("button", { name: "Voice & feedback", exact: true })
+      .getByRole("button", { name: "Connections", exact: true })
       .click();
+    await p.locator(".connection-voice").click();
     await expect(
       p.getByText("Key saved on this Mac", { exact: true }),
     ).toBeVisible();

@@ -1,0 +1,170 @@
+/* Scoped to the visual host; authored styles never enter the app document. */
+.widget.visual-widget {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  margin: 24px 0;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 5px 18px -16px #0005;
+  text-align: left;
+  overflow: hidden;
+}
+.visual-widget .visual-widget-bar {
+  padding: 16px 18px;
+  gap: 16px;
+  background: var(--sunken);
+  flex-wrap: wrap;
+}
+.visual-widget-heading {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 150px;
+}
+.visual-widget-heading .eyebrow {
+  margin: 0;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+}
+.visual-widget .visual-widget-heading strong {
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.4;
+}
+.visual-widget-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.visual-widget .visual-widget-actions .ghost {
+  min-height: 34px;
+  padding: 6px 9px;
+  font-size: 12px;
+}
+.visual-widget .visual-widget-gate {
+  padding: 28px 20px 24px;
+  text-align: center;
+  gap: 14px;
+}
+.visual-widget-gate p {
+  font: 18px/1.4 var(--serif);
+  margin: 0;
+}
+.visual-widget .visual-widget-gate small {
+  font-size: 11px;
+  justify-content: center;
+  flex-wrap: wrap;
+  line-height: 1.5;
+}
+.visual-widget-viewport {
+  position: relative;
+  background: var(--card);
+}
+.visual-widget .visual-widget-viewport iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: var(--card);
+  transition: none;
+}
+.visual-widget-loading,
+.visual-widget-failure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 28px 24px;
+  color: var(--muted);
+  text-align: center;
+}
+.visual-widget-loading {
+  position: absolute;
+  inset: 0;
+  outline: none;
+}
+.visual-widget-loading svg {
+  animation: visual-widget-spin 1.3s linear infinite;
+}
+.visual-widget-failure {
+  min-height: 220px;
+}
+.visual-widget-failure > svg {
+  color: var(--warm);
+}
+.visual-widget-failure strong {
+  color: var(--text);
+  font-size: 15px;
+}
+.visual-widget-failure p {
+  margin: 0;
+  font-size: 12px;
+}
+.visual-widget-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 9px 18px;
+  border-top: 1px solid var(--border);
+  color: var(--faint);
+  font-size: 10px;
+}
+.visual-widget-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.visual-widget-state.state-ready {
+  color: var(--accent);
+}
+.widget.visual-widget.is-expanded {
+  position: fixed;
+  inset: 24px;
+  margin: auto;
+  width: min(1200px, calc(100vw - 48px));
+  max-height: calc(100dvh - 48px);
+  height: auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+  box-shadow: 0 24px 80px #0004;
+}
+.visual-widget.is-expanded::backdrop {
+  background: #1420189c;
+  backdrop-filter: blur(5px);
+}
+.visual-widget.is-expanded .visual-widget-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.visual-widget.is-expanded .visual-widget-footer {
+  background: var(--sunken);
+}
+@keyframes visual-widget-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .visual-widget-loading svg {
+    animation: none;
+  }
+}
+@media (max-width: 600px) {
+  .widget.visual-widget.is-expanded {
+    inset: 10px;
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+  }
+  .visual-widget .visual-widget-bar {
+    padding: 13px;
+    gap: 10px;
+  }
+}

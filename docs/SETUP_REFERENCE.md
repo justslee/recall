@@ -264,7 +264,7 @@ The [active-reading contract](../skills/recall-source/references/active-reading.
 
 If configuring manually, install the skill kit, enable capture and add this instruction:
 
-> For substantive reading questions and learning discussions, use the installed recall-self-test skill before ending the response. Search and reuse suitable cards; fill genuine gaps through recall-cards; assess meaningful math/coding supplements even when a concept card exists. Return verified Recall links and report capture outcomes. Respect opt-out; never infer mastery or change schedules from exposure.
+> Answer substantive learning questions first. If Recall capture is enabled, use the installed recall-self-test skill for one bounded local lookup and a short capture receipt. Reuse exact ready cards and queue gaps for preparation. Publish KB notes on request. Respect opt-out and preserve review state.
 
 Generate a card link with:
 

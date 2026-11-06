@@ -97,9 +97,8 @@ struct NotebookDetailView: View {
     let notebookId: String
     @EnvironmentObject private var notebooks: NotebookStore
     @EnvironmentObject private var bridge: BridgeClient
-    @State private var showCreate = false
     @State private var title = ""
-    @State private var createdNoteId: String?
+    @State private var editingPage: PadNotebookPage?
     @State private var renaming: PadNotebookNote?
     @State private var deleting: PadNotebookNote?
     @State private var sendScope: NotebookSendScope?
@@ -114,24 +113,32 @@ struct NotebookDetailView: View {
                         NotebookEyebrow("NOTEBOOK")
                         Text(notebook.title).font(.system(.largeTitle, design: .serif)).foregroundStyle(PadPalette.text)
                         NotebookSyncLabel(summary: notebooks.syncSummary(for: notebook))
-                        Text("Every note has its own pages. Nothing is shared automatically.").font(.subheadline).foregroundStyle(PadPalette.muted)
+                        Text("Tap a note to keep writing. Its pages stay private until you send them.").font(.subheadline).foregroundStyle(PadPalette.muted)
                     }.notebookListRow(top: 22, bottom: 20)
                     if notebooks.notes(in: notebook).isEmpty {
-                        ContentUnavailableView("Begin with one note", systemImage: "doc.text", description: Text("Add a note, then write across as many pages as you need.")).notebookListRow()
+                        ContentUnavailableView {
+                            Label("Begin with one note", systemImage: "doc.text")
+                        } description: {
+                            Text("Start writing now. You can name your note on the pad.")
+                        } actions: {
+                            Button("New note", systemImage: "plus") { createNote(in: notebook) }
+                                .buttonStyle(.borderedProminent).accessibilityIdentifier("notebook-first-note")
+                        }.notebookListRow()
                     }
                     ForEach(Array(notebooks.notes(in: notebook).enumerated()), id: \.element.id) { index, note in
-                        NavigationLink { NotebookNoteView(noteId: note.id) } label: {
+                        Button { open(note) } label: {
                             HStack(spacing: 14) {
                                 Text(String(format: "%02d", index + 1)).font(.system(.caption, design: .monospaced)).foregroundStyle(PadPalette.accent).frame(width: 30)
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text(note.title).font(.system(.title3, design: .serif)).foregroundStyle(PadPalette.text)
-                                    Text("\(notebooks.pages(in: note).count) pages").font(.caption).foregroundStyle(PadPalette.muted)
+                                    Text(notebooks.pages(in: note).count == 1 ? "Continuous sheet" : "\(notebooks.pages(in: note).count) sheets").font(.caption).foregroundStyle(PadPalette.muted)
                                     NotebookSyncLabel(summary: notebooks.syncSummary(for: note))
                                 }
                                 Spacer(minLength: 0)
+                                Image(systemName: "pencil.tip").foregroundStyle(PadPalette.accent).accessibilityHidden(true)
                             }.padding(16).background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(PadPalette.border))
                         }
-                        .notebookListRow()
+                        .buttonStyle(.plain).notebookListRow()
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button { deleting = note } label: { Label("Delete", systemImage: "trash") }.tint(.red).disabled(bridge.activeNotebookNoteId == note.id)
                             Button { rename(note) } label: { Label("Rename", systemImage: "pencil") }.tint(PadPalette.accent)
@@ -150,20 +157,18 @@ struct NotebookDetailView: View {
                             Button("Send notebook to Recall…", systemImage: "arrow.up.doc") { sendScope = .notebook(notebook.id) }.disabled(notebooks.notes(in: notebook).isEmpty)
                         } label: { Image(systemName: "ellipsis.circle") }.accessibilityLabel("Notebook options")
                     }
-                    ToolbarItem(placement: .topBarTrailing) { Button("New note", systemImage: "plus") { title = ""; showCreate = true } }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("New note", systemImage: "plus") { createNote(in: notebook) }
+                            .accessibilityIdentifier("notebook-new-note")
+                    }
                 }
             } else { ContentUnavailableView("Notebook removed", systemImage: "book.closed", description: Text("Other notebooks and copies on your Mac are unchanged.")) }
         }
         .background(PadPalette.background)
         .navigationTitle(notebook?.title ?? "Notebook")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $createdNoteId) { NotebookNoteView(noteId: $0) }
+        .fullScreenCover(item: $editingPage) { NotebookPageEditor(initialPage: $0) }
         .sheet(item: $sendScope) { NotebookSendPreview(scope: $0) }
-        .alert("New note", isPresented: $showCreate) {
-            TextField("Note title", text: $title)
-            Button("Create") { if let notebook { perform { let note = try notebooks.createNote(in: notebook, title: title); _ = try notebooks.addPage(to: note); createdNoteId = note.id } } }.disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            Button("Cancel", role: .cancel) {}
-        }
         .alert("Rename note", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Note title", text: $title)
             Button("Save") { if let item = renaming { perform { try notebooks.renameNote(item, title: title) } }; renaming = nil }
@@ -177,76 +182,112 @@ struct NotebookDetailView: View {
         }
         .notebookError(error: $error, storageError: notebooks.storageError)
     }
+    private func createNote(in notebook: PadNotebook) { perform { editingPage = try notebooks.createNoteForWriting(in: notebook) } }
+    private func open(_ note: PadNotebookNote) { perform { editingPage = try notebooks.resumePage(for: note) } }
     private func rename(_ item: PadNotebookNote) { title = item.title; renaming = item }
     private func perform(_ action: () throws -> Void) { do { try action() } catch { self.error = error.localizedDescription } }
 }
 
-struct NotebookNoteView: View {
+/// Optional page navigation and receipts, reached from the canvas rather than
+/// placed between a note in the library and its writing surface.
+struct NotebookPageBrowser: View {
     let noteId: String
+    let currentPageId: String
+    let onOpen: (PadNotebookPage) -> Bool
+    let onDelete: (PadNotebookPage) -> Void
     @EnvironmentObject private var notebooks: NotebookStore
     @EnvironmentObject private var bridge: BridgeClient
-    @State private var editingPage: PadNotebookPage?
-    @State private var deletingPage: PadNotebookPage?
+    @Environment(\.dismiss) private var dismiss
+    @State private var tab = BrowserTab.pages
     @State private var sendScope: NotebookSendScope?
     @State private var error: String?
+    @State private var deletingPage: PadNotebookPage?
     private var note: PadNotebookNote? { notebooks.notes.first { $0.id == noteId } }
+    private var submissions: [NotebookSubmission] { notebooks.submissions.filter { $0.noteId == noteId } }
+    private enum BrowserTab: String, CaseIterable { case pages = "Pages", sent = "Sent snapshots" }
 
     var body: some View {
-        Group {
-            if let note {
-                List {
-                    VStack(alignment: .leading, spacing: 10) {
-                        NotebookEyebrow("YOUR PAGES")
-                        Text(note.title).font(.system(.largeTitle, design: .serif)).foregroundStyle(PadPalette.text)
-                        NotebookSyncLabel(summary: notebooks.syncSummary(for: note))
-                    }.notebookListRow(top: 22, bottom: 18)
-                    ForEach(Array(notebooks.pages(in: note).enumerated()), id: \.element.id) { index, page in
-                        Button { editingPage = page } label: {
-                            HStack(spacing: 16) {
-                                NotebookPageThumbnail(page: page).frame(width: 68, height: 86)
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(page.title).font(.system(.title3, design: .serif)).foregroundStyle(PadPalette.text)
-                                    Text("Page \(index + 1)").font(.caption).foregroundStyle(PadPalette.muted)
-                                    Text(page.updatedAt, style: .date).font(.caption).foregroundStyle(PadPalette.muted)
-                                    Text("Saved on iPad").font(.caption).foregroundStyle(PadPalette.muted)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(PadPalette.muted)
-                            }.padding(14).background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(PadPalette.border))
-                        }.buttonStyle(.plain).notebookListRow()
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button { deletingPage = page } label: { Label("Delete", systemImage: "trash") }.tint(.red).disabled(bridge.activeNotebookNoteId == note.id)
+        NavigationStack {
+            Group {
+                if let note {
+                    List {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text(note.title).font(.system(.title, design: .serif)).foregroundStyle(PadPalette.text)
+                            Picker("Browse note", selection: $tab) {
+                                ForEach(BrowserTab.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                            }.pickerStyle(.segmented).accessibilityIdentifier("notebook-browser-tabs")
+                        }.notebookListRow(top: 18, bottom: 16)
+                        if tab == .pages {
+                            ForEach(Array(notebooks.pages(in: note).enumerated()), id: \.element.id) { index, page in
+                                Button { if onOpen(page) { dismiss() } } label: {
+                                    HStack(spacing: 16) {
+                                        NotebookPageThumbnail(page: page).frame(width: 56, height: 72)
+                                        VStack(alignment: .leading, spacing: 5) {
+                                            Text(page.title).font(.system(.headline, design: .serif)).foregroundStyle(PadPalette.text)
+                                            Text("Page \(index + 1) · Saved on iPad").font(.caption).foregroundStyle(PadPalette.muted)
+                                        }
+                                        Spacer()
+                                        if page.id == currentPageId { Image(systemName: "checkmark.circle.fill").foregroundStyle(PadPalette.accent) }
+                                    }.padding(14).background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(page.id == currentPageId ? PadPalette.accent : PadPalette.border))
+                                }.buttonStyle(.plain).notebookListRow()
+                                    .accessibilityAddTraits(page.id == currentPageId ? [.isSelected] : [])
+                                    .accessibilityIdentifier("notebook-page-\(page.id)")
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button { deletingPage = page } label: { Label("Delete", systemImage: "trash") }
+                                            .tint(.red).disabled(bridge.activeNotebookNoteId == note.id)
+                                    }
+                                    .contextMenu {
+                                        Button("Send page to Recall…", systemImage: "arrow.up.doc") { sendScope = .pages(noteId: note.id, pageIds: [page.id]) }
+                                        Button("Delete page…", systemImage: "trash", role: .destructive) { deletingPage = page }
+                                            .disabled(bridge.activeNotebookNoteId == note.id)
+                                    }
+                            }
+                            Button { addPage(note) } label: { Label("Add a page", systemImage: "doc.badge.plus").frame(maxWidth: .infinity, minHeight: 48) }
+                                .buttonStyle(.bordered).notebookListRow(top: 14, bottom: 18).accessibilityIdentifier("notebook-add-page")
+                        } else {
+                            NotebookSyncLabel(summary: notebooks.syncSummary(for: note)).notebookListRow()
+                            if submissions.isEmpty {
+                                ContentUnavailableView("Nothing sent yet", systemImage: "arrow.up.doc", description: Text("Writing stays on this iPad until you choose Send to Recall.")).notebookListRow()
+                            }
+                            ForEach(submissions) { submission in
+                                NotebookSubmissionRow(submission: submission).notebookListRow()
+                            }
                         }
-                        .contextMenu {
-                            Button("Open page", systemImage: "pencil") { editingPage = page }
-                            Button("Send page to Recall…", systemImage: "arrow.up.doc") { sendScope = .pages(noteId: note.id, pageIds: [page.id]) }
-                            Button("Delete page…", systemImage: "trash", role: .destructive) { deletingPage = page }.disabled(bridge.activeNotebookNoteId == note.id)
-                        }
-                        .accessibilityIdentifier("notebook-page-\(page.id)")
                     }
-                    Button { addPage(note) } label: { Label("Add a page", systemImage: "doc.badge.plus").frame(maxWidth: .infinity, minHeight: 48) }
-                        .buttonStyle(.bordered).notebookListRow(top: 14, bottom: 18).accessibilityIdentifier("notebook-add-page")
-                    if !notebooks.submissions.filter({ $0.noteId == note.id }).isEmpty {
-                        NotebookEyebrow("SENT SNAPSHOTS").notebookListRow(top: 18)
-                        ForEach(notebooks.submissions.filter { $0.noteId == note.id }) { submission in
-                            NotebookSubmissionRow(submission: submission).notebookListRow()
+                    .notebookListAppearance()
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Send note", systemImage: "arrow.up.doc") { sendScope = .note(note.id) }
+                                .disabled(notebooks.pages(in: note).isEmpty)
                         }
                     }
-                }.notebookListAppearance()
-                .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Send to Recall", systemImage: "arrow.up.doc") { sendScope = .note(note.id) }.disabled(notebooks.pages(in: note).isEmpty) } }
-            } else { ContentUnavailableView("Note removed", systemImage: "doc.text") }
+                } else { ContentUnavailableView("Note removed", systemImage: "doc.text") }
+            }
+            .background(PadPalette.background)
+            .navigationTitle("Your note").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() } } }
+            .sheet(item: $sendScope) { NotebookSendPreview(scope: $0) }
+            .alert("Delete page?", isPresented: Binding(get: { deletingPage != nil }, set: { if !$0 { deletingPage = nil } })) {
+                Button("Delete page", role: .destructive) { deletePage() }
+                Button("Cancel", role: .cancel) { deletingPage = nil }
+            } message: {
+                Text("This page and any snapshot containing it that is still waiting to send will be removed from this iPad. Unsent writing will be lost. This cannot be undone. Earlier received Mac and KB copies remain.")
+            }
+            .notebookError(error: $error, storageError: notebooks.storageError)
         }
-        .background(PadPalette.background)
-        .navigationTitle(note?.title ?? "Note").navigationBarTitleDisplayMode(.inline)
-        .fullScreenCover(item: $editingPage) { NotebookPageEditor(initialPage: $0) }
-        .sheet(item: $sendScope) { NotebookSendPreview(scope: $0) }
-        .alert("Delete page?", isPresented: Binding(get: { deletingPage != nil }, set: { if !$0 { deletingPage = nil } })) {
-            Button("Delete page", role: .destructive) { if let item = deletingPage { do { guard bridge.activeNotebookNoteId != item.noteId else { throw PadError.rejected("This note is transferring. Wait for it to finish before deleting a page.") }; try notebooks.delete(item) } catch { self.error = error.localizedDescription } }; deletingPage = nil }
-            Button("Cancel", role: .cancel) { deletingPage = nil }
-        } message: { Text("This page and any snapshot containing it that is still waiting to send will be removed from this iPad. Unsent writing will be lost. This cannot be undone. Earlier received Mac and KB copies remain.") }
-        .notebookError(error: $error, storageError: notebooks.storageError)
     }
-    private func addPage(_ note: PadNotebookNote) { do { editingPage = try notebooks.addPage(to: note) } catch { self.error = error.localizedDescription } }
+    private func addPage(_ note: PadNotebookNote) {
+        do { if onOpen(try notebooks.addPage(to: note)) { dismiss() } } catch { self.error = error.localizedDescription }
+    }
+    private func deletePage() {
+        guard let page = deletingPage else { return }
+        do {
+            guard bridge.activeNotebookNoteId != page.noteId else { throw PadError.rejected("This note is transferring. Wait for it to finish before deleting a page.") }
+            try notebooks.delete(page)
+            deletingPage = nil
+            onDelete(page)
+        } catch { self.error = error.localizedDescription }
+    }
 }
 
 enum NotebookSendScope: Identifiable {
@@ -256,18 +297,144 @@ enum NotebookSendScope: Identifiable {
     }
 }
 
+/// One preview can commit at most one immutable selection. The brief suspension
+/// lets SwiftUI paint the saving state before the MainActor renderer starts.
+@MainActor
+final class NotebookSendPreparation: ObservableObject {
+    @Published private(set) var preparing = false
+    @Published private(set) var submissionIds: [String] = []
+    @Published private(set) var error: String?
+    private var preparationTask: Task<Void, Never>?
+
+    var prepared: Bool { !submissionIds.isEmpty }
+
+    @discardableResult
+    func start(commit: @escaping @MainActor () throws -> [NotebookSubmission], transfer: @escaping @MainActor () async -> Void) -> Task<Void, Never>? {
+        guard !preparing, !prepared else { return nil }
+
+        preparing = true
+        error = nil
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            do {
+                try await Task.sleep(for: .milliseconds(80))
+                try Task.checkCancellation()
+                let snapshots = try commit()
+                guard !snapshots.isEmpty else { throw PadError.rejected("No selected snapshot was saved. Your original notebook is kept.") }
+
+                submissionIds = snapshots.map(\.id)
+                preparing = false
+                preparationTask = nil
+                // Dismissing after a successful commit must not cancel its
+                // durable outbox transfer; the bridge owns delivery lifecycle.
+                await transfer()
+            } catch is CancellationError {
+                preparing = false
+                preparationTask = nil
+            } catch {
+                self.error = error.localizedDescription
+                preparing = false
+                preparationTask = nil
+            }
+        }
+        preparationTask = task
+        return task
+    }
+
+    func cancelBeforeSaved() {
+        guard !prepared else { return }
+
+        preparationTask?.cancel()
+    }
+}
+
+struct NotebookSendFeedback: Equatable {
+    enum Kind: Equatable { case ready, preparing, saved, received, attention, failed }
+    let kind: Kind
+    let title: String
+    let detail: String
+    let symbol: String
+
+    var warns: Bool { kind == .attention || kind == .failed }
+
+    @MainActor
+    static func resolve(preparation: NotebookSendPreparation, submissions: [NotebookSubmission], connected: Bool, paired: Bool, selectedCount: Int, selectionError: String? = nil) -> Self {
+        if preparation.preparing {
+            return Self(kind: .preparing, title: "Saving your snapshot…", detail: "Rendering all selected writing and diagrams. Keep Recall Pad open until this copy is saved.", symbol: "arrow.up.doc")
+        }
+        if let error = preparation.error ?? selectionError {
+            return Self(kind: .failed, title: preparation.prepared ? "Transfer needs attention" : "Couldn’t save this selection", detail: String(error.prefix(400)), symbol: "exclamationmark.circle")
+        }
+        if preparation.prepared {
+            let ids = Set(preparation.submissionIds)
+            let saved = submissions.filter { ids.contains($0.id) }
+            guard saved.count == ids.count else {
+                return Self(kind: .attention, title: "Saved snapshot needs attention", detail: "One of this selection’s saved receipts is unavailable. Check Sent snapshots before sending a new selection.", symbol: "exclamationmark.circle")
+            }
+            let received = saved.filter { $0.receivedAt != nil }
+            let imageCount = saved.reduce(0) { $0 + $1.pages.count }
+            let count = "\(imageCount) image \(imageCount == 1 ? "page" : "pages") · \(received.count) of \(saved.count) \(saved.count == 1 ? "snapshot" : "snapshots") received"
+            if let issue = saved.first(where: { $0.lastError != nil || [.needsAttention, .paused].contains($0.state) }) {
+                return Self(kind: .attention, title: received.count == saved.count ? "Received on Mac · needs attention" : "Snapshot saved · transfer needs attention", detail: "\(count). \(String((issue.lastError ?? issue.state.title).prefix(300))) Your saved work is kept.", symbol: "exclamationmark.circle")
+            }
+            if received.count == saved.count {
+                let completed = saved.allSatisfy { $0.state == .added || $0.state == .reviewed }
+                return Self(kind: .received, title: completed ? "Prepared on Mac" : "Received on Mac", detail: "\(count). \(completed ? "See the saved KB and card outcomes in Sent snapshots." : "On your Mac: Recall → Settings & backups → Learning connections → From your notebooks → View pages. KB and card preparation is still separate.") Tap Done to return to writing.", symbol: "checkmark.circle.fill")
+            }
+            return Self(kind: .saved, title: connected ? "Snapshot saved · sending to Mac" : "Snapshot saved · waiting for Mac", detail: "\(count). You can tap Done; this saved copy stays queued until the Mac confirms receipt.", symbol: "checkmark.circle")
+        }
+        if !paired {
+            return Self(kind: .ready, title: "Pair with a Mac to send", detail: "Your writing stays saved privately on this iPad.", symbol: "link")
+        }
+        if selectedCount == 0 {
+            return Self(kind: .ready, title: "Choose a written page", detail: "Select at least one page with ink or diagrams. Blank pages are not sent.", symbol: "doc")
+        }
+        return Self(kind: .ready, title: "Ready to save and send", detail: "\(selectedCount) selected source \(selectedCount == 1 ? "page" : "pages"). Long sheets become several ordered images; thumbnails show each sheet’s beginning.", symbol: "arrow.up.doc")
+    }
+}
+
+struct NotebookSendStatusPanel: View {
+    let feedback: NotebookSendFeedback
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            if feedback.kind == .preparing { ProgressView().padding(.top, 2) }
+            else { Image(systemName: feedback.symbol).font(.title3).padding(.top, 1) }
+            VStack(alignment: .leading, spacing: 5) {
+                Text(feedback.title).font(.headline)
+                Text(feedback.detail).font(.footnote).foregroundStyle(PadPalette.muted).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(feedback.warns ? Color.red : PadPalette.accent)
+        .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+        .background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(PadPalette.border))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("notebook-send-status")
+    }
+}
+
 struct NotebookSendPreview: View {
     let scope: NotebookSendScope
     @EnvironmentObject private var notebooks: NotebookStore
     @EnvironmentObject private var bridge: BridgeClient
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selectedIds: Set<String> = []
     @State private var eligibleIds: Set<String> = []
     @State private var writtenCounts: [String: Int] = [:]
     @State private var selectionInitialized = false
-    @State private var preparing = false
-    @State private var prepared = false
+    @StateObject private var preparation = NotebookSendPreparation()
     @State private var error: String?
+
+    private var preparing: Bool { preparation.preparing }
+    private var prepared: Bool { preparation.prepared }
+    private var feedback: NotebookSendFeedback {
+        NotebookSendFeedback.resolve(preparation: preparation, submissions: notebooks.submissions, connected: bridge.connected, paired: bridge.pairedMac != nil, selectedCount: selectionCount, selectionError: error)
+    }
+    private var sentSubmissions: [NotebookSubmission] { notebooks.submissions.filter { preparation.submissionIds.contains($0.id) } }
+    private var retryIds: [String] { sentSubmissions.filter { $0.receivedAt == nil && $0.lastError != nil && $0.retryAllowed }.map(\.id) }
 
     private var selectedNotebook: PadNotebook? {
         if case .notebook(let id) = scope { return notebooks.notebooks.first { $0.id == id } }
@@ -285,57 +452,69 @@ struct NotebookSendPreview: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                VStack(alignment: .leading, spacing: 10) {
-                    NotebookEyebrow("CHOOSE WHAT TO SHARE")
-                    Text(title).font(.system(.title, design: .serif)).foregroundStyle(PadPalette.text)
-                    Text("\(selectionCount) selected pages · \(bridge.connected ? "Mac connected" : bridge.pairedMac == nil ? "Pair with a Mac before sending" : "Saved offline, sent when the Mac reconnects")").font(.subheadline).foregroundStyle(PadPalette.muted)
-                }.listRowBackground(PadPalette.surface)
-                if let notebook = selectedNotebook {
-                    ForEach(notebooks.notes(in: notebook)) { note in
-                        selectionRow(id: note.id) {
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text(note.title).foregroundStyle(PadPalette.text)
-                                Text("\(writtenCounts[note.id] ?? 0) written pages · \(notebooks.pages(in: note).count - (writtenCounts[note.id] ?? 0)) blank").font(.caption).foregroundStyle(PadPalette.muted)
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 8) {
+                    NotebookSendStatusPanel(feedback: feedback)
+                    if !retryIds.isEmpty {
+                        Button("Retry this transfer", systemImage: "arrow.clockwise") { retryTransfer() }
+                            .font(.subheadline).buttonStyle(.bordered)
+                    }
+                }.padding(.horizontal, 16).padding(.vertical, 10)
+                List {
+                    VStack(alignment: .leading, spacing: 10) {
+                        NotebookEyebrow("CHOOSE WHAT TO SHARE")
+                        Text(title).font(.system(.title, design: .serif)).foregroundStyle(PadPalette.text)
+                        Text("\(selectionCount) selected pages · \(bridge.connected ? "Mac connected" : bridge.pairedMac == nil ? "Pair with a Mac before sending" : "Saved offline, sent when the Mac reconnects")").font(.subheadline).foregroundStyle(PadPalette.muted)
+                    }.listRowBackground(PadPalette.surface)
+                    if let notebook = selectedNotebook {
+                        ForEach(notebooks.notes(in: notebook)) { note in
+                            selectionRow(id: note.id) {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(note.title).foregroundStyle(PadPalette.text)
+                                    Text("\(writtenCounts[note.id] ?? 0) written pages · \(notebooks.pages(in: note).count - (writtenCounts[note.id] ?? 0)) blank").font(.caption).foregroundStyle(PadPalette.muted)
+                                }
                             }
                         }
-                    }
-                } else if let note = selectedNote {
-                    ForEach(Array(notebooks.pages(in: note).enumerated()), id: \.element.id) { index, page in
-                        selectionRow(id: page.id) {
-                            HStack(spacing: 14) {
-                                NotebookPageThumbnail(page: page).frame(width: 52, height: 68)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(page.title).foregroundStyle(PadPalette.text)
-                                    Text("Page \(index + 1)").font(.caption).foregroundStyle(PadPalette.muted)
-                                    if !eligibleIds.contains(page.id) { Text("Blank page · not sent").font(.caption).foregroundStyle(PadPalette.muted) }
+                    } else if let note = selectedNote {
+                        ForEach(Array(notebooks.pages(in: note).enumerated()), id: \.element.id) { index, page in
+                            selectionRow(id: page.id) {
+                                HStack(spacing: 14) {
+                                    NotebookPageThumbnail(page: page).frame(width: 52, height: 68)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(page.title).foregroundStyle(PadPalette.text)
+                                        Text("Page \(index + 1)").font(.caption).foregroundStyle(PadPalette.muted)
+                                        if !eligibleIds.contains(page.id) { Text("Blank page · not sent").font(.caption).foregroundStyle(PadPalette.muted) }
+                                    }
                                 }
                             }
                         }
                     }
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("An intentional handoff", systemImage: "arrow.up.doc").font(.headline).foregroundStyle(PadPalette.text)
+                        Text("Recall saves only your selection on the Mac. An assistant reviews the handwriting, looks for existing concepts, and prepares KB changes and validated cards using your configured sources and permissions.")
+                        Text("Handwriting may need clarification. Read-only sources remain read-only. Received pages are not proof that knowledge-base updates or cards are finished.")
+                        Text("Preparing with your assistant shares these pages with its AI provider. Your notebook is never shared automatically.")
+                        Text("Blank pages are excluded. Every selected note is saved as an ordered snapshot; long handwritten pages may export as several images.")
+                    }.font(.footnote).foregroundStyle(PadPalette.muted).padding(.vertical, 6).listRowBackground(PadPalette.surface)
+                    if prepared {
+                        Section("This saved selection") {
+                            ForEach(sentSubmissions) { submission in
+                                NotebookSubmissionRow(submission: submission).listRowBackground(PadPalette.surface)
+                            }
+                        }
+                    }
                 }
-                VStack(alignment: .leading, spacing: 10) {
-                    Label("An intentional handoff", systemImage: "arrow.up.doc").font(.headline).foregroundStyle(PadPalette.text)
-                    Text("Recall saves only your selection on the Mac. An assistant reviews the handwriting, looks for existing concepts, and prepares KB changes and validated cards using your configured sources and permissions.")
-                    Text("Handwriting may need clarification. Read-only sources remain read-only. Received pages are not proof that knowledge-base updates or cards are finished.")
-                    Text("Preparing with your assistant shares these pages with its AI provider. Your notebook is never shared automatically.")
-                    Text("Blank pages are excluded. Every selected note is saved as an ordered snapshot; long handwritten pages may export as several images.")
-                }.font(.footnote).foregroundStyle(PadPalette.muted).padding(.vertical, 6).listRowBackground(PadPalette.surface)
-                if prepared {
-                    Label(bridge.connected ? "Snapshot saved · transferring to Mac" : "Snapshot saved · waiting for Mac", systemImage: "checkmark.circle")
-                        .foregroundStyle(PadPalette.accent).listRowBackground(PadPalette.surface)
-                    Text("Continue writing freely. New edits stay private until you send again. Preparation and KB/card outcomes will appear in the submission receipt.")
-                        .font(.footnote).foregroundStyle(PadPalette.muted).listRowBackground(PadPalette.surface)
-                }
-                if let error { Label(error, systemImage: "exclamationmark.circle").font(.footnote).foregroundStyle(.red).listRowBackground(PadPalette.surface) }
+                .scrollContentBackground(.hidden).background(PadPalette.background)
             }
-            .scrollContentBackground(.hidden).background(PadPalette.background)
+            .background(PadPalette.background)
             .navigationTitle("Send to Recall").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(prepared ? "Done" : "Cancel") { dismiss() }.disabled(preparing) }
-                ToolbarItem(placement: .confirmationAction) { Button(preparing ? "Saving…" : "Send selected") { submit() }.disabled(preparing || prepared || selectedIds.isEmpty || bridge.pairedMac == nil).accessibilityIdentifier("notebook-send-confirm") }
+                ToolbarItem(placement: .confirmationAction) { Button(preparing ? "Saving…" : prepared ? "Saved" : preparation.error == nil ? "Send selected" : "Try again") { submit() }.disabled(preparing || prepared || selectedIds.isEmpty || bridge.pairedMac == nil).accessibilityIdentifier("notebook-send-confirm") }
             }
             .onAppear { selectInitial() }
+            .onDisappear { preparation.cancelBeforeSaved() }
+            .onChange(of: scenePhase) { _, phase in if phase != .active { preparation.cancelBeforeSaved() } }
             .interactiveDismissDisabled(preparing)
         }
     }
@@ -368,15 +547,23 @@ struct NotebookSendPreview: View {
     }
     private func submit() {
         guard !preparing, !prepared, let recipient = bridge.pairedMac?.installationId else { return }
-        preparing = true
+
+        error = nil
+        let notebook = selectedNotebook
+        let note = selectedNote
+        let selection = Array(selectedIds)
+        preparation.start(commit: {
+            if let notebook { return try notebooks.prepareSubmissions(notebook, selectedNoteIds: selection, recipientInstallationId: recipient) }
+            if let note { return [try notebooks.prepareSubmission(note, selectedPageIds: selection, recipientInstallationId: recipient)] }
+            throw PadError.rejected("This selected notebook or note is no longer available. Your other work is kept.")
+        }, transfer: { await bridge.flushNotebookOutbox() })
+    }
+    private func retryTransfer() {
         do {
-            if let notebook = selectedNotebook { _ = try notebooks.prepareSubmissions(notebook, selectedNoteIds: Array(selectedIds), recipientInstallationId: recipient) }
-            else if let note = selectedNote { _ = try notebooks.prepareSubmission(note, selectedPageIds: Array(selectedIds), recipientInstallationId: recipient) }
-            else { throw PadError.rejected("This selected notebook or note is no longer available. Your other work is kept.") }
-            prepared = true
-            preparing = false
+            for id in retryIds { try notebooks.retrySubmission(id) }
+            error = nil
             Task { await bridge.flushNotebookOutbox() }
-        } catch { preparing = false; self.error = error.localizedDescription }
+        } catch { self.error = error.localizedDescription }
     }
 }
 
@@ -398,7 +585,7 @@ struct NotebookSubmissionRow: View {
                     do { try notebooks.retrySubmission(submission.id); Task { await bridge.flushNotebookOutbox() } } catch { self.error = error.localizedDescription }
                 }.font(.caption).buttonStyle(.bordered)
             }
-            if submission.receivedAt != nil && [.awaitingAssistant, .needsAttention, .paused].contains(submission.state) { Text("Continue in Recall’s learning inbox on your Mac. Receiving pages does not finish KB or card preparation.").font(.footnote) }
+            if submission.receivedAt != nil && [.awaitingAssistant, .needsAttention, .paused].contains(submission.state) { Text("On your Mac: Recall → Settings & backups → Learning connections → From your notebooks → View pages. Finish with assistant handles KB and card preparation.").font(.footnote) }
             if let error { Text(error).font(.footnote).foregroundStyle(.red) }
         }.foregroundStyle(PadPalette.muted).padding(14).frame(maxWidth: .infinity, alignment: .leading)
             .background(PadPalette.surface, in: RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(PadPalette.border))

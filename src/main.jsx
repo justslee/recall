@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   BookOpen,
+  FileText,
   CalendarCheck,
   Library,
   History,
@@ -37,6 +38,7 @@ import {
 } from "./ReviewSession";
 import { HistoryView } from "./HistoryView";
 import { ProgressView } from "./ProgressView";
+const KnowledgeSpace = React.lazy(() => import("./KnowledgeSpace").then(module => ({ default: module.KnowledgeSpace })));
 import { SpeakView } from "./SpeakView";
 import { SettingsView } from "./SettingsView";
 import { PadStudyFollower, TutorPadWorkspace } from "./Handwriting";
@@ -71,6 +73,21 @@ const eyebrows = {
 function App() {
   const appearance = useAppearance();
   const [historyDay, setHistoryDay] = useState(null);
+  const [knowledgeOpened, setKnowledgeOpened] = useState(false);
+  const [knowledgeSearchSignal, setKnowledgeSearchSignal] = useState(0);
+  useEffect(() => {
+    const handler = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setKnowledgeOpened(true);
+        setView("knowledge");
+        setKnowledgeSearchSignal(n => n + 1);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+  const [speakCard, setSpeakCard] = useState(null);
   const [data, setData] = useState(null),
     [selection, setSelection] = useState(defaultSelection),
     [view, setView] = useState("study"),
@@ -256,6 +273,7 @@ function App() {
     });
   }, []);
   const go = (where) => {
+    if (where === "knowledge") setKnowledgeOpened(true);
     setVoiceReturn(null);
     if (where === "settings") setSettingsSection("general");
     if (where === "catalog") refresh().catch(fail);
@@ -406,6 +424,40 @@ function App() {
   const saveSession = async (next) => {
     await api.setting("session", next);
     setActiveSession(next);
+  };
+  const startMapSession = async (ids, format = selection.format, origin = "Atlas") => {
+    if (activeSession && activeSession.index < activeSession.ids.length) {
+      notify(
+        `Your current session is saved. Finish it before starting a ${origin} session.`,
+      );
+      return;
+    }
+    const chosen = ids.filter((id) =>
+      data.cards.some(
+        (c) => c.id === id && c.status === "ready" && !c.suspended,
+      ),
+    );
+    if (!chosen.length) return;
+    try {
+      await saveSession({
+        id: crypto.randomUUID(),
+        ids: chosen,
+        index: 0,
+        selection: {
+          ...structuredClone(selection),
+          format,
+          practice: false,
+          limit: chosen.length,
+        },
+        revealed: false,
+        rated: 0,
+        skipped: 0,
+        startedAt: new Date().toISOString(),
+      });
+      go("review");
+    } catch (e) {
+      fail(e);
+    }
   };
   const start = async () => {
     const cards = queue(data.cards, selection);
@@ -669,6 +721,7 @@ function App() {
           {[
             ["study", "Study desk", BookOpen],
             ["library", "Library", Library],
+            ["knowledge", "Knowledge", FileText],
             ["selftest", "Self test", CalendarCheck],
             ["speak", "Speak", Mic],
             ["progress", "Progress", ChartNoAxesCombined],
@@ -704,7 +757,7 @@ function App() {
         </div>
       </header>
       <main className="main">
-        {view !== "review" && (
+        {!["review", "progress", "knowledge"].includes(view) && (
           <header className="page-header">
             <div>
               <span className="eyebrow">{eyebrows[view]}</span>
@@ -737,9 +790,14 @@ function App() {
               study={view === "study"}
             />
           )}
+        {knowledgeOpened && <React.Suspense fallback={view === "knowledge" ? <p>Opening your Knowledge space…</p> : null}><KnowledgeSpace active={view === "knowledge"} cards={data.cards} searchSignal={knowledgeSearchSignal} onPractice={(ids, format) => startMapSession(ids, format, "Knowledge")} onCard={(id) => { const card = data.cards.find(c => c.id === id); if (card) browse(card); }} onSetup={() => { go("settings"); setSettingsSection("knowledge"); }} notify={notify} /></React.Suspense>}
         {view === "selftest" && (
           <SelfTest
             data={learning}
+            onConnections={() => {
+              setSettingsSection("connections");
+              go("settings");
+            }}
             format={selection.format}
             onFormat={(format) => changeSelection({ format })}
             activeSession={activeSession}
@@ -1003,9 +1061,22 @@ function App() {
             />
           </div>
         )}
-        {view === "speak" && <SpeakView onSettings={openVoiceSettings} />}
+        {view === "speak" && (
+          <SpeakView
+            onSettings={openVoiceSettings}
+            initialCardId={speakCard}
+            onSelectedCard={() => setSpeakCard(null)}
+          />
+        )}
         {view === "progress" && (
           <ProgressView
+            selection={selection}
+            onSelection={changeSelection}
+            onPractice={startMapSession}
+            onExplain={(id) => {
+              setSpeakCard(id);
+              go("speak");
+            }}
             onStudy={() => go("study")}
             onHistory={(day = null) => {
               setHistoryDay(day);
@@ -1016,7 +1087,7 @@ function App() {
               if (card) browse(card);
             }}
             onTopic={(topic) => {
-              changeSelection({ ...defaultSelection, topics: [topic] });
+              changeSelection({ topics: [topic] });
               go("study");
             }}
           />

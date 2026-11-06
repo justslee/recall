@@ -28,7 +28,7 @@ const folder = dataDir(option("data"));
 const apply = flag("apply"),
   json = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const usage =
-  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/search/link/trust | kb scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | paper connect codex/claude [--apply] | paper connection-status | paper mcp | paper start/publish/status/wait/read/end JSON_FILE | notebook list/inspect/page/export | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
+  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/revise/revision-status/search/link/trust | cards inspect CARD_ID [--previous] | kb index/read/scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | paper connect codex/claude [--apply] | paper connection-status | paper mcp | paper start/publish/status/wait/read/end JSON_FILE | notebook list/inspect/page/export | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
 function withStore(fn) {
   const { Store } = require("../electron/store.cjs");
   const s = new Store(folder);
@@ -133,6 +133,47 @@ function readonly(fn) {
                 ),
               );
         }
+      } else if (action === "revise") {
+        const revisions = require("../electron/card-revisions.cjs");
+        const raw = json(rest[0]);
+        if (!apply) result = readonly((db) => revisions.preview({ db }, raw));
+        else {
+          // Repeated submissions recover the same durable receipt. A queued
+          // request is revalidated by the only writer immediately before use.
+          result = revisions.enqueue(folder, raw);
+          try {
+            withStore((s) => revisions.applyPending(s));
+          } catch (error) {
+            if (error.code !== "RECALL_WRITER_BUSY") throw error;
+          }
+          result = revisions.status(folder, result.requestId);
+        }
+      } else if (action === "inspect") {
+        result = readonly((db) => {
+          const row = db
+            .prepare("SELECT content,suspended FROM cards WHERE id=?")
+            .get(rest[0]);
+          if (!row) throw Error("Card not found in this library");
+          const card = JSON.parse(row.content);
+          if (args.includes("--previous")) {
+            const previous = db
+              .prepare("SELECT value FROM settings WHERE key=?")
+              .get("widget-revision-previous:" + rest[0]);
+            if (!previous)
+              throw Error("No previous widget revision saved for this card");
+            return { card: JSON.parse(previous.value) };
+          }
+          return {
+            card,
+            contentHash: require("../electron/card-revisions.cjs").hash(card),
+            suspended: !!row.suspended,
+          };
+        });
+      } else if (action === "revision-status") {
+        result = require("../electron/card-revisions.cjs").status(
+          folder,
+          rest[0],
+        );
       } else if (action === "import-status") {
         result = require("../electron/card-imports.cjs").status(
           folder,
@@ -204,8 +245,7 @@ function readonly(fn) {
             }),
             mode: "preview",
           };
-        const backup = store.backup();
-        return { ...catalog.syncCatalog(store, raw), backup };
+        return catalog.syncCatalog(store, raw);
       });
     } else if (command === "kb") {
       const kb = require("../adapters/knowledge.cjs");
@@ -239,8 +279,19 @@ function readonly(fn) {
             "kb setup list | inspect ID | prompt ID | record ID RECEIPT.json --apply | complete ID RESULT.json --apply",
           );
       } else if (action === "scan") result = kb.scan(folder, rest[0]);
-      else if (action === "search")
-        result = kb.search(folder, rest[0], rest.slice(1).join(" "));
+      else if (action === "read")
+        result = require("../electron/knowledge-files.cjs").readNote(folder, rest[0], rest[1]);
+      else if (action === "index" || action === "search") {
+        if (action === "search" && kb.source(folder, rest[0]).type === "notion") result = kb.search(folder, rest[0], rest.slice(1).join(" "));
+        else {
+          const { KnowledgeIndex } = require("../electron/knowledge-index.cjs");
+          const index = new KnowledgeIndex(folder);
+          try {
+            if (action === "index" || !index.status().sources.find(s => s.id === rest[0])?.checkedAt) await index.refresh();
+            result = action === "index" ? index.status() : { ...index.query({ sourceId: rest[0], query: rest.slice(1).join(" ") }), index: index.status() };
+          } finally { index.close(); }
+        }
+      }
       else if (action === "save")
         result = kb.save(folder, rest[0], json(rest[1]), {
           apply,

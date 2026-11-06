@@ -53,23 +53,26 @@ const { Store } = require("../electron/store.cjs"),
     await p
       .getByRole("button", { name: "Settings & backups", exact: true })
       .click();
-    await p
-      .getByRole("button", { name: "Learning connections", exact: true })
-      .click();
+    await p.getByRole("button", { name: "Connections", exact: true }).click();
+    await p.locator(".connection-claude").click();
     await expect(
       p.getByText("Keep the learning. Keep your flow."),
     ).toBeVisible();
-    await expect(p.getByText("A missing objective")).toBeVisible();
+    await expect(p.getByText("A missing objective")).toHaveCount(0);
     const claude = p.getByRole("article", { name: "Claude connection" });
     await expect(
       claude.getByText("Skills installed", { exact: true }),
     ).toBeVisible();
+    await claude
+      .getByText("Readiness & connection details", { exact: true })
+      .click();
     await expect(claude.getByText("Not tested", { exact: true })).toBeVisible();
     await expect(
       claude.getByText("Learning verified", { exact: true }),
     ).toHaveCount(0);
     await claude
       .getByRole("button", { name: "Verify learning", exact: true })
+      .first()
       .click();
     await p.getByLabel("A concept to learn").fill("Explain a weighted average");
     await p
@@ -108,6 +111,11 @@ const { Store } = require("../electron/store.cjs"),
     await expect(
       claude.getByRole("link", { name: card.title }),
     ).toHaveAttribute("href", /^recall:\/\/card\//);
+    await p.getByRole("button", { name: "View captured learning" }).click();
+    await expect(p.getByText("A missing objective")).toBeVisible();
+    await p
+      .getByText("Inspect or prepare one capture", { exact: true })
+      .click();
     await expect(
       p.getByRole("button", { name: "Prepare next", exact: true }),
     ).toBeEnabled();
@@ -166,13 +174,15 @@ const { Store } = require("../electron/store.cjs"),
       "pending",
     );
     await p
-      .getByRole("button", { name: "Connect", exact: true })
-      .first()
+      .getByRole("button", { name: "All connections", exact: true })
       .click();
+    await p.locator(".connection-codex").click();
+    await p.getByRole("button", { name: "Connect Codex", exact: true }).click();
     await expect(
       p.getByRole("button", { name: "Install connection" }),
     ).toBeVisible();
     await p.getByRole("button", { name: "Cancel", exact: true }).click();
+    await p.getByRole("button", { name: "View captured learning" }).click();
     await p.getByText("Optional catch-up", { exact: false }).click();
     await p.getByLabel("Catch up from local session records").check();
     await p.getByLabel("All local projects").check();
@@ -207,6 +217,13 @@ const { Store } = require("../electron/store.cjs"),
       fullPage: true,
       animations: "disabled",
     });
+    await p
+      .getByRole("button", { name: "All connections", exact: true })
+      .click();
+    await p.locator(".connection-claude").click();
+    await claude
+      .getByText("Readiness & connection details", { exact: true })
+      .click();
     await claude.getByRole("link", { name: card.title }).click();
     await expect(
       p.getByRole("heading", { name: card.title, exact: true }),

@@ -8,6 +8,10 @@ Back up before upgrading. Keep the previous app until an isolated upgrade and re
 The Mac app identity and default data location remain Recall. Never seed or replace an existing
 library to adopt the public app.
 
+Opening Recall, importing cards and verifying new cards do not create full profile backups.
+Card imports commit in SQLite and visual verification uses a disposable profile. Use an
+explicit backup when you want a recovery point for an upgrade, migration or disk failure.
+
 ## Back up and test a restore
 
 In the app, use **Settings & backups → Library & backups → Back up now** before an update.

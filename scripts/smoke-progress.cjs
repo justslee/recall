@@ -6,7 +6,9 @@ const fs = require("node:fs"),
 const { Store } = require("../electron/store.cjs");
 const { saveConfig } = require("../electron/config.cjs");
 (async () => {
-  const folder = fs.mkdtempSync(path.join(os.tmpdir(), "recall-progress-ui-"));
+  await require("./require-invisible-runtime.cjs")(process.env.RECALL_TEST_EXECUTABLE);
+  const folder = require("../electron/verification-mode.cjs").createProfile();
+  const emptyFolder = require("../electron/verification-mode.cjs").createProfile();
   const s = new Store(folder);
   saveConfig(folder, { timeZone: "UTC" });
   const today = new Date().toISOString().slice(0, 10);
@@ -30,14 +32,20 @@ const { saveConfig } = require("../electron/config.cjs");
       ...(process.env.RECALL_TEST_EXECUTABLE
         ? { executablePath: process.env.RECALL_TEST_EXECUTABLE, args: [] }
         : { args: [path.join(__dirname, "..")] }),
-      env: { ...process.env, RECALL_DATA_DIR: folder },
+      env: { ...process.env, RECALL_DATA_DIR: folder, RECALL_VERIFY: "1" },
     });
     const p = await app.firstWindow(),
       errors = [];
     p.on("pageerror", (e) => errors.push(e.message));
     await p.getByRole("button", { name: "Progress", exact: true }).click();
+    await p
+      .getByRole("button", { name: "Review journal", exact: true })
+      .click();
     await expect(
-      p.getByRole("heading", { name: "What’s staying with you?", exact: true }),
+      p.getByRole("heading", {
+        name: "Small sessions. Lasting progress.",
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(p.locator(".progress-stat > strong")).toHaveText([
       "140",
@@ -72,6 +80,9 @@ const { saveConfig } = require("../electron/config.cjs");
       Array(12).fill("Again"),
     );
     await p.getByRole("button", { name: "Progress", exact: true }).click();
+    await p
+      .getByRole("button", { name: "Review journal", exact: true })
+      .click();
     await expect(p.locator(".progress-stat > strong").first()).toHaveText(
       "140",
     );
@@ -132,10 +143,11 @@ const { saveConfig } = require("../electron/config.cjs");
       ...(process.env.RECALL_TEST_EXECUTABLE
         ? { executablePath: process.env.RECALL_TEST_EXECUTABLE, args: [] }
         : { args: [path.join(__dirname, "..")] }),
-      env: { ...process.env, RECALL_DATA_DIR: path.join(folder, "empty") },
+      env: { ...process.env, RECALL_DATA_DIR: emptyFolder, RECALL_VERIFY: "1" },
     });
     const empty = await app.firstWindow();
     await empty.getByRole("button", { name: "Progress", exact: true }).click();
+    await empty.getByRole("button", { name: "Review journal", exact: true }).click();
     await expect(
       empty.locator(".progress-stat").first().locator("strong"),
     ).toHaveText("0");
@@ -153,6 +165,7 @@ const { saveConfig } = require("../electron/config.cjs");
   } finally {
     if (app) await app.close();
     fs.rmSync(folder, { recursive: true, force: true });
+    fs.rmSync(emptyFolder, { recursive: true, force: true });
   }
 })().catch((e) => {
   console.error(e);

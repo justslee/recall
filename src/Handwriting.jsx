@@ -1399,7 +1399,7 @@ export function TutorPadSettings({ workspace = false }) {
 
 // The active Mac question is authoritative only during an explicit handoff.
 // Following a question never reads or changes the card’s reveal/rating state.
-function PaperAssistantConnections() {
+export function PaperAssistantConnections({ hostFilter = null }) {
   const [connection, setConnection] = useState(null),
     [busy, setBusy] = useState(""),
     [message, setMessage] = useState("");
@@ -1448,28 +1448,47 @@ function PaperAssistantConnections() {
           {[
             ["codex", "Codex"],
             ["claude", "Claude Code"],
-          ].map(([host, label]) => {
-            const installed =
-              connection?.hosts?.[host]?.registered &&
-              connection?.hosts?.[host]?.skillInstalled;
-            return (
-              <button
-                key={host}
-                disabled={!!busy}
-                onClick={() => connect(host)}
-              >
-                {installed ? <Check size={14} /> : <Link size={14} />}{" "}
-                {busy === host
-                  ? "Connecting…"
-                  : installed
-                    ? `Refresh ${label} tools`
-                    : connection?.hosts?.[host]?.disabled
-                      ? `Review ${label} setup`
-                      : `Connect ${label}`}
-              </button>
-            );
-          })}
+          ]
+            .filter(([host]) => !hostFilter || hostFilter === host)
+            .map(([host, label]) => {
+              const installed =
+                connection?.hosts?.[host]?.registered &&
+                connection?.hosts?.[host]?.skillInstalled;
+              return (
+                <button
+                  key={host}
+                  disabled={!!busy}
+                  onClick={() => connect(host)}
+                >
+                  {installed ? <Check size={14} /> : <Link size={14} />}{" "}
+                  {busy === host
+                    ? "Connecting…"
+                    : installed
+                      ? `Refresh ${label} tools`
+                      : connection?.hosts?.[host]?.disabled
+                        ? `Review ${label} setup`
+                        : `Connect ${label}`}
+                </button>
+              );
+            })}
         </div>
+        <button
+          className="text-button"
+          onClick={async () => {
+            try {
+              await api.copyLearningText(
+                "Let’s start a paper learning session. Connect this chat to Recall Pad, send the current problem to my iPad, and wait for my submitted work before evaluating it. Keep discussion and hints in this chat.",
+              );
+              setMessage(
+                "Copied. Paste into a fresh chat and send when ready.",
+              );
+            } catch (error) {
+              setMessage(readableError(error));
+            }
+          }}
+        >
+          Copy paper-session prompt
+        </button>
         <p>
           ChatGPT desktop can reuse the Codex tools on a supported local host.
           Start a fresh chat and check its MCP server list; web chats need a

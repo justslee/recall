@@ -28,7 +28,8 @@ class Store {
         throw Error("Unsafe database path");
       fs.chmodSync(this.file, 0o600);
       this.db = new DatabaseSync(this.file);
-      this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;
+      this.db
+        .exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;
  CREATE TABLE IF NOT EXISTS cards(id TEXT PRIMARY KEY, content TEXT NOT NULL, schedule TEXT NOT NULL, suspended INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY,card_id TEXT NOT NULL,at TEXT NOT NULL,rating TEXT NOT NULL,practice INTEGER NOT NULL,before_schedule TEXT NOT NULL,after_schedule TEXT NOT NULL,session_before TEXT,undone INTEGER NOT NULL DEFAULT 0);
@@ -42,6 +43,7 @@ class Store {
         "self-tests",
         "learning-inbox",
         "card-imports",
+        "card-revisions",
         "knowledge",
         "packs",
       ])
@@ -150,7 +152,7 @@ class Store {
       folder: this.folder,
     };
   }
-  import(cards) {
+  import(cards, packReceipt) {
     return this.transaction(() => {
       let inserted = 0,
         unchanged = 0;
@@ -185,6 +187,10 @@ class Store {
         ]),
       ];
       this.set("decks", decks);
+      if (packReceipt) {
+        const id = crypto.createHash("sha256").update(packReceipt.id).digest("hex");
+        this.set("pack-receipt:" + id, packReceipt);
+      }
       return { inserted, unchanged };
     });
   }
@@ -238,7 +244,7 @@ class Store {
     return next;
   }
   recordChallengeAttempt(card, language, code, result) {
-    if (!card.catalog) return;
+    if (card.kind !== "code") return;
     this.db
       .prepare(
         "INSERT INTO challenge_attempts(card_id,at,language,code,result,content_hash) VALUES(?,?,?,?,?,?)",
@@ -427,10 +433,6 @@ class Store {
         name: r.name,
         url: `data:${r.mime};base64,${Buffer.from(r.bytes).toString("base64")}`,
       }));
-  }
-  backup() {
-    const result = require("./backup.cjs").backup(this);
-    return path.join(result.backup, "recall.sqlite");
   }
   close() {
     this.db.close();

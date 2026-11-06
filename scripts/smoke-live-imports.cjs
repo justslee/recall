@@ -65,6 +65,7 @@ const cli = (...args) =>
     });
     const page = await app.firstWindow(),
       errors = [];
+    assert.equal(fs.existsSync(path.join(folder, "backups")), false);
     page.on("pageerror", (e) => errors.push(e.message));
     page.setDefaultTimeout(15000);
     await expect(page.locator(".shelf-book")).toHaveCount(4);
@@ -133,6 +134,7 @@ const cli = (...args) =>
           timeout: 15000,
         })
         .toBe("imported");
+      assert.equal(fs.existsSync(path.join(folder, "backups")), false);
       await expect
         .poll(() => page.evaluate(() => window.__libraryChanges))
         .toBe(Number(id.slice(-1)));

@@ -137,6 +137,7 @@ test("complete learning journey: note, duplicate protection, cards, daily test, 
     bundles.importPack(store, pack, { apply: true, widgets: true }).unchanged,
     3,
   );
+  assert.equal(fs.existsSync(path.join(folder, "backups")), false);
   assert.equal(
     require("../electron/exercise-trust.cjs").canRunExercise(
       store.cards().find((c) => c.kind === "code"),

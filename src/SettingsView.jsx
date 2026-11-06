@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FolderOpen, DatabaseBackup, Download } from "lucide-react";
-import { LearningConnections } from "./LearningConnections";
-import { KnowledgeSetup } from "./KnowledgeSetup";
 import { useAppearance } from "./appearance";
-import { VoiceSettings } from "./VoiceAnswer";
-import { HandwritingSettings } from "./Handwriting";
+import { ConnectionsHub } from "./ConnectionsHub";
 
 function Setting({ title, description, value, action }) {
   return (
@@ -39,35 +36,37 @@ export function SettingsView({
       <nav className="settings-tabs" aria-label="Settings sections">
         {[
           ["general", "General"],
-          ["voice", "Voice & feedback"],
-          ["handwriting", "iPad & handwriting"],
-          ["connections", "Learning connections"],
+          ["connections", "Connections"],
           ["library", "Library & backups"],
         ].map(([id, label]) => (
           <button
             key={id}
-            aria-pressed={section === id}
+            aria-pressed={
+              section === id ||
+              (id === "connections" &&
+                ["voice", "handwriting", "knowledge"].includes(section))
+            }
             onClick={() => setSection(id)}
           >
             {label}
           </button>
         ))}
       </nav>
-      <div hidden={section !== "voice"}>
-        <VoiceSettings
-          focus={voiceFocus}
-          onBack={onBackToAnswer}
-          backLabel={voiceBackLabel}
+      {["connections", "voice", "handwriting", "knowledge"].includes(section) && (
+        <ConnectionsHub
+          initialDetail={
+            section === "voice"
+              ? "voice"
+              : section === "handwriting"
+                ? "paper"
+                : section === "knowledge" ? "knowledge" : null
+          }
+          voiceFocus={voiceFocus}
+          onBackToAnswer={onBackToAnswer}
+          voiceBackLabel={voiceBackLabel}
+          preferences={<LearningSettings />}
         />
-      </div>
-      <div hidden={section !== "handwriting"}>
-        <HandwritingSettings onOpenVoiceSettings={() => setSection("voice")} />
-      </div>
-      <div hidden={section !== "connections"}>
-        <LearningSettings />
-        <KnowledgeSetup />
-        <LearningConnections />
-      </div>
+      )}
       <div hidden={section !== "general"}>
         <section className="settings-group">
           <span className="eyebrow">Appearance</span>

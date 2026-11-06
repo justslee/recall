@@ -147,6 +147,22 @@ test("assistant sessions publish immutable problems and note prompts without car
   );
 });
 
+test("tutor publish preserves multiline LaTeX through storage and the iPad session", async (t) => {
+  const f = setup(t);
+  const session = await f.sessions.call("start", { title: "Attribution math" });
+  const formula = "$$\nR_p=\\prod_{t=1}^{T}(1+r_{p,t})-1\n$$";
+  const published = await publish(f, session, `Compute:\n${formula}\nExplain.`);
+  const expected = `Compute:<br>${formula}<br>Explain.`;
+  assert.equal(published.problem.prompt, expected);
+  assert.equal(f.sessions.activeSession().problems[0].prompt, expected);
+  assert.equal(
+    f.store.db
+      .prepare("SELECT prompt FROM paper_tutor_problems WHERE id=?")
+      .get(published.problem.id).prompt,
+    expected,
+  );
+});
+
 test("scoped capabilities reject cross-session reads and survive ordinary restart outside backups", async (t) => {
   const f = setup(t),
     a = await f.sessions.call("start", { title: "Chat A" }),

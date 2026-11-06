@@ -14,6 +14,8 @@ When adapting a reference, inspect its figure, caption, handlers, calculations a
 
 ## Runtime and accessibility
 
+Check the installed toolkit before depending on it. The bundled `window.RecallVisual` 1.0.0 provides coordinated state, SVG primitives, scales, plots, bars, timelines, labeled range controls and cancellable playback. Use its supported methods from [widget-contract.md](widget-contract.md); host protocol 2 is a separate lifecycle channel, not an author API. Prefer one state model and pure calculation functions rather than independent handlers that can leave a chart, number and explanation disagreeing. Native HTML/SVG remains appropriate for a purpose-built scene. Keep a readable static explanation if the required toolkit is unavailable.
+
 Use self-contained HTML/SVG in a fenced `widget` block in the answer. Everything is inline. No network requests, storage, host APIs, remote fonts or arbitrary files. Nothing runs until Load interactive. Use theme variables (`--text`, `--muted`, `--accent`, `--accent-soft`, `--border`, `--card`, `--sans`), a viewBox and accessible labels. Avoid viewport-sized heights; the frame measures its content. Native code belongs in the exercise runner, never in a widget.
 
 Use the supplied fonts or system fallbacks. Recompose diagrams or move detail into HTML on narrow cards; a large SVG viewBox that shrinks tiny labels is not sufficient. The current frame height is capped at 1400 px, so keep an exploration compact. Prefer native buttons and labeled inputs. Custom SVG controls require keyboard activation, a visible focus indicator and an accessible name; color and hover cannot carry essential meaning alone.
@@ -24,6 +26,19 @@ Use a static SVG when interaction adds no learning value. Mermaid is suitable fo
 
 Inbox imports leave widgets disabled regardless of a submitted permission flag. Explain the handoff: the reader enables Allow this card's interactive widgets in the card editor, then chooses Load interactive. Do not bypass permission through settings or database writes; a validation report does not grant execution trust.
 
+## Benchmarks and safe revisions
+
+The repository’s `examples/visual-benchmarks` offers three complete compositions, not one repeated dashboard: comparable yield curves and spread scenarios; asset/liability valuation and surplus sensitivity; and ownership lanes with strong/weak reachability and temporary callers. Read each model and its limitations. The yield curve is hypothetical, duration valuation is a first-order approximation, and a weak reference does not promise a collection time. The build script creates a synthetic preview pack; it neither imports into a personal library nor certifies quality. These checkout files are not guaranteed to be present in installed kits.
+
+For an authorized replacement, use `recall cards revise FILE` to preview the widget-only expected-content-hash request, then apply and confirm its revision receipt. Preserve IDs, all prose outside the selected fence, widget permissions and learning history. Arbitrary content revisions remain outside that contract. Show the requested benchmark visuals before migrating additional cards. Never write raw database updates or mint a duplicate ID to bypass a conflict.
+
 ## Inspect before delivery
 
 Use [widget-contract.md](widget-contract.md) for the runnable contract. When working from a repository checkout, `examples/demo.json` contains a complete card example; it is not bundled into the installed connection kit. Test every distinct control at representative values and boundaries, compare results to independent calculations, and inspect the actual rendered card in both system themes and at normal and narrow widths. Verify state survives a theme change, labels remain readable, and marks and interpretation update together. Check keyboard controls, reduced motion and Pause/Reset during playback when present. Confirm every advertised state is reachable. Keep factual/model checks, rendering/interaction checks and import validation distinct; report any incomplete check. Report any part of a requested document not covered rather than substituting a sample for a full scan. Updating this guidance does not automatically revise existing cards.
+
+Keep a concise acceptance record: runtime/toolkit version, scenario, input values, independent expected result, observed marks/text, width/theme and screenshot path. Include baseline, a meaningful changed state and boundary/counterexample. Inspect actual rendered labels and interaction outcomes; screenshots of an unchanged decorative scene are not evidence that controls work. Check Loading → Ready, an error/timeout fallback, Retry, Reset, Expand/Collapse retaining state and appearance changes without remounting. Verify hiding the answer removes its iframe. These lifecycle checks belong to runtime changes and representative compatibility tests; do not force every daily authoring run to retest the entire host.
+
+If actual rendering or interaction checks cannot run, preserve the current card and mark the proposed visual draft with its missing checks. Do not treat a syntax check, generated QA report, screenshot count or successful import as observed acceptance. Keep model checks, visual checks and live-import receipts distinct.
+
+
+Routine visual QA follows [invisible-verification.md](invisible-verification.md): hidden, disposable real-renderer checks and exact-content caching. Never browse or flip the user’s live cards for verification.

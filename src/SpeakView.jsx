@@ -408,7 +408,11 @@ function Feedback({ attempt, onAgain }) {
   );
 }
 
-export function SpeakView({ onSettings }) {
+export function SpeakView({
+  onSettings,
+  initialCardId = null,
+  onSelectedCard = () => {},
+}) {
   const [tab, setTab] = useState("practice");
   const [topicMode, setTopicMode] = useState("library"),
     [customTitle, setCustomTitle] = useState(""),
@@ -514,7 +518,7 @@ export function SpeakView({ onSettings }) {
       api.speakHistory(),
       api.draft(COMPOSER_KEY),
     ])
-      .then(([voice, saved, rows, savedComposer]) => {
+      .then(async ([voice, saved, rows, savedComposer]) => {
         if (!alive.current) return;
         setStatus(voice);
         setHistory(rows);
@@ -524,6 +528,28 @@ export function SpeakView({ onSettings }) {
           setTranscript(saved.transcript || "");
           setReceipt(saved.recordingToken ? saved : null);
           restoreComposer(saved.config);
+        }
+        if (initialCardId && !saved?.config) {
+          const bytes = await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(initialCardId),
+          );
+          if (!alive.current) return;
+          const id =
+            "card-" +
+            Array.from(new Uint8Array(bytes))
+              .map((v) => v.toString(16).padStart(2, "0"))
+              .join("")
+              .slice(0, 32);
+          setTopicMode("library");
+          setSourceId(id);
+          setQuery("");
+          onSelectedCard();
+        } else if (initialCardId && saved?.config) {
+          setError(
+            "Your previous explanation draft is restored. Finish it or choose a new topic before starting another explanation.",
+          );
+          onSelectedCard();
         }
         hydrated.current = true;
         setPhase("idle");

@@ -1,0 +1,344 @@
+<style>
+  /* BENCHMARK_STYLES */
+  .vb-balance {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 155px;
+    gap: 23px;
+    align-items: center;
+  }
+  .vb-balance-row + .vb-balance-row {
+    margin-top: 20px;
+  }
+  .vb-balance-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .vb-track {
+    height: 33px;
+    position: relative;
+    border-bottom: 1px solid var(--vb-line);
+  }
+  .vb-track-before {
+    position: absolute;
+    left: 0;
+    top: 2px;
+    height: 23px;
+    border: 1px dashed var(--vb-muted);
+    border-radius: 3px;
+  }
+  .vb-track-after {
+    position: absolute;
+    left: 0;
+    top: 7px;
+    height: 23px;
+    background: var(--vb-blue);
+    border-radius: 3px;
+    opacity: 0.85;
+  }
+  .vb-balance-row.liability .vb-track-after {
+    background: var(--vb-amber);
+  }
+  .vb-bar-note {
+    font-size: 10px;
+    color: var(--vb-muted);
+    margin-top: 7px;
+  }
+  .vb-surplus {
+    border-left: 1px solid var(--vb-line);
+    padding: 15px 0 15px 20px;
+  }
+  .vb-surplus .vb-stat-value {
+    font-size: 36px;
+  }
+  .vb-exposure {
+    margin-top: 20px;
+    padding: 13px 14px;
+    background: var(--vb-surface);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+  }
+  .vb-exposure small {
+    font-size: 10px;
+    color: var(--vb-muted);
+    display: block;
+  }
+  .vb-exposure strong {
+    font: 20px var(--serif, Georgia, serif);
+    white-space: nowrap;
+  }
+  .vb-duration-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    margin-top: 14px;
+  }
+  .vb-duration-actions span {
+    font-size: 10px;
+    color: var(--vb-muted);
+  }
+  @media (max-width: 480px) {
+    .vb-balance {
+      grid-template-columns: 1fr;
+      gap: 17px;
+    }
+    .vb-surplus {
+      border-left: 0;
+      border-top: 1px solid var(--vb-line);
+      padding: 12px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .vb-surplus .vb-stat-value {
+      font-size: 29px;
+    }
+    .vb-exposure {
+      align-items: flex-start;
+    }
+    .vb-exposure strong {
+      font-size: 18px;
+    }
+    .vb-duration-actions {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>
+<section
+  class="vb"
+  aria-labelledby="duration-title"
+  data-benchmark="duration-gap"
+>
+  <header class="vb-header">
+    <div>
+      <p class="vb-kicker">Assets and promises</p>
+      <h2 id="duration-title">Match the exposure, not just the years.</h2>
+      <p class="vb-subtitle">
+        Watch the two sides of an insurer’s balance sheet revalue under the same
+        small yield shock.
+      </p>
+    </div>
+    <span class="vb-badge"><i class="vb-dot"></i>First order</span>
+  </header>
+  <div class="vb-stats">
+    <div class="vb-stat">
+      <span class="vb-stat-label">Asset duration</span
+      ><strong class="vb-stat-value vb-blue" id="duration-asset"></strong
+      ><span class="vb-stat-note">¥110bn of assets</span>
+    </div>
+    <div class="vb-stat">
+      <span class="vb-stat-label">Liability duration</span
+      ><strong class="vb-stat-value vb-amber">18.00y</strong
+      ><span class="vb-stat-note">¥100bn of liabilities</span>
+    </div>
+    <div class="vb-stat">
+      <span class="vb-stat-label">Weighted duration gap</span
+      ><strong class="vb-stat-value" id="duration-gap"></strong
+      ><span class="vb-stat-note">Dₐ − (L / A) × Dₗ</span>
+    </div>
+  </div>
+  <div class="vb-legend">
+    <span class="vb-key"><i class="dashed"></i>Before shock</span
+    ><span class="vb-key"><i></i>Assets after</span
+    ><span class="vb-key"
+      ><i style="background: var(--vb-amber)"></i>Liabilities after</span
+    >
+  </div>
+  <div class="vb-balance">
+    <div>
+      <div class="vb-balance-row">
+        <div class="vb-balance-label">
+          <strong>Assets</strong><span id="duration-asset-value"></span>
+        </div>
+        <div
+          class="vb-track"
+          role="img"
+          id="duration-assets-bar"
+          aria-label="Asset value before and after the shock"
+        >
+          <span class="vb-track-before" style="width: 61.1111%"></span
+          ><span class="vb-track-after" id="duration-assets-after"></span>
+        </div>
+        <p class="vb-bar-note" id="duration-asset-change"></p>
+      </div>
+      <div class="vb-balance-row liability">
+        <div class="vb-balance-label">
+          <strong>Liabilities</strong
+          ><span id="duration-liability-value"></span>
+        </div>
+        <div
+          class="vb-track"
+          role="img"
+          id="duration-liabilities-bar"
+          aria-label="Liability value before and after the shock"
+        >
+          <span class="vb-track-before" style="width: 55.5556%"></span
+          ><span class="vb-track-after" id="duration-liabilities-after"></span>
+        </div>
+        <p class="vb-bar-note" id="duration-liability-change"></p>
+      </div>
+    </div>
+    <div class="vb-surplus">
+      <div>
+        <span class="vb-stat-label">New surplus</span
+        ><strong class="vb-stat-value vb-teal" id="duration-surplus"></strong>
+      </div>
+      <div>
+        <span class="vb-stat-label">versus ¥10bn before</span
+        ><span class="vb-stat-note" id="duration-surplus-change"></span>
+      </div>
+    </div>
+  </div>
+  <div class="vb-exposure">
+    <div>
+      <h3>Net duration exposure</h3>
+      <small>A × Dₐ − L × Dₗ · billion yen-years</small>
+    </div>
+    <strong id="duration-exposure"></strong>
+  </div>
+  <p
+    class="vb-caption"
+    id="duration-explanation"
+    role="status"
+    aria-live="polite"
+  ></p>
+  <div class="vb-controls">
+    <label class="vb-control" for="duration-asset-input"
+      ><span class="vb-control-top"
+        >Change asset duration
+        <output
+          for="duration-asset-input"
+          id="duration-asset-out"
+        ></output></span
+      ><input
+        id="duration-asset-input"
+        type="range"
+        min="5"
+        max="25"
+        step="any"
+        value="12"
+      /><span class="vb-range-limits"
+        ><span>5 years</span><span>25 years</span></span
+      ></label
+    ><label class="vb-control" for="duration-shock"
+      ><span class="vb-control-top"
+        >Parallel yield shock
+        <output for="duration-shock" id="duration-shock-out"></output></span
+      ><input
+        id="duration-shock"
+        type="range"
+        min="-2"
+        max="2"
+        step="0.1"
+        value="1"
+      /><span class="vb-range-limits"
+        ><span>−2 percentage points</span
+        ><span>+2 percentage points</span></span
+      ></label
+    >
+  </div>
+  <div class="vb-duration-actions">
+    <button id="duration-match">Match first-order exposure</button
+    ><span>Matching target: 100 / 110 × 18 = 16.36 years</span>
+  </div>
+  <footer class="vb-footer">
+    <p class="vb-footnote">
+      Hypothetical modified durations and values. ΔV ≈ −V × D × Δy; Δsurplus ≈
+      −(A × Dₐ − L × Dₗ) × Δy. Parallel, small-shock approximation: ignores
+      convexity, basis risk and changing cash flows. A first-order match is not
+      an exact hedge.
+    </p>
+    <button class="vb-reset" id="duration-reset">Reset example</button>
+  </footer>
+</section>
+<script>
+  /* BENCHMARK_MODELS */
+  /* BENCHMARK_HELPERS */
+  (() => {
+    let state = { assetDuration: 12, shockPct: 1 };
+    function render() {
+      const model = durationGap(state),
+        neutral = Math.abs(model.exposure) < 1e-7;
+      $("duration-asset-input").value = state.assetDuration;
+      $("duration-shock").value = state.shockPct;
+      setText("duration-asset", `${number(model.assetDuration, 2)}y`);
+      setText("duration-gap", `${signed(model.gapYears, 2)}y`);
+      setText("duration-asset-out", `${number(model.assetDuration, 2)} years`);
+      setText("duration-shock-out", `${signed(model.shockPct, 1)} pp`);
+      setText("duration-asset-value", `¥${number(model.assetsAfter)}bn`);
+      setText(
+        "duration-liability-value",
+        `¥${number(model.liabilitiesAfter)}bn`,
+      );
+      setText(
+        "duration-asset-change",
+        `¥110bn before · ${signed(model.assetChange, 1)}bn change`,
+      );
+      setText(
+        "duration-liability-change",
+        `¥100bn before · ${signed(model.liabilityChange, 1)}bn change`,
+      );
+      setText("duration-surplus", `¥${number(model.surplusAfter)}bn`);
+      setText(
+        "duration-surplus-change",
+        `${signed(model.surplusChange, 1)}bn change`,
+      );
+      setText("duration-exposure", signed(model.exposure, 1));
+      $("duration-assets-after").style.width =
+        `${(model.assetsAfter / 180) * 100}%`;
+      $("duration-liabilities-after").style.width =
+        `${(model.liabilitiesAfter / 180) * 100}%`;
+      $("duration-assets-bar").setAttribute(
+        "aria-label",
+        `Assets: 110 billion yen before, ${number(model.assetsAfter)} after`,
+      );
+      $("duration-liabilities-bar").setAttribute(
+        "aria-label",
+        `Liabilities: 100 billion yen before, ${number(model.liabilitiesAfter)} after`,
+      );
+      const condition = neutral
+        ? "The weighted exposures match."
+        : model.exposure < 0
+          ? "Liabilities carry more duration exposure than assets."
+          : "Assets carry more duration exposure than liabilities.";
+      const effect =
+        Math.abs(model.surplusChange) < 1e-7
+          ? "This shock leaves the first-order surplus unchanged."
+          : `A ${signed(model.shockPct, 1)} pp shock ${model.surplusChange > 0 ? "raises" : "reduces"} surplus by ¥${number(Math.abs(model.surplusChange))}bn.`;
+      setText("duration-explanation", `${condition} ${effect}`);
+      $("duration-match").setAttribute("aria-pressed", String(neutral));
+      document.querySelector("[data-benchmark]").dataset.result =
+        JSON.stringify({
+          exposure: model.exposure,
+          gapYears: model.gapYears,
+          surplusChange: model.surplusChange,
+          surplusAfter: model.surplusAfter,
+        });
+    }
+    $("duration-asset-input").addEventListener("input", (event) => {
+      state.assetDuration = Number(event.target.value);
+      render();
+    });
+    $("duration-shock").addEventListener("input", (event) => {
+      state.shockPct = Number(event.target.value);
+      render();
+    });
+    $("duration-match").addEventListener("click", () => {
+      state.assetDuration = durationGap(state).matchedAssetDuration;
+      render();
+    });
+    $("duration-reset").addEventListener("click", () => {
+      state = { assetDuration: 12, shockPct: 1 };
+      render();
+    });
+    render();
+  })();
+</script>

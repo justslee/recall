@@ -47,6 +47,24 @@ test("math inequalities survive HTML stripping and remain escaped on the iPad fr
   );
 });
 
+test("display math keeps its delimiters and uninterrupted multiline text on iPad fronts", () => {
+  for (const formula of [
+    "$$\nR_p = \\prod_{t=1}^{T}(1+r_{p,t})-1\n$$",
+    "\\[\n\\frac{x}{y} < 2\n\\]",
+  ]) {
+    const source = `Before\n${formula}\nAfter`;
+    assert.equal(contract.referenceText(source), source);
+    assert.equal(
+      contract.questionFront(source).html,
+      `Before<br>${formula.replace(/</g, "&lt;")}<br>After`,
+    );
+  }
+  assert.equal(
+    contract.referenceText("Use $x$ and $$y$$."),
+    "Use $x$ and $$y$$.",
+  );
+});
+
 test("unsupported, oversized and undecodable front illustrations fail explicitly", () => {
   for (const source of [
     '<img src="https://example.test/question.png">',

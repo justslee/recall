@@ -6,7 +6,11 @@ These images show the actual Recall interface with original demo content, synthe
 
 ## Mac screenshots
 
-The `setup-*.png` and `demo-*.png` Mac screens were captured from the source app on October 11, 2026. The screenshot script uses a disposable profile and assistant home; it does not install into a real assistant account, pair a device, enable the companion, record audio, run card code or request AI feedback.
+`knowledge-space-light.png` and `knowledge-space-dark.png` show the current source build's local note reader, indexed shelf and linked practice. Captured November 6, 2026 by `scripts/smoke-knowledge-space.cjs` in a hidden temporary profile, they use synthetic notes and original demonstration cards. No real source folder, note, credential or learning history is included.
+
+`connections-hub.png`, `learning-map.png` and the refreshed `setup-welcome.png` were captured on October 31, 2026 from hidden, disposable libraries using `node scripts/smoke-learning-ux.cjs`. They show synthetic data and the current source build. The same script checks both appearances without opening the reader’s app. These images do not claim that an assistant, iPad or provider is connected.
+
+The remaining `setup-*.png` and `demo-*.png` Mac screens were captured from the source app on October 11, 2026. The screenshot script uses a disposable profile and assistant home; it does not install into a real assistant account, pair a device, enable the companion, record audio, run card code or request AI feedback.
 
 To refresh them from a prepared checkout:
 

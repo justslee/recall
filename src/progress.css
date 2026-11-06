@@ -16,6 +16,10 @@
   margin: 6px 0;
   letter-spacing: -0.6px;
 }
+.study-index .progress-page .progress-intro h2,
+.study-index .progress-page .progress-intro .eyebrow {
+  display: block;
+}
 .progress-intro p {
   color: var(--muted);
   margin: 0;

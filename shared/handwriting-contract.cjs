@@ -344,6 +344,8 @@ function imageInfo(bytes, mime, decode) {
   }
   return { width, height, mime, bytes: bytes.length };
 }
+const formulaPattern =
+  /\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?:\\.|[^$\n])+\$/g;
 function referenceText(html) {
   const entities = (text) =>
     text
@@ -356,28 +358,33 @@ function referenceText(html) {
   let text = String(html || "")
     .replace(/```(?:widget|mermaid)[^\n]*\n[\s\S]*?```/gi, " ")
     .replace(/<(script|style|svg|iframe)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
-    .replace(
-      /\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?:\\.|[^$\n])+\$/g,
-      (formula) => {
-        const index = formulas.push(formula) - 1;
-        return prefix + index + "-end";
-      },
-    )
+    .replace(formulaPattern, (formula) => {
+      const index = formulas.push(formula) - 1;
+      return prefix + index + "-end";
+    })
     .replace(/<br\s*\/?\s*>|<\/(?:p|li|div|h[1-6])>/gi, "\n")
     .replace(/<!--([\s\S]*?)-->/g, " ")
     .replace(/<\/?[a-z][a-z0-9:-]*(?:\s+[^<>]*?)?\s*\/?>/gi, " ")
     .trim();
   text = entities(text);
   for (let i = 0; i < formulas.length; i++)
-    text = text.replace(prefix + i + "-end", entities(formulas[i]));
+    // A replacement string interprets $$ as a single dollar sign.
+    text = text.replace(prefix + i + "-end", () => entities(formulas[i]));
   return text;
 }
 function safeFront(html) {
-  return referenceText(html)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\n/g, "<br>");
+  const escape = (text) =>
+    text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const text = referenceText(html);
+  let rendered = "",
+    cursor = 0;
+  for (const match of text.matchAll(formulaPattern)) {
+    rendered += escape(text.slice(cursor, match.index)).replace(/\n/g, "<br>");
+    // KaTeX needs one uninterrupted text node, including equation newlines.
+    rendered += escape(match[0]);
+    cursor = match.index + match[0].length;
+  }
+  return rendered + escape(text.slice(cursor)).replace(/\n/g, "<br>");
 }
 function questionFront(html, decode) {
   const images = [],

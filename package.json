@@ -17,6 +17,9 @@
     "icon": "electron scripts/make-icon.cjs",
     "format": "prettier --write src electron/*.cjs tests scripts docs README.md",
     "test:desktop": "node scripts/smoke-public.cjs",
+    "test:visuals": "node scripts/smoke-visuals.cjs",
+    "preview:visuals": "node scripts/preview-visuals.cjs",
+    "preview:visuals:app": "node scripts/open-visual-preview.cjs",
     "audit:release": "node scripts/audit-release.cjs",
     "audit:package": "node scripts/audit-package.cjs",
     "test:journey": "node --test tests/journey.test.cjs",
@@ -25,6 +28,8 @@
     "test:progress": "node scripts/smoke-progress.cjs",
     "test:connections": "node scripts/smoke-connections.cjs",
     "test:knowledge": "node scripts/smoke-knowledge-setup.cjs",
+    "test:knowledge-space": "node scripts/smoke-knowledge-space.cjs",
+    "benchmark:knowledge": "node scripts/benchmark-knowledge.cjs",
     "test:knowledge-bootstrap": "node scripts/smoke-knowledge-bootstrap.cjs",
     "test:security:native": "node scripts/security-native.cjs",
     "test:security:desktop": "node scripts/security-desktop.cjs",
@@ -42,7 +47,10 @@
     "test:notebooks": "node scripts/smoke-notebooks.cjs",
     "test:pad-lifecycle": "node scripts/smoke-pad-lifecycle.cjs",
     "docs:check": "node scripts/check-docs.cjs",
-    "docs:screenshots": "node scripts/capture-docs.cjs"
+    "docs:screenshots": "node scripts/capture-docs.cjs",
+    "test:learning-ux": "node scripts/smoke-learning-ux.cjs",
+    "test:atlas": "node scripts/smoke-atlas.cjs",
+    "verify:cards": "node scripts/verify-cards.cjs"
   },
   "dependencies": {
     "@peculiar/x509": "2.1.0",
@@ -51,6 +59,7 @@
     "dompurify": "^3.4.14",
     "katex": "^0.18.6",
     "lucide-react": "^1.41.0",
+    "marked": "16.4.2",
     "mermaid": "^11.17.2",
     "monaco-editor": "^0.56.0",
     "qrcode": "1.5.4",

@@ -1,0 +1,169 @@
+.connection-hub-heading {
+  max-width: 650px;
+  margin: 28px 0;
+}
+.connection-hub-heading h2,
+.connection-detail-title h2 {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: clamp(27px, 3vw, 38px);
+  font-weight: 500;
+  margin: 10px 0;
+  letter-spacing: -0.035em;
+}
+.connection-hub-heading p,
+.connection-hub-footnote {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.connection-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+}
+.connection-hub-card {
+  grid-column: span 3;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 25px;
+  min-height: 204px;
+  text-align: left;
+  border-radius: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
+}
+.connection-hub-card:nth-child(n + 3) {
+  grid-column: span 2;
+}
+.connection-hub-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 25px #0000000b;
+}
+.connection-hub-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.connection-hub-card strong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 19px;
+}
+.connection-hub-card > span:not(.connection-hub-icons) {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.connection-hub-card small {
+  margin-top: auto;
+  color: var(--accent);
+  font-size: 12px;
+  padding-top: 8px;
+}
+.connection-hub-icons {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  min-height: 48px;
+  margin-bottom: 9px;
+}
+.connection-brand {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.assistant-connection-mark {
+  background: none !important;
+}
+.assistant-connection-mark .connection-brand {
+  width: 34px;
+  height: 34px;
+}
+.connection-preferences {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding: 20px 0;
+}
+.connection-preferences summary,
+.connection-checks summary,
+.connection-single-item summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 12px 0;
+}
+.connection-back {
+  margin: 8px 0 20px;
+}
+.connection-hub-footnote {
+  max-width: 700px;
+  font-size: 13px;
+}
+.preparation-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 24px;
+  border-radius: 18px;
+  margin: 20px 0;
+}
+.preparation-panel h3 {
+  margin: 8px 0;
+}
+.preparation-panel > small {
+  display: block;
+  margin-top: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.preparation-panel pre {
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+.preparation-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 15px 0;
+  font-size: 13px;
+}
+.preparation-progress progress {
+  width: 100%;
+  height: 5px;
+  accent-color: var(--accent);
+}
+.preparation-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+@media (max-width: 900px) {
+  .connection-hub-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .connection-hub-card,
+  .connection-hub-card:nth-child(n + 3) {
+    grid-column: span 1;
+  }
+  .connection-knowledge {
+    grid-column: 1 / -1 !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .connection-hub-card {
+    transition: none;
+  }
+}

@@ -1,0 +1,298 @@
+<style>
+  /* BENCHMARK_STYLES */
+</style>
+<section class="vb" aria-labelledby="curve-title" data-benchmark="yield-curve">
+  <header class="vb-header">
+    <div>
+      <p class="vb-kicker">One curve, two ends</p>
+      <h2 id="curve-title">What makes a curve steeper?</h2>
+      <p class="vb-subtitle">
+        Compare the same maturities. Steepening describes a widening long–short
+        spread, not whether yields rise or fall.
+      </p>
+    </div>
+    <span class="vb-badge"><i class="vb-dot"></i>Hypothetical</span>
+  </header>
+  <div class="vb-pills" role="group" aria-label="Yield curve scenarios">
+    <button data-scenario="bear" aria-pressed="true">Bear steepener</button
+    ><button data-scenario="bull" aria-pressed="false">Bull steepener</button
+    ><button data-scenario="parallel" aria-pressed="false">
+      Parallel shift</button
+    ><button data-scenario="flatten" aria-pressed="false">Flattener</button>
+  </div>
+  <div class="vb-stats">
+    <div class="vb-stat">
+      <span class="vb-stat-label">Baseline · 30y − 2y</span
+      ><strong class="vb-stat-value" id="curve-baseline">140 bp</strong
+      ><span class="vb-stat-note">Same reference curve</span>
+    </div>
+    <div class="vb-stat">
+      <span class="vb-stat-label">New spread</span
+      ><strong class="vb-stat-value vb-blue" id="curve-spread"></strong
+      ><span class="vb-stat-note" id="curve-change"></span>
+    </div>
+    <div class="vb-stat">
+      <span class="vb-stat-label">Curve movement</span
+      ><strong
+        class="vb-stat-value"
+        style="font-size: clamp(18px, 3.3vw, 25px)"
+        id="curve-direction"
+      ></strong
+      ><span class="vb-stat-note" id="curve-slope"></span>
+    </div>
+  </div>
+  <div class="vb-legend">
+    <span class="vb-key"><i class="dashed"></i>Baseline</span
+    ><span class="vb-key"><i></i>Scenario</span
+    ><span>Illustrative curve · five maturity points</span>
+  </div>
+  <div class="vb-chart" id="curve-chart">
+    <svg
+      role="img"
+      aria-label="Baseline and scenario yield curves across two to thirty years"
+    ></svg>
+  </div>
+  <p
+    class="vb-caption"
+    id="curve-explanation"
+    role="status"
+    aria-live="polite"
+  ></p>
+  <div class="vb-controls">
+    <label class="vb-control" for="curve-short"
+      ><span class="vb-control-top"
+        >2-year yield change
+        <output id="curve-short-out" for="curve-short"></output></span
+      ><input
+        id="curve-short"
+        type="range"
+        min="-100"
+        max="100"
+        step="5"
+        value="20"
+      /><span class="vb-range-limits"
+        ><span>−100 bp</span><span>+100 bp</span></span
+      ></label
+    ><label class="vb-control" for="curve-long"
+      ><span class="vb-control-top"
+        >30-year yield change
+        <output id="curve-long-out" for="curve-long"></output></span
+      ><input
+        id="curve-long"
+        type="range"
+        min="-100"
+        max="100"
+        step="5"
+        value="80"
+      /><span class="vb-range-limits"
+        ><span>−100 bp</span><span>+100 bp</span></span
+      ></label
+    >
+  </div>
+  <footer class="vb-footer">
+    <p class="vb-footnote">
+      Values are illustrative, not observed JGB data. Intermediate changes are
+      interpolated in log maturity. A curve can steepen while both yields fall.
+    </p>
+    <button class="vb-reset" id="curve-reset">Reset example</button>
+  </footer>
+</section>
+<script>
+  /* BENCHMARK_MODELS */
+  /* BENCHMARK_HELPERS */
+  (() => {
+    const scenarios = {
+      bear: [20, 80],
+      bull: [-75, -20],
+      parallel: [50, 50],
+      flatten: [80, 20],
+    };
+    let state = { shortBp: 20, longBp: 80, scenario: "bear" };
+    const chart = $("curve-chart"),
+      svg = chart.querySelector("svg");
+    function draw(model) {
+      const width = Math.max(
+          220,
+          Math.round(chart.getBoundingClientRect().width),
+        ),
+        height = 238;
+      const margin = { left: 35, right: 20, top: 28, bottom: 37 };
+      const x = (years) =>
+        margin.left +
+        (Math.log(years / 2) / Math.log(15)) *
+          (width - margin.left - margin.right);
+      const y = (yieldPct) =>
+        height -
+        margin.bottom -
+        ((yieldPct + 0.6) / 3.8) * (height - margin.top - margin.bottom);
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.replaceChildren();
+      for (const tick of [0, 1, 2, 3]) {
+        svg.append(
+          svgNode("line", {
+            x1: margin.left,
+            x2: width - margin.right,
+            y1: y(tick),
+            y2: y(tick),
+            stroke: "var(--viz-grid,var(--vb-line))",
+            "stroke-dasharray": "2 4",
+          }),
+        );
+        svgText(svg, margin.left - 9, y(tick) + 4, `${tick}%`, {
+          "text-anchor": "end",
+        });
+      }
+      svgText(svg, margin.left, 13, "Yield", { "font-size": 10 });
+      for (const point of model.points)
+        svgText(svg, x(point.years), height - 12, `${point.years}y`, {
+          "text-anchor": "middle",
+        });
+      const path = (key) =>
+        model.points
+          .map(
+            (point, i) =>
+              `${i ? "L" : "M"}${x(point.years).toFixed(2)},${y(point[key]).toFixed(2)}`,
+          )
+          .join(" ");
+      const area =
+        path("scenario") +
+        " " +
+        model.points
+          .slice()
+          .reverse()
+          .map(
+            (point) =>
+              `L${x(point.years).toFixed(2)},${y(point.baseline).toFixed(2)}`,
+          )
+          .join(" ") +
+        " Z";
+      svg.append(
+        svgNode("path", { d: area, fill: "var(--vb-blue)", opacity: 0.08 }),
+      );
+      svg.append(
+        svgNode("path", {
+          d: path("baseline"),
+          stroke: "var(--vb-muted)",
+          "stroke-width": 2,
+          "stroke-dasharray": "5 5",
+          fill: "none",
+        }),
+      );
+      svg.append(
+        svgNode("path", {
+          d: path("scenario"),
+          stroke: "var(--vb-blue)",
+          "stroke-width": 3,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          fill: "none",
+        }),
+      );
+      for (const point of model.points)
+        svg.append(
+          svgNode("circle", {
+            cx: x(point.years),
+            cy: y(point.scenario),
+            r: 3.5,
+            fill: "var(--vb-paper)",
+            stroke: "var(--vb-blue)",
+            "stroke-width": 2,
+          }),
+        );
+      const first = model.points[0],
+        last = model.points.at(-1);
+      svgText(
+        svg,
+        x(2) + 4,
+        y(first.scenario) - 10,
+        `${number(first.scenario, 2)}%`,
+        { fill: "var(--vb-blue)", "font-size": 12, "font-weight": 600 },
+      );
+      svgText(
+        svg,
+        x(30) - 4,
+        y(last.scenario) - 10,
+        `${number(last.scenario, 2)}%`,
+        {
+          fill: "var(--vb-blue)",
+          "text-anchor": "end",
+          "font-size": 12,
+          "font-weight": 600,
+        },
+      );
+    }
+    function render() {
+      const model = yieldCurve(state);
+      $("curve-short").value = state.shortBp;
+      $("curve-long").value = state.longBp;
+      setText("curve-short-out", `${signed(model.shortBp)} bp`);
+      setText("curve-long-out", `${signed(model.longBp)} bp`);
+      setText("curve-spread", `${number(model.spreadBp, 0)} bp`);
+      setText(
+        "curve-change",
+        `${signed(model.spreadChangeBp)} bp versus baseline`,
+      );
+      setText(
+        "curve-direction",
+        model.direction === "Mixed" && model.shortBp === 0 && model.longBp === 0
+          ? "Unchanged"
+          : model.direction === "Mixed"
+            ? "Opposite directions"
+            : `${model.direction} move`,
+      );
+      setText("curve-slope", model.slope);
+      const move = (bp) =>
+        bp < 0
+          ? `falls ${number(-bp, 0)} bp`
+          : bp > 0
+            ? `rises ${number(bp, 0)} bp`
+            : "stays unchanged";
+      const conclusion =
+        model.spreadChangeBp > 0
+          ? "The long–short gap widens: steepening."
+          : model.spreadChangeBp < 0
+            ? "The long–short gap narrows: flattening."
+            : "The gap stays the same: no steepening.";
+      setText(
+        "curve-explanation",
+        `The 2-year yield ${move(model.shortBp)}; the 30-year ${move(model.longBp)}. ${conclusion}`,
+      );
+      document
+        .querySelectorAll("[data-scenario]")
+        .forEach((button) =>
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.scenario === state.scenario),
+          ),
+        );
+      document.querySelector("[data-benchmark]").dataset.result =
+        JSON.stringify({
+          spreadBp: model.spreadBp,
+          spreadChangeBp: model.spreadChangeBp,
+          slope: model.slope,
+        });
+      draw(model);
+    }
+    document.querySelectorAll("[data-scenario]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const [shortBp, longBp] = scenarios[button.dataset.scenario];
+        state = { shortBp, longBp, scenario: button.dataset.scenario };
+        render();
+      }),
+    );
+    $("curve-short").addEventListener("input", (event) => {
+      state = { ...state, shortBp: Number(event.target.value), scenario: null };
+      render();
+    });
+    $("curve-long").addEventListener("input", (event) => {
+      state = { ...state, longBp: Number(event.target.value), scenario: null };
+      render();
+    });
+    $("curve-reset").addEventListener("click", () => {
+      state = { shortBp: 20, longBp: 80, scenario: "bear" };
+      render();
+    });
+    observeWidth(chart, () => draw(yieldCurve(state)));
+    render();
+  })();
+</script>

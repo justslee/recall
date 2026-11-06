@@ -1,0 +1,375 @@
+{
+  "version": 1,
+  "kitVersion": "1.0.0",
+  "description": "Original synthetic, offline teaching visuals. Model fixtures are separate from rendering checks and editorial review.",
+  "viewports": [360, 720],
+  "appearances": ["light", "dark"],
+  "reducedMotion": true,
+  "benchmarks": [
+    {
+      "id": "yield-curve",
+      "file": "yield-curve.html",
+      "template": "yield-curve.template.html",
+      "previewCardId": "benchmark:yield-curve:v1",
+      "title": "Two ways to steepen a yield curve",
+      "prompt": "Can a yield curve steepen while both short and long yields fall? Explain using a long–short spread.",
+      "summary": "A curve steepens when the long–short yield spread increases. Both yields may rise, both may fall, or they may move in opposite directions. These hypothetical points illustrate the distinction.",
+      "topic": "Fixed Income",
+      "root": "[data-benchmark='yield-curve']",
+      "reset": "#curve-reset",
+      "model": "yieldCurve",
+      "assumptions": [
+        "Hypothetical annualized yields",
+        "Five fixed maturity points",
+        "Intermediate yield changes interpolated in log maturity"
+      ],
+      "interactions": [
+        {
+          "name": "bear-steepener",
+          "steps": [],
+          "expected": {
+            "spreadBp": 200,
+            "spreadChangeBp": 60,
+            "slope": "Steepening"
+          }
+        },
+        {
+          "name": "bull-steepener",
+          "steps": [{ "click": "[data-scenario='bull']" }],
+          "expected": {
+            "spreadBp": 195,
+            "spreadChangeBp": 55,
+            "slope": "Steepening"
+          }
+        },
+        {
+          "name": "parallel",
+          "steps": [{ "click": "[data-scenario='parallel']" }],
+          "expected": {
+            "spreadBp": 140,
+            "spreadChangeBp": 0,
+            "slope": "Parallel shift"
+          }
+        },
+        {
+          "name": "flattener",
+          "steps": [{ "click": "[data-scenario='flatten']" }],
+          "expected": {
+            "spreadBp": 80,
+            "spreadChangeBp": -60,
+            "slope": "Flattening"
+          }
+        },
+        {
+          "name": "opposite-boundaries",
+          "steps": [
+            { "input": "#curve-short", "value": 100 },
+            { "input": "#curve-long", "value": -100 }
+          ],
+          "expected": {
+            "spreadBp": -60,
+            "spreadChangeBp": -200,
+            "slope": "Flattening"
+          }
+        },
+        {
+          "name": "reset-is-reproducible",
+          "steps": [
+            { "click": "[data-scenario='bull']" },
+            { "click": "#curve-reset" }
+          ],
+          "expected": {
+            "spreadBp": 200,
+            "spreadChangeBp": 60,
+            "slope": "Steepening"
+          }
+        }
+      ]
+    },
+    {
+      "id": "duration-gap",
+      "file": "duration-gap.html",
+      "template": "duration-gap.template.html",
+      "previewCardId": "benchmark:duration-gap:v1",
+      "title": "Duration gap and the insurer's surplus",
+      "prompt": "Why does matching asset and liability duration in years alone fail when their values differ?",
+      "summary": "A balance-sheet duration gap compares value-weighted interest-rate exposure. In this first-order parallel-shock model, surplus sensitivity depends on A × Dₐ − L × Dₗ, not simply Dₐ − Dₗ.",
+      "topic": "Fixed Income",
+      "root": "[data-benchmark='duration-gap']",
+      "reset": "#duration-reset",
+      "model": "durationGap",
+      "assumptions": [
+        "Hypothetical modified durations",
+        "Assets ¥110bn and liabilities ¥100bn held fixed at baseline",
+        "Liability duration 18 years",
+        "Small parallel shock with first-order valuation",
+        "No convexity, basis risk or cash-flow changes"
+      ],
+      "interactions": [
+        {
+          "name": "unmatched-up-shock",
+          "steps": [],
+          "expected": {
+            "exposure": -480,
+            "surplusChange": 4.8,
+            "surplusAfter": 14.8
+          }
+        },
+        {
+          "name": "unmatched-down-shock",
+          "steps": [{ "input": "#duration-shock", "value": -1 }],
+          "expected": {
+            "exposure": -480,
+            "surplusChange": -4.8,
+            "surplusAfter": 5.2
+          }
+        },
+        {
+          "name": "same-years-not-matched",
+          "steps": [{ "input": "#duration-asset-input", "value": 18 }],
+          "expected": {
+            "exposure": 180,
+            "surplusChange": -1.8,
+            "surplusAfter": 8.2
+          }
+        },
+        {
+          "name": "weighted-match",
+          "steps": [{ "click": "#duration-match" }],
+          "expected": {
+            "exposure": 0,
+            "gapYears": 0,
+            "surplusChange": 0,
+            "surplusAfter": 10
+          }
+        },
+        {
+          "name": "zero-shock",
+          "steps": [{ "input": "#duration-shock", "value": 0 }],
+          "expected": {
+            "exposure": -480,
+            "surplusChange": 0,
+            "surplusAfter": 10
+          }
+        },
+        {
+          "name": "maximum-expansion",
+          "steps": [
+            { "input": "#duration-asset-input", "value": 25 },
+            { "input": "#duration-shock", "value": -2 }
+          ],
+          "expected": {
+            "exposure": 950,
+            "surplusChange": 19,
+            "surplusAfter": 29
+          }
+        },
+        {
+          "name": "minimum-duration-boundary",
+          "steps": [
+            { "input": "#duration-asset-input", "value": 5 },
+            { "input": "#duration-shock", "value": 2 }
+          ],
+          "expected": {
+            "exposure": -1250,
+            "surplusChange": 25,
+            "surplusAfter": 35
+          }
+        },
+        {
+          "name": "reset-is-reproducible",
+          "steps": [
+            { "click": "#duration-match" },
+            { "click": "#duration-reset" }
+          ],
+          "expected": {
+            "exposure": -480,
+            "surplusChange": 4.8,
+            "surplusAfter": 14.8
+          }
+        }
+      ]
+    },
+    {
+      "id": "weak-reference",
+      "file": "weak-reference.html",
+      "template": "weak-reference.template.html",
+      "previewCardId": "benchmark:weak-reference:v1",
+      "title": "Weak references, ownership and cleanup",
+      "prompt": "Does closing a resource or storing a weak reference guarantee its wrapper is collected? Trace the strong owners.",
+      "summary": "A weak reference observes an object without keeping it alive. Closing a resource releases its handle; collection depends on reachability. A caller that saves the result of a live weak-reference read creates a temporary strong owner.",
+      "topic": "Software Engineering",
+      "root": "[data-benchmark='weak-reference']",
+      "reset": "#reference-reset",
+      "model": "referenceTransition",
+      "assumptions": [
+        "Simplified reachability model; real collector timing varies",
+        "Solid links retain; dashed links observe",
+        "Explicit resource close is independent from wrapper collection",
+        "No process RSS guarantee"
+      ],
+      "interactions": [
+        {
+          "name": "initial-owner",
+          "steps": [],
+          "expected": {
+            "phase": 0,
+            "owner": true,
+            "strongCache": false,
+            "temporary": false,
+            "collected": false,
+            "reachable": true,
+            "closed": false,
+            "gcRuns": 0
+          }
+        },
+        {
+          "name": "close-is-not-collection",
+          "steps": [{ "click": "#reference-next" }],
+          "expected": {
+            "phase": 1,
+            "closed": true,
+            "owner": true,
+            "collected": false,
+            "reachable": true
+          }
+        },
+        {
+          "name": "release-is-not-gc",
+          "steps": [
+            { "click": "#reference-next" },
+            { "click": "#reference-next" }
+          ],
+          "expected": {
+            "phase": 2,
+            "owner": false,
+            "collected": false,
+            "reachable": false
+          }
+        },
+        {
+          "name": "weak-collection",
+          "steps": [
+            { "click": "#reference-next" },
+            { "click": "#reference-next" },
+            { "click": "#reference-next" }
+          ],
+          "expected": {
+            "phase": 3,
+            "collected": true,
+            "reachable": false,
+            "gcRuns": 1
+          }
+        },
+        {
+          "name": "strong-cache-retains",
+          "steps": [
+            { "click": "#reference-strong" },
+            { "click": "#reference-next" },
+            { "click": "#reference-next" },
+            { "click": "#reference-next" }
+          ],
+          "expected": {
+            "strongCache": true,
+            "owner": false,
+            "collected": false,
+            "reachable": true,
+            "gcRuns": 1
+          }
+        },
+        {
+          "name": "weak-call-creates-owner",
+          "steps": [
+            { "click": "#reference-read" },
+            { "click": "#reference-next" },
+            { "click": "#reference-next" },
+            { "click": "#reference-next" }
+          ],
+          "expected": {
+            "temporary": true,
+            "collected": false,
+            "reachable": true,
+            "gcRuns": 1
+          }
+        },
+        {
+          "name": "caller-release-needs-later-gc",
+          "steps": [
+            { "click": "#reference-read" },
+            { "click": "#reference-next" },
+            { "click": "#reference-next" },
+            { "click": "#reference-next" },
+            { "click": "#reference-release" }
+          ],
+          "expected": {
+            "temporary": false,
+            "collected": false,
+            "reachable": false,
+            "gcRuns": 1
+          }
+        },
+        {
+          "name": "later-gc-collects",
+          "steps": [
+            { "click": "#reference-read" },
+            { "click": "#reference-next" },
+            { "click": "#reference-next" },
+            { "click": "#reference-next" },
+            { "click": "#reference-release" },
+            { "click": "#reference-next" }
+          ],
+          "expected": {
+            "temporary": false,
+            "collected": true,
+            "reachable": false,
+            "gcRuns": 2
+          }
+        },
+        {
+          "name": "back-restores-model",
+          "steps": [
+            { "click": "#reference-next" },
+            { "click": "#reference-next" },
+            { "click": "#reference-back" }
+          ],
+          "expected": {
+            "phase": 1,
+            "owner": true,
+            "closed": true,
+            "collected": false
+          }
+        },
+        {
+          "name": "mode-switch-restarts",
+          "steps": [
+            { "click": "#reference-strong" },
+            { "click": "#reference-next" },
+            { "click": "#reference-weak" }
+          ],
+          "expected": {
+            "phase": 0,
+            "strongCache": false,
+            "owner": true,
+            "closed": false,
+            "gcRuns": 0
+          }
+        },
+        {
+          "name": "reset-is-reproducible",
+          "steps": [
+            { "click": "#reference-strong" },
+            { "click": "#reference-next" },
+            { "click": "#reference-reset" }
+          ],
+          "expected": {
+            "phase": 0,
+            "strongCache": false,
+            "owner": true,
+            "closed": false,
+            "gcRuns": 0
+          }
+        }
+      ]
+    }
+  ]
+}

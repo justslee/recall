@@ -122,6 +122,7 @@ async function prepare(
     verifyProvider = provider.verify,
     createInvocation = provider.invocation,
     expectedDigest,
+    itemId,
   } = {},
 ) {
   if (!config(folder).captureEnabled) throw Error("Learning capture is paused");
@@ -130,7 +131,12 @@ async function prepare(
     recover(folder);
     const item = inbox
       .read(folder)
-      .items.filter((i) => i.status === "pending" && i.type !== "notebook")
+      .items.filter(
+        (i) =>
+          i.status === "pending" &&
+          i.type !== "notebook" &&
+          (!itemId || i.id === itemId),
+      )
       .reverse()[0];
     if (!item) return { prepared: 0 };
     const agent = connections.settings(folder).agent;

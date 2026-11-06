@@ -115,9 +115,23 @@ function connect(folder, host, options = {}) {
   const old = fs.existsSync(target.instructions)
     ? fs.readFileSync(target.instructions, "utf8")
     : "";
-  const block = `${BEGIN}\n${profileMarker(folder)}\nFor substantive learning across projects, use the Recall bridge skill at ${target.skill}. Capture only discussed learning; reuse suitable cards, assess useful math/coding supplements, queue missing work, and return verified card links. Respect capture opt-out. Never infer mastery or change review schedules from exposure.\n${END}`;
+  const block = `${BEGIN}\n${profileMarker(folder)}\nAnswer substantive learning questions first. For enabled capture, use the Recall bridge skill at ${target.skill} for one bounded local lookup and a short capture receipt. Publish KB notes on request and prepare missing cards separately. Honor opt-out and preserve review state.\n${END}`;
   const instructions = replaceBlock(old, block);
-  const skill = `---\nname: recall-bridge\ndescription: Connect substantive learning in any project to the local Recall inbox. Reuse relevant cards, queue missing objectives and return verified card links.\n---\n# Recall connection\n\n${profileMarker(folder)}\nUse this CLI from any directory: \`${wrapper}\`. The selected library is ${folder}.\n\n1. Run \`connections status\`; respect capture pause. Read personal recall-self-test and recall-cards skills when available, otherwise the portable skills at ${kit}. The bundled portable workflow is ${path.join(kit, "recall-source/references/active-reading.md")}.\n2. Search card names, aliases, prompts and answers with \`cards search TERMS\`. Match the specific objective. Reuse ready, unsuspended cards; separately consider useful missing math/coding supplements.\n3. Submit an objective with \`inbox add FILE\`. JSON fields: id (stable session/objective/checkpoint), sessionId, title, objective, context, at (actual ISO timestamp), evidence (discussed/explained/solved), source, kbUrl, cardIds. Use cardIds for verified matches, otherwise an empty array. Include optional needsAuthoring (boolean) and reason for a missing supplement even if concept cards exist. Repeated identical submissions are idempotent.\n4. Existing IDs appear in today's Self Test immediately. Missing work stays visible in the inbox until prepared and validated. Use \`inbox status\` to confirm; do not describe pending work as ready. Do not start an authoring worker during every answer.\n5. Return a brief new/reused/pending receipt with Markdown from \`cards link ID\`. Do not count generated exercises as solved. Do not log routine operations, transcripts, secrets, assistant-only implementation or this worker's own activity. Never change schedules.\n\nFor completed authoring, read ${path.join(kit, "recall-source/references/inbox.md")} and submit a validated result with \`inbox submit ITEM_ID RESULT_FILE\`. The app imports through its existing writer while open; \`inbox apply\` handles queued results while closed. Never bypass the queue with direct database writes.\n`;
+  const skill = `---
+name: recall-bridge
+description: Capture substantive learning in the local Recall inbox after answering. Reuse ready cards and defer missing card work to preparation.
+---
+# Recall connection
+
+${profileMarker(folder)}
+Use this CLI from any directory: \`${wrapper}\`. The selected library is ${folder}.
+
+For ordinary learning questions, follow ${path.join(kit, "recall-source/references/active-reading.md")}. Give the useful answer first. For enabled capture, make one bounded local lookup and submit a concise objective with \`inbox add FILE\`. The command enforces capture pause. Reuse an exact ready, unsuspended match or queue the gap. Use a verified card link for a ready match or a short queued receipt. Leave live KB work and card authoring for their separate workflows.
+
+Capture JSON takes a stable id, sessionId, title, objective, context, actual ISO timestamp at, evidence (discussed/explained/solved), source, optional kbUrl and cardIds. Use an empty cardIds array for a gap. If a reused card leaves a specific gap, include needsAuthoring and a reason. Respect opt-out and exclude routine operations, raw transcripts, secrets and assistant-only work.
+
+For requested KB publishing, read ${path.join(kit, "recall-source/references/knowledge.md")}. For explicit or scheduled preparation, read ${path.join(kit, "recall-source/references/inbox.md")} and use the installed personal authoring skills or the portable kit at ${kit}. Submit validated results with \`inbox submit ITEM_ID RESULT_FILE\`. The open app applies results through its writer. With the app closed, use \`inbox apply\`. Preserve review state.
+`;
   if (
     fs.existsSync(target.skill) &&
     !fs.readFileSync(target.skill, "utf8").includes("# Recall connection")

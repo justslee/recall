@@ -28,13 +28,16 @@ jobs:
       - run: npm run test:security:desktop
       - run: node scripts/validate-card-exercises.cjs examples/cards.json examples/mutants.json /tmp/validation.json
       - run: npm run test:desktop
+      - run: npm run test:visuals
       - run: node scripts/smoke-self-test.cjs
       - run: npm run test:links
       - run: npm run test:live-imports
       - run: npm run test:progress
+      - run: npm run test:atlas
       - run: npm run test:connections
       - run: node scripts/smoke-knowledge-setup.cjs
       - run: npm run test:knowledge-bootstrap
+      - run: npm run test:knowledge-space
       - run: npm run test:voice
       - run: npm run test:speak
       - run: npm run test:handwriting
@@ -45,10 +48,16 @@ jobs:
       - run: npm run audit:release
       - run: npm run package
       - run: npm run audit:package
+      - run: npm run test:visuals
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:desktop
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:progress
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:atlas
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:live-imports

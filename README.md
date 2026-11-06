@@ -54,6 +54,10 @@ Choose a **topic** or **collection** separately from format. Cards can contain L
 
 ## Connect your learning
 
+The current source build also adds **Knowledge**, a local home for Markdown and HTML notes. Write and read in the app, search an indexed folder with **⌘K**, and practice the connected ideas. An Obsidian folder can be used directly. [See the illustrated Knowledge guide →](docs/KNOWLEDGE_SPACE.md)
+
+The current source build brings assistant, knowledge-base, iPad and speech setup into one **Connections** hub. **Progress → Atlas** turns your topics and practice evidence into an explorable map, with separate Concepts, Math, Coding and Mixed views. [Explore setup, background preparation and Atlas →](docs/LEARNING_FLOW.md)
+
 **Learn → capture → self-test → revisit.**
 
 Recall includes a portable skill kit for Codex and Claude Code. Connect once, then learn in your other local projects. Suitable cards are reused; genuinely missing objectives are prepared and validated. Receipts distinguish **new**, **reused** and **pending** work.

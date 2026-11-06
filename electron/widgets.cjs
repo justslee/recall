@@ -16,74 +16,16 @@ function widgetsOf(answer) {
   return widgets;
 }
 
-// Keep in sync with src/tokens.css. tests/core.test.cjs fails if they drift.
-const tokens = {
-  "--bg": "#111915",
-  "--bg-deep": "#151f19",
-  "--sunken": "#17221c",
-  "--card": "#1a2520",
-  "--raised": "#24312a",
-  "--text": "#e8eee6",
-  "--muted": "#acb9ad",
-  "--faint": "#8c9e8f",
-  "--border": "#2c3b31",
-  "--border-strong": "#536957",
-  "--accent": "#b6d2aa",
-  "--accent-strong": "#c9dfbf",
-  "--accent-soft": "#2a3d2e",
-  "--accent-ink": "#19291b",
-  "--warm": "#e4b98b",
-  "--warm-bg": "#382e24",
-  "--warm-border": "#83674b",
-  "--editor": "#18231e",
-  "--selection": "#405841",
-  "--glass": "#1c2a21e8",
-  "--sheen": "#e2f0d70b",
-  "--radius-sm": "10px",
-  "--radius": "16px",
-  "--radius-lg": "22px",
-  "--shadow": "0 16px 48px -30px #02080380",
-  "--fast": "0.15s",
-  "--ease": "cubic-bezier(0.2, 0.7, 0.2, 1)",
-  "--sans": '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  "--serif": '"New York", Georgia, "Times New Roman", serif',
-  "--mono": '"SF Mono", Menlo, monospace',
-  "--titlebar": "52px",
-  "--sidebar": "220px",
-};
-const lightTokens = {
-  "--bg": "#f3f4ed",
-  "--bg-deep": "#e9eee5",
-  "--sunken": "#edf1e8",
-  "--card": "#fcfcf7",
-  "--raised": "#e3eadc",
-  "--text": "#26382d",
-  "--muted": "#526657",
-  "--faint": "#5f7162",
-  "--border": "#d6dfd0",
-  "--border-strong": "#8da184",
-  "--accent": "#446a43",
-  "--accent-strong": "#30552f",
-  "--accent-soft": "#dfead7",
-  "--accent-ink": "#ffffff",
-  "--warm": "#8c5529",
-  "--warm-bg": "#f4e8d9",
-  "--warm-border": "#c0976b",
-  "--editor": "#f7f8ef",
-  "--selection": "#d3e2c8",
-  "--glass": "#eff3e9ed",
-  "--sheen": "#ffffffb3",
-  "--shadow": "0 18px 46px -30px #3b553b33",
-};
+// The app build and isolated frame share the packaged canonical palette.
+const { theme, tokens, lightTokens } = require("../shared/widget-theme.cjs");
+const {
+  installVisualRuntime,
+  installWidgetBridge,
+} = require("../shared/widget-runtime.cjs");
 
-const kit = `:root{${Object.entries(tokens)
-  .map(([k, v]) => `${k}:${v}`)
-  .join(";")}}
-@media (prefers-color-scheme:light){:root{${Object.entries(lightTokens)
-  .map(([k, v]) => `${k}:${v}`)
-  .join(";")}}}
+const kit = `${theme}
 /* Aliases so widgets written for other Claude surfaces pick up the theme. */
-:root{--color-background:var(--card);--color-surface:var(--sunken);--color-surface-raised:var(--raised);--color-text:var(--text);--color-text-primary:var(--text);--color-text-secondary:var(--muted);--color-text-tertiary:var(--faint);--color-border:var(--border);--color-accent:var(--accent);--color-accent-foreground:var(--accent-ink);--color-warning:var(--warm);--font-sans:var(--sans);--font-serif:var(--serif);--font-mono:var(--mono)}
+:root{--foreground:var(--text);--primary:var(--accent);--background:var(--card);--muted-foreground:var(--muted);--color-background:var(--card);--color-surface:var(--sunken);--color-surface-raised:var(--raised);--color-text:var(--text);--color-text-primary:var(--text);--color-text-secondary:var(--muted);--color-text-tertiary:var(--faint);--color-border:var(--border);--color-accent:var(--accent);--color-accent-foreground:var(--accent-ink);--color-warning:var(--warm);--font-sans:var(--sans);--font-serif:var(--serif);--font-mono:var(--mono)}
 *,*::before,*::after{box-sizing:border-box}
 html{color-scheme:light dark;height:auto}
 body{margin:0;padding:18px 20px;background:var(--card);color:var(--text);font:14px/1.6 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;height:auto}
@@ -118,23 +60,6 @@ svg{max-width:100%;height:auto;display:block}
 svg text:not([fill]){fill:var(--text)}
 svg text:not([font-family]){font-family:var(--sans)}`;
 
-// Reports content height to the host so the frame can size itself. Nothing else
-// crosses the boundary; the host ignores any other message shape.
-const bridge = `(() => {
-  const root = document.documentElement;
-  let last = 0;
-  const send = () => {
-    const height = Math.ceil(root.getBoundingClientRect().height);
-    if (height !== last) {
-      last = height;
-      parent.postMessage({ recallWidget: { height } }, "*");
-    }
-  };
-  new ResizeObserver(send).observe(root);
-  addEventListener("load", send);
-  send();
-})();`;
-
 // No network, no navigation targets, no embedding except by the app. The
 // sandbox directive holds even if the URL were ever opened outside an iframe.
 const WIDGET_CSP =
@@ -146,8 +71,14 @@ const escapeHtml = (s) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
   );
 
-function widgetDocument({ title, html }) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><style>${kit}</style></head><body>${html}<script>${bridge}</script></body></html>`;
+function widgetDocument({ title, html }, { instance = "legacy" } = {}) {
+  if (typeof instance !== "string" || !/^[A-Za-z0-9_-]{1,96}$/.test(instance))
+    throw Error("Invalid widget instance.");
+
+  // Trusted helpers and diagnostics install before authored scripts. No eval,
+  // external module loading, host bridge, or storage capability is introduced.
+  const runtime = `(${installVisualRuntime.toString()})();(${installWidgetBridge.toString()})(${JSON.stringify(instance)});`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><style>${kit}</style><script>${runtime}</script></head><body>${html}</body></html>`;
 }
 
 module.exports = {

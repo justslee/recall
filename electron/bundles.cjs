@@ -4,6 +4,13 @@ const assert = require("node:assert/strict"),
   vm = require("node:vm");
 const { exerciseHash } = require("./exercise-trust.cjs"),
   { widgetsOf } = require("./widgets.cjs");
+function validateWidgetMarkup(answer) {
+  for (const w of widgetsOf(answer))
+    for (const script of w.html.matchAll(
+      /<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi,
+    ))
+      new vm.Script(script[1]);
+}
 function validateCards(cards) {
   assert(
     Array.isArray(cards) && cards.length,
@@ -48,11 +55,7 @@ function validateCards(cards) {
           assert(typeof v[key] === "string" && v[key].trim());
       }
     }
-    for (const w of widgetsOf(c.answer))
-      for (const script of w.html.matchAll(
-        /<script[^>]*>([\s\S]*?)<\/script>/g,
-      ))
-        new vm.Script(script[1]);
+    validateWidgetMarkup(c.answer);
   }
   return cards;
 }
@@ -106,27 +109,14 @@ function importPack(store, raw, { apply = false, widgets = false } = {}) {
     !report.conflicts.length,
     "Conflicting card IDs; create a reviewed revision instead",
   );
-  const backup = store.backup();
-  const result = store.import(cards);
-  const { atomic } = require("./config.cjs");
-  atomic(
-    path.join(
-      store.folder,
-      "packs",
-      require("node:crypto")
-        .createHash("sha256")
-        .update(pack.id)
-        .digest("hex") + ".json",
-    ),
-    {
-      schemaVersion: 1,
-      id: pack.id,
-      title: pack.title,
-      cardIds: cards.map((c) => c.id),
-      importedAt: new Date().toISOString(),
-    },
-  );
-  return { ...report, ...result, backup };
+  const result = store.import(cards, {
+    schemaVersion: 1,
+    id: pack.id,
+    title: pack.title,
+    cardIds: cards.map((c) => c.id),
+    importedAt: new Date().toISOString(),
+  });
+  return { ...report, ...result };
 }
 function trustCode(store, id, report) {
   require("../shared/contracts.cjs").validate("ValidationReport", report);
@@ -196,6 +186,7 @@ async function reviewCode(store, id, report) {
   };
 }
 module.exports = {
+  validateWidgetMarkup,
   validateCards,
   normalizePack,
   preview,

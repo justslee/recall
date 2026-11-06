@@ -1,129 +1,69 @@
-# Interactive widgets and SVG figures
+# Interactive widgets and static figures
 
-_Added September 6, 2026 in Recall 0.2.0. Part one is the authoring contract. Part two is how it works and why._
+Use a static SVG when inspection is enough. Use a fenced `widget` when changing an input, tracing a state or comparing scenarios teaches the objective. The core answer must remain useful without loading it.
 
-## Part one: the contract
+## Runtime versions and boundary
 
-A card answer can carry two kinds of visual besides Mermaid and KaTeX.
+The current document supplies **`window.RecallVisual.version === "1.0.0"`**, an offline SVG/state toolkit. This is separate from **host message protocol version 2**, which reports lifecycle, layout and a bounded request to close its own expanded workspace. Older self-contained HTML widgets remain supported; new toolkit widgets need an app containing that toolkit. Check the installed app before promising compatibility. Prefer a readable initial explanation or static figure when the toolkit is unavailable; do not claim an untested fallback works.
 
-### Static SVG figures
-
-Paste an `<svg>` element anywhere in the answer. It renders in the zoomable figure viewer. Use the theme variables for every color so the figure matches the app:
-
-```html
-<svg viewBox="0 0 320 120" role="img" aria-label="Cause leads to effect">
-  <style>
-    .lbl {
-      font: 13px var(--sans);
-      fill: var(--muted);
-    }
-  </style>
-  <rect
-    x="10"
-    y="30"
-    width="120"
-    height="60"
-    rx="10"
-    fill="var(--accent-soft)"
-    stroke="var(--accent)"
-    stroke-width="2"
-  />
-  <text x="70" y="65" text-anchor="middle" fill="var(--text)">Cause</text>
-</svg>
-```
-
-Rules: always give a `viewBox` (the viewer scales by it), keep `<style>` inside the `<svg>`, never reference remote images or fonts, and write an `aria-label` that says what the figure shows. Scripts, event handlers and `foreignObject` are removed by the sanitizer.
-
-### Interactive widgets
-
-Wrap plain HTML, CSS and JavaScript in a fenced block. The text after `widget` on the opening line becomes the title.
+The card stores plain inline HTML, CSS and JavaScript inside this fence:
 
 ````text
-```widget Explore bond price sensitivity
-<label>Yield change <b id="v">20</b> bp
-  <input id="m" type="range" min="-100" max="100" value="20"></label>
-<div class="grid">
-  <div class="metric"><small>Estimated price</small><strong id="p"></strong></div>
-</div>
-<script>
-const m = document.getElementById("m");
-const draw = () => {
-  document.getElementById("v").textContent = m.value;
-  document.getElementById("p").textContent = (100 - 4.5 * m.value / 100).toFixed(2);
-};
-m.oninput = draw; draw();
-</script>
+```widget Explore the mechanism
+<!-- focused HTML/SVG, labeled controls and inline script -->
 ```
 ````
 
-What a widget can rely on:
+Nothing executes until the reader chooses **Load interactive**. The iframe has `sandbox="allow-scripts"`, an opaque origin, no preload and its own restrictive CSP. No network requests, remote scripts/fonts, storage, arbitrary files, host APIs, navigation or popups. Do not add `allow-same-origin`, author a custom parent bridge, or send commands through `postMessage`. The trusted Escape handler only requests dismissal of its own expanded visual. Bundled helpers do not add permissions. Canvas authors should redraw on appearance changes; SVG using CSS tokens updates in place.
 
-- **Theme.** Light and dark palettes follow macOS in place through `prefers-color-scheme`, retaining slider state and the existing sandbox. Use tokens for artwork; fixed-color imported assets retain their authored colors. Canvas authors should redraw on media-query changes. The document already contains the forest tokens (`--bg`, `--card`, `--sunken`, `--raised`, `--text`, `--muted`, `--faint`, `--border`, `--accent`, `--accent-soft`, `--accent-ink`, `--warm`, radii, `--sans`, `--serif`, `--mono`) plus aliases used on other Claude surfaces (`--color-background`, `--color-text-primary`, `--color-text-secondary`, `--color-border`, `--color-accent`, `--font-sans`, and so on). Plain `label`, `input[type=range]`, `button`, `button.primary`, `.grid`, `.metric`, `.panel`, `.row`, `.eyebrow`, `table` and `svg` are styled to match the app.
-- **Sizing.** The frame grows and shrinks to fit the content automatically, up to the current 1400 px height limit. Do not set `height: 100vh` on `html` or `body`; let content define the height. Split long articles into focused explorations and recompose diagrams for narrow cards instead of shrinking labels.
-- **Isolation.** No network, no fonts from the web, no storage, no access to the app, no navigation, no popups. Everything the widget needs must be inline. `fetch`, `localStorage`, `parent.document` and `window.recall` all fail.
-- **Loading.** Nothing runs when a card opens or is revealed. The widget loads only when the reader clicks **Load interactive**. **Reset** reloads it from scratch.
+Inbox imports leave widgets disabled. The reader must enable **Allow this card’s interactive widgets** in the editor, then choose **Load interactive**. A validation report does not grant that permission.
 
-When authoring in Claude, ask for "a Recall widget" and paste this file, or the two rules that matter most: use the theme variables, and keep everything inline. A complete worked example, with math, a two-mode widget and a Mermaid map in one answer, is in `examples/demo.json` in the repository checkout; the installed connection kit includes this contract's inline example instead.
+## Theme and composition
 
-### Permissions
+The app and widget use the packaged canonical palette in `shared/visual-theme.css`. Use `--text`, `--muted`, `--faint`, `--card`, `--sunken`, `--raised`, `--border`, `--accent`, `--accent-soft`, `--accent-ink`, `--warm`, `--sans`, `--serif` and `--mono`. For graphical marks use `--viz-series-1` through `--viz-series-6`, `--viz-grid`, `--viz-axis`, `--viz-label` and `--viz-focus`. Pair color with a label, position or line pattern.
 
-Cards written in the app allow their widgets by default; the edit form has a checkbox to opt out. Cards that arrive through an Anki import or learning inbox have widgets **off** until you edit the card and tick **Allow this card's interactive widgets**. Inbox submissions cannot grant permission through a bundle flag or validation report. After enabling the card, choose **Load interactive** to run a widget. The main process enforces this: a widget request for a disallowed card returns 403, so the switch is not just cosmetic.
+Compatibility aliases include `--foreground`, `--primary`, `--background`, `--muted-foreground`, `--color-background`, `--color-text-primary`, `--color-text-secondary`, `--color-border`, `--color-accent` and `--font-sans`. Do not invent undefined tokens or override the document with a fixed light/dark palette. Native labels, inputs, buttons, `.grid`, `.metric`, `.panel` and `.row` have baseline styling; these are primitives, not a mandatory dashboard layout.
 
-## Part two: how it works
+Content determines frame height, bounded at **96–1400 px**. Never give `html` or `body` a viewport-sized height. Recompose at narrow widths instead of shrinking SVG labels until unreadable. Avoid host-height feedback loops, oversized articles and decorative panels. Use one dominant explanatory scene, a few relevant controls and a short interpretation derived from the same state.
 
-### The boundary that shaped everything
+## Bundled toolkit 1.0.0
 
-Recall has one rule above the rest: card content never touches privileged APIs, and nothing executes when a card loads. The renderer talks to the file system through a narrow IPC bridge exposed as `window.recall`, and the IPC handler rejects any call that does not come from the main frame at `recall://app/`. Card answers are sanitized with DOMPurify before they touch the DOM. Scripts, styles, iframes and forms are stripped.
+All methods run inside the sandbox and use native DOM/SVG. They are optional; a composed hand-authored scene is appropriate when it explains the concept better.
 
-An interactive widget is, by definition, a script written by someone else. The question was never "can we run it" but "where can it run so that the rule still holds."
+| Helper                                    | Contract                                                                                                                                                                                                              |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `state(initial, render)`                  | Returns `get()`, `set(patchOrUpdater)` and `reset()`. Values are cloned. Calls `render(snapshot)` immediately and after each update; the first render must not read an uninitialized controller variable.             |
+| `svg(tag, attrs, text?)`                  | Builds a supported SVG primitive. Text uses `textContent`; event/resource-loading attributes are rejected. Add actual interactions through native event listeners.                                                    |
+| `linear([d0,d1], [r0,r1], {clamp:false})` | Creates a finite linear scale. A zero-width domain is rejected.                                                                                                                                                       |
+| `pointsPath(points, xScale?, yScale?)`    | Builds a path from numeric `[x,y]` points.                                                                                                                                                                            |
+| `plot(svg, options)`                      | Options: `domain`, `range`, `series:[{points,color?,label?}]`, optional `width`, `height`, `xLabel`, `yLabel`, `label`. Returns `{x,y}` scales for annotations. Label units and assumptions yourself.                 |
+| `bars(svg, options)`                      | Options: `items:[{label,value,color?}]`, optional `width`, `height`, `max`, `label`. Signed values are supported.                                                                                                     |
+| `timeline(svg, options)`                  | Options: `steps:[{label,detail?}]`, optional `active`, `width`, `height`, `label`. Stable stages with an active index.                                                                                                |
+| `createRange(options)`                    | `label,min,max,step?,value,unit?,onChange`. Returns `{element,input,output,set}`. `set(value)` updates the control without invoking its change callback.                                                              |
+| `playback(options)`                       | `frames,render,interval?` returns `play,pause,next,reset,destroy,isPlaying,current`. No automatic start; Play declines while reduced motion is enabled or the document is hidden. Reset/Pause cancel stale callbacks. |
 
-### Static SVG was almost free
+State helpers coordinate rendering; they do not verify mathematics or choose a useful composition. Keep domain calculations as pure functions that can be checked independently. Playback does not supply Back or arbitrary stage selection; implement those explicitly if advertised.
 
-The existing sanitizer already lets `<svg>` through, and a spike showed that `fill="var(--accent)"` resolves to the theme color inside the card. The only casualty was styling: the prose sanitizer forbids `<style>` elements and `style` attributes, which is right for imported HTML but wrong for a diagram whose labels are styled with a class.
+## Lifecycle and diagnostics
 
-The fix reuses a path that already existed. Mermaid output is sanitized with DOMPurify's SVG profile, which keeps `<style>` and `class` while still removing scripts and `foreignObject`. `RichContent` now lifts `<svg>` blocks out of the prose the same way it lifts Mermaid fences, runs them through that SVG profile, and hands them to the same zoomable viewer. One regular expression grew four alternatives; one viewer component gained a `label` prop.
+The trusted document bridge installs before authored scripts, reports initial readiness after DOM parsing, catches script errors, rejected promises and blocked-resource errors, and coalesces content-height measurements. The host validates the exact iframe window, fresh opaque instance, protocol version, message type and bounded fields. An Escape key inside the frame can request dismissal of that same expanded visual; it cannot navigate, reveal, rate, access data or operate another frame. There is no host command channel.
 
-### Widgets needed their own origin
+The host shows Loading, Ready or a visible error with **Retry**; missing readiness times out after eight seconds. An error removes the failing frame. **Reset** and Retry create fresh instances and reset parameters. **Expand/Collapse** keeps the same iframe and current inputs; Escape returns to the card. Appearance changes retain state. Hiding the card answer destroys its frame; reopening requires Load again and does not promise parameter restoration.
 
-The obvious approach, an iframe with `srcdoc`, does not work here, and the reason is worth knowing. A document loaded from `srcdoc`, `data:` or `blob:` inherits the Content Security Policy of the page that created it. The app's policy says `script-src 'self'`, so the widget's inline script would be refused. A `<meta>` CSP inside the widget cannot help either; meta policies can only tighten, never loosen.
+Do not copy or fake lifecycle messages in authored scripts. Syntax validation is only a structural check: a script may parse yet still fail, calculate incorrectly or render unreadable labels.
 
-So the widget has to be a real document with its own headers. The main process already serves the app from a custom `recall://app` origin through `protocol.handle`. It now also answers `recall://widget/<card-id>/<index>`. It loads the card from SQLite, checks `widgetsAllowed`, finds the nth fence, wraps it in a document with the theme kit and a height bridge, and returns it with a `Content-Security-Policy` header of its own:
+## Runnable benchmark sources
 
-```text
-default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';
-img-src data: blob:; font-src data:; base-uri 'none'; form-action 'none';
-frame-ancestors recall://app; sandbox allow-scripts
-```
+The repository’s [visual benchmarks](../../../examples/visual-benchmarks) contain three full, synthetic teaching compositions and independent models:
 
-`'unsafe-inline'` sounds alarming until you notice what is around it. There is no `connect-src`, so `fetch` fails. There is no `frame-src`, so the widget cannot embed anything. `frame-ancestors` means only the app may embed it. The `sandbox` directive applies even if the URL were opened outside an iframe.
+- `yield-curve.template.html`: before/after curves with units, yield changes, spread classification and scenario controls.
+- `duration-gap.template.html`: assets and liabilities respond together; first-order valuation and surplus changes expose the hedge boundary.
+- `weak-reference.template.html`: stable ownership regions, strong/weak reachability and explicit caller/collection states.
 
-On the app side, the iframe carries `sandbox="allow-scripts"` and nothing else. Without `allow-same-origin` the frame gets an opaque origin, so `parent.document` throws, storage throws, and cookies do not exist. The app's own CSP relaxed exactly one directive, `frame-src 'none'` becoming `frame-src recall://widget`. Electron's preload runs only in the main frame, so `window.recall` is simply undefined inside the widget. The smoke test asserts that directly.
+`node examples/visual-benchmarks/build.cjs` assembles inline widget fragments and a synthetic preview pack. This is a local build, not a live-library import or a QA certificate. Adapt the explanatory structure to the objective; do not mechanically copy every panel or control. The examples are in the checkout, not guaranteed to exist in an installed assistant kit.
 
-Two more belts for the braces: the main process refuses any sub-frame navigation away from widget URLs, and the widget response is `Cache-Control: no-store` so an edited card never shows a stale widget.
+## Static SVG
 
-### The one message that crosses the line
+Provide a `viewBox`, readable labels, theme-token colors and an accessible description of what the figure shows. SVG and Mermaid render as sanitized image documents in the zoomable viewer; their CSS cannot style app controls. Scripts, event handlers and `foreignObject` do not provide interaction. Do not include external resources. A failed figure shows a fallback note while the rest of the card remains readable.
 
-The frame needs a height. The widget document ends with a small bridge script that watches its own root with `ResizeObserver` and posts `{ recallWidget: { height } }` to the parent. The host listens for messages, checks that the sender is its own iframe's `contentWindow`, reads only that one number, clamps it, and ignores everything else. No other message shape is honored in either direction. This is the whole protocol.
-
-### The explicit click
-
-Even a perfectly sandboxed script should not run just because a card was revealed. The product rule says explicit action, and the existing interactive labs already sit behind a disclosure. Widgets follow the same rhythm: a card shows a titled block with **Load interactive** and a one-line note about the sandbox. Only the click creates the iframe. This also keeps the review loop light; a session of forty cards does not spin up forty frames you never touched.
-
-### Why the tokens are duplicated, and why that is safe
-
-The widget kit lives in the main process, in `electron/widgets.cjs`, because it has to be served with the document. The renderer's tokens live in `src/tokens.css`. The packaged app ships without `src/`, so the main process cannot read the CSS at runtime. Rather than invent a build step, the token values are written twice, and a unit test parses `src/tokens.css` and fails if any value differs or if either side has a token the other lacks. Duplication with an enforced invariant is cheaper than a pipeline, and the failure mode is a red test rather than a subtly off-theme widget.
-
-### What went wrong on the way
-
-The first version of the smoke test tried to prove the 403 by calling `fetch("recall://widget/…")` from the app page. It failed with "Failed to fetch". That was the app's own CSP doing its job: `connect-src 'self'` does not include the widget origin. The check now runs in the main process through Electron's `net.fetch`, which exercises the real protocol handler and can also read the response's CSP header. When a security test fails, the first question is whether the failure is the security working.
-
-## Files
-
-- `electron/widgets.cjs`: fence parser, theme kit, CSP string, document envelope, height bridge.
-- `electron/main.cjs`: the `recall://widget` route and sub-frame navigation guard.
-- `electron/store.cjs`: `widgetsAllowed` on save; imports leave it unset.
-- `src/RichContent.jsx`: block splitting for widgets and SVG figures; shared `SvgViewer`.
-- `src/WidgetFrame.jsx`: the gate, the iframe, the height listener.
-- `src/AuthorForm.jsx`: templates, permission checkbox.
-- `index.html`: `frame-src recall://widget`.
-- `tests/journey.test.cjs` and `scripts/smoke-public.cjs`: parsing, CSP, token sync, permission defaults, real load, interaction, blocking.
+For the composition and actual acceptance checks, read [visuals.md](visuals.md). Changes to this contract do not revise existing cards.

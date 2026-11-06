@@ -5,7 +5,7 @@ import "./welcome-guide.css";
 export function WelcomeGuide({ busy, onDemo, onImport, onConnect }) {
   const paths = [
     {
-      title: "Try demo",
+      title: "Try a short session",
       description:
         "One concept, one calculation, one coding exercise. Get a feel for your study desk.",
       Icon: BookOpen,
@@ -21,7 +21,7 @@ export function WelcomeGuide({ busy, onDemo, onImport, onConnect }) {
       className: "import",
     },
     {
-      title: "Connect learning",
+      title: "Bring my learning",
       description:
         "Choose your knowledge base and connect an assistant to capture what you learn.",
       Icon: Link2,

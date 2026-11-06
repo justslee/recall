@@ -1,10 +1,10 @@
 ---
 name: recall-question
-description: "Answer a quick learning question and capture the useful insight in the configured KB. Use for small questions arising during everyday work; hand substantial explanations to recall-concept."
+description: "Answer quick learning questions during everyday work and capture a short local Recall objective when enabled. Use recall-concept for deeper explanations."
 ---
 
 # Question
 
-For opted-in active reading, follow ../recall-source/references/active-reading.md and recall-self-test before the response ends. Search/reuse or fill the actual objective, assess useful math/coding supplements even for existing concepts, and return verified card links. Report KB and Recall outcomes separately.
+Answer first and keep the depth proportional to the question. Follow the quick path in [active reading](../recall-source/references/active-reading.md) for enabled Recall capture. Preserve enough context to make the objective useful. Record a misconception only if demonstrated.
 
-Keep the answer proportional to the question. Read ../recall-source/references/quality.md and ../recall-source/references/knowledge.md. Search for the concept; enrich a matching note instead of creating one per question. Preserve the exact context that makes the insight useful. Record a misconception only if demonstrated. If capture is enabled, log the testable objective through recall-self-test. Do not invoke both this and recall-concept to capture the same turn twice.
+For requested KB publishing, follow [knowledge operations](../recall-source/references/knowledge.md) and enrich a matching note where appropriate. Capture the objective once even when recall-concept also applies.

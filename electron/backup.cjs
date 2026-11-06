@@ -6,6 +6,7 @@ const { atomic, lock } = require("./config.cjs");
 const paths = [
   "self-tests",
   "learning-inbox",
+  "card-revisions",
   "learning-connections.json",
   "knowledge",
   "packs",
@@ -223,6 +224,18 @@ function restore(folder, input) {
     } finally {
       staged.close();
     }
+    // Restored revision requests are retained for inspection, never authority
+    // to replace card content merely because a backup was opened.
+    const revisionDir = path.join(stage, "card-revisions");
+    if (fs.existsSync(revisionDir))
+      for (const name of fs
+        .readdirSync(revisionDir)
+        .filter((n) => /^[a-f0-9]{64}\.json$/.test(n))) {
+        const file = path.join(revisionDir, name),
+          item = JSON.parse(fs.readFileSync(file, "utf8"));
+        if (item.status === "queued")
+          atomic(file, { ...item, status: "needs_resubmission" });
+      }
     require("./private-files.cjs").directory(saved);
     for (const name of [
       "recall.sqlite",

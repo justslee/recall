@@ -17,7 +17,7 @@ const fs = require("node:fs"),
     const page = await app.firstWindow();
     page.on("pageerror", (e) => errors.push(e.message));
     await expect(
-      page.getByRole("button", { name: "Try demo", exact: true }),
+      page.getByRole("button", { name: "Try a short session", exact: true }),
     ).toBeVisible();
     assert.equal(
       (await page.evaluate(() => window.recall.snapshot())).cards.length,
@@ -27,7 +27,7 @@ const fs = require("node:fs"),
       page.getByRole("button", { name: "Import cards", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Connect learning", exact: true }),
+      page.getByRole("button", { name: "Bring my learning", exact: true }),
     ).toBeVisible();
     fs.mkdirSync(path.join(__dirname, "../evidence"), { recursive: true });
     await page.setViewportSize({ width: 1320, height: 980 });
@@ -39,11 +39,12 @@ const fs = require("node:fs"),
       });
     }
     await page
-      .getByRole("button", { name: "Connect learning", exact: true })
+      .getByRole("button", { name: "Bring my learning", exact: true })
       .click();
     await expect(
-      page.getByRole("button", { name: "Learning connections", exact: true }),
+      page.getByRole("button", { name: "Connections", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
+    await page.locator(".connection-knowledge").click();
     await expect(
       page.getByRole("button", { name: "Add knowledge source", exact: true }),
     ).toBeVisible();
@@ -82,9 +83,9 @@ const fs = require("node:fs"),
       0,
     );
     await page.getByRole("button", { name: "Study desk", exact: true }).click();
-    await page.getByRole("button", { name: "Try demo", exact: true }).click();
+    await page.getByRole("button", { name: "Try a short session", exact: true }).click();
     await expect(
-      page.getByRole("button", { name: "Try demo", exact: true }),
+      page.getByRole("button", { name: "Try a short session", exact: true }),
     ).toHaveCount(0);
     assert.equal(
       (await page.evaluate(() => window.recall.snapshot())).cards.length,
@@ -184,8 +185,9 @@ const fs = require("node:fs"),
       .getByRole("button", { name: "Settings & backups", exact: true })
       .click();
     await page
-      .getByRole("button", { name: "Learning connections", exact: true })
+      .getByRole("button", { name: "Connections", exact: true })
       .click();
+    await page.getByText("Capture preferences & privacy", {exact: true}).click();
     await page
       .getByLabel("Allow learning capture from my configured skills")
       .check();

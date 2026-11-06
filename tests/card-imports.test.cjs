@@ -31,7 +31,7 @@ test("open-writer imports are queued, visible to that writer and idempotent with
   store.set("draft:kept", "An unfinished answer");
   const before = store.db.prepare("SELECT * FROM cards ORDER BY id").all();
   const settings = store.db
-    .prepare("SELECT * FROM settings WHERE key!='decks' ORDER BY key")
+    .prepare("SELECT * FROM settings WHERE key!='decks' AND key NOT GLOB 'pack-receipt:*' ORDER BY key")
     .all();
   const file = path.join(folder, "pack.json");
   fs.writeFileSync(file, JSON.stringify(pack()));
@@ -58,10 +58,15 @@ test("open-writer imports are queued, visible to that writer and idempotent with
   assert.equal(cli("import-status", queued.requestId).mode, "imported");
   assert.equal(store.cards().length, demo.cards.length + 1);
   assert(store.get("decks").includes("Extra collection"));
+  assert.equal(fs.existsSync(path.join(folder, "backups")), false);
+  assert.deepEqual(
+    JSON.parse(store.db.prepare("SELECT value FROM settings WHERE key GLOB 'pack-receipt:*'").get().value).cardIds,
+    ["fresh"],
+  );
   for (const old of before) assert.deepEqual(store.card(old.id), old);
   assert.deepEqual(
     store.db
-      .prepare("SELECT * FROM settings WHERE key!='decks' ORDER BY key")
+      .prepare("SELECT * FROM settings WHERE key!='decks' AND key NOT GLOB 'pack-receipt:*' ORDER BY key")
       .all(),
     settings,
   );

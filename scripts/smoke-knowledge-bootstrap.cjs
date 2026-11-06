@@ -38,8 +38,9 @@ const { _electron: electron, expect } = require("@playwright/test"),
       .getByRole("button", { name: "Settings & backups", exact: true })
       .click();
     await page
-      .getByRole("button", { name: "Learning connections", exact: true })
+      .getByRole("button", { name: "Connections", exact: true })
       .click();
+    await page.locator(".connection-knowledge").click();
     return page;
   };
   const chooseParent = async (panel, type) => {

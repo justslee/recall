@@ -24,7 +24,7 @@ const { cardLink } = require(repo + "/electron/card-links.cjs");
     answer:
       '<p>Safe test fixture</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" onload="window.__recallXss=true"><style>body{--recall-security-probe:escaped!important}button{--recall-button-probe:affected!important}</style><text x="10" y="40">Synthetic security probe</text></svg><img src="x" onerror="window.__recallXss=true">',
   };
-  const widgetHtml = `<div id="result">pending</div><script>(async()=>{const r={recall:typeof window.recall,node:typeof require};for(const [k,fn] of Object.entries({parent:()=>parent.document.body.innerText,storage:()=>localStorage.length,topNavigation:()=>{top.location='recall://app/blocked-probe';return 'allowed'},popup:()=>window.open('recall://app/blocked-probe')?'opened':'blocked'})){try{r[k]=fn()}catch(e){r[k]=e.name}}try{await fetch('https://recall-security-probe.invalid/');r.network='allowed'}catch(e){r.network=e.name}parent.postMessage({method:'run',args:['audit:svg','python','print(1)'],recallWidget:{height:999999}},'*');document.getElementById('result').textContent=JSON.stringify(r)})();</script>`;
+  const widgetHtml = `<div id="result">pending</div><script>(async()=>{const r={recall:typeof window.recall,node:typeof require};for(const [k,fn] of Object.entries({parent:()=>parent.document.body.innerText,storage:()=>localStorage.length,topNavigation:()=>{top.location='recall://app/blocked-probe';return 'allowed'},popup:()=>window.open('recall://app/blocked-probe')?'opened':'blocked'})){try{r[k]=fn()}catch(e){r[k]=e.name}}parent.postMessage({method:'run',args:['audit:svg','python','print(1)'],recallWidget:{height:999999}},'*');document.getElementById('result').textContent=JSON.stringify(r)})();</script>`;
   const widgetCard = {
     ...base,
     id: "audit:widget",
@@ -86,9 +86,12 @@ const { cardLink } = require(repo + "/electron/card-links.cjs");
     p.setDefaultTimeout(12000);
     const logs = [],
       pageErrors = [];
+    let networkResult = null;
     p.on("pageerror", (e) => pageErrors.push(e.message));
     p.on("console", (m) => {
       if (m.type() === "error") logs.push(m.text());
+      if (m.text().startsWith("RECALL_WIDGET_NETWORK:"))
+        networkResult = m.text().slice("RECALL_WIDGET_NETWORK:".length);
     });
     await p.getByRole("button", { name: "Reveal answer", exact: true }).click();
     await expect(p.locator(".answer")).toBeVisible();
@@ -195,14 +198,102 @@ const { cardLink } = require(repo + "/electron/card-links.cjs");
     const frame = p.frameLocator("iframe");
     await expect(frame.locator("#result")).not.toHaveText("pending");
     result.widget = JSON.parse(await frame.locator("#result").textContent());
+    await expect(p.locator(".widget")).toHaveAttribute(
+      "data-widget-status",
+      "ready",
+    );
+    // Let the initial measured height settle before probing rejected messages.
+    await p.waitForTimeout(180);
+    const widgetFrame = p
+      .frames()
+      .find((f) => f.url().startsWith("recall://widget/"));
+    const instance = new URL(widgetFrame.url()).searchParams.get("instance");
+    const initialHeight = await p
+      .locator("iframe")
+      .evaluate((el) => el.style.height);
+    await widgetFrame.evaluate((instance) => {
+      parent.postMessage({ recallWidget: { height: 999999 } }, "*");
+      parent.postMessage(
+        {
+          recallWidget: {
+            version: 2,
+            instance: "stale-instance",
+            type: "height",
+            height: 100000,
+          },
+        },
+        "*",
+      );
+      parent.postMessage(
+        {
+          method: "run",
+          args: ["audit:svg", "python", "print(1)"],
+          recallWidget: {
+            version: 2,
+            instance,
+            type: "height",
+            height: 100000,
+          },
+        },
+        "*",
+      );
+      parent.postMessage(
+        {
+          recallWidget: {
+            version: 2,
+            instance,
+            type: "height",
+            height: 100001,
+          },
+        },
+        "*",
+      );
+    }, instance);
+    // Correct envelope from the host is still the wrong WindowProxy/source.
+    await p.evaluate((instance) => {
+      window.postMessage(
+        {
+          recallWidget: {
+            version: 2,
+            instance,
+            type: "height",
+            height: 100000,
+          },
+        },
+        "*",
+      );
+    }, instance);
+    await p.waitForTimeout(180);
+    assert.equal(
+      await p.locator("iframe").evaluate((el) => el.style.height),
+      initialHeight,
+    );
+    result.rejectedWidgetMessages = [
+      "legacy",
+      "stale instance",
+      "extra command keys",
+      "oversized measurement",
+      "wrong sender",
+    ];
+    await widgetFrame.evaluate((instance) => {
+      parent.postMessage(
+        {
+          recallWidget: {
+            version: 2,
+            instance,
+            type: "height",
+            height: 100000,
+          },
+        },
+        "*",
+      );
+    }, instance);
+    await expect(p.locator("iframe")).toHaveCSS("height", "1400px");
     result.frameHeight = await p
       .locator("iframe")
       .evaluate((el) => el.style.height);
     result.mainUrlAfterWidget = p.url();
     // A loaded widget may not steer its own frame to another widget document.
-    const widgetFrame = p
-      .frames()
-      .find((f) => f.url().startsWith("recall://widget/"));
     const frameUrlBefore = widgetFrame.url();
     await widgetFrame.evaluate(() => {
       location.href = "recall://widget/audit%3Awidget/0?rev=99&n=99";
@@ -229,6 +320,24 @@ const { cardLink } = require(repo + "/electron/card-links.cjs");
         r[tail] = (await net.fetch("recall://app/" + tail)).status;
       return r;
     });
+    // Provoke the blocked network only after the healthy-frame checks. The
+    // bridge reports this CSP violation and removes the failed iframe; capture
+    // the synthetic result without relying on DOM that must be torn down.
+    await widgetFrame.evaluate(() => {
+      void fetch("https://recall-security-probe.invalid/").then(
+        () => console.info("RECALL_WIDGET_NETWORK:allowed"),
+        (error) => console.info("RECALL_WIDGET_NETWORK:" + error.name),
+      );
+    });
+    await expect.poll(() => networkResult).toBe("TypeError");
+    await expect(p.locator(".widget")).toHaveAttribute(
+      "data-widget-status",
+      "error",
+    );
+    await expect(p.locator("iframe")).toHaveCount(0);
+    result.widget.network = networkResult;
+    result.blockedResourceFeedback =
+      "Visible failure and Retry; failed iframe removed";
     result.cspErrors = logs.filter((m) =>
       /security|refused|blocked|sandbox/i.test(m),
     );

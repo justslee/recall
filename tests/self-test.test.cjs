@@ -188,10 +188,10 @@ test("gaps, unavailable cards, later links and unreadable records stay visible; 
   assert.equal(st.snapshot(s, now).days[0].gaps, 1);
   fs.writeFileSync(path.join(s.folder, "self-tests/entries/bad.json"), "{");
   assert.equal(st.snapshot(s, now).issues.length, 1);
-  const backup = s.backup();
+  const { backup } = require("../electron/backup.cjs").backup(s);
   assert(
     fs.existsSync(
-      path.join(path.dirname(backup), "self-tests/days/2026-09-13.md"),
+      path.join(backup, "self-tests/days/2026-09-13.md"),
     ),
   );
 });

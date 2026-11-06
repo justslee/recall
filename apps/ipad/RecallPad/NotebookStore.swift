@@ -18,6 +18,16 @@ final class NotebookStore: ObservableObject {
     private let removeItem: (URL) throws -> Void
     private var unreadableIndex = false
     private var deletions: [PendingDeletion] = []
+    private static let artworkMarker = Data("RECALL_NOTEBOOK_ARTWORK_V1\0".utf8)
+    private struct ArtworkArchive: Codable {
+        let version: Int
+        let ink: Data
+        let shapes: [NotebookShape]
+    }
+    private struct PageArtwork {
+        let drawing: PKDrawing
+        let shapes: [NotebookShape]
+    }
 
     private struct PendingDeletion: Codable {
         let id: String
@@ -28,7 +38,7 @@ final class NotebookStore: ObservableObject {
     private struct Index: Codable {
         let version: Int
         let notebooks: [PadNotebook]
-        let notes: [PadNotebookNote]
+        var notes: [PadNotebookNote]
         let pages: [PadNotebookPage]
         let submissions: [NotebookSubmission]
         let deletions: [PendingDeletion]
@@ -100,7 +110,7 @@ final class NotebookStore: ObservableObject {
 
     private func readIndex() throws -> Index {
         guard try itemType(at: indexURL) == .typeRegular else { throw PadError.rejected("The notebook index is not a regular file. Existing work has been kept.") }
-        let index = try decoder.decode(Index.self, from: Data(contentsOf: indexURL))
+        var index = try decoder.decode(Index.self, from: Data(contentsOf: indexURL))
         guard index.version == 1 else { throw PadError.rejected("These notebooks need a newer Recall Pad. Existing work has been kept.") }
         let notebookIds = index.notebooks.map(\.id)
         let noteIds = index.notes.map(\.id)
@@ -126,6 +136,14 @@ final class NotebookStore: ObservableObject {
               }),
               index.submissions.allSatisfy({ validSubmission($0, notebookIds: notebookIds, noteIds: noteIds) }) else {
             throw PadError.rejected("The notebook index has inconsistent records. Existing notes and ink have been kept.")
+        }
+        // A navigation hint cannot invalidate otherwise recoverable ink. Older
+        // indexes omit it; stale or cross-note pointers safely choose Page 1.
+        for position in index.notes.indices {
+            if let remembered = index.notes[position].lastOpenedPageId,
+               !index.notes[position].pageIds.contains(remembered) {
+                index.notes[position].lastOpenedPageId = index.notes[position].pageIds.first
+            }
         }
         return index
     }
@@ -215,6 +233,44 @@ final class NotebookStore: ObservableObject {
         return note
     }
 
+    /// One tap opens a complete writable note. The note and first page enter
+    /// the index together; failures never leave an empty row or orphan ink.
+    @discardableResult func createNoteForWriting(in notebook: PadNotebook) throws -> PadNotebookPage {
+        guard notebooks.contains(where: { $0.id == notebook.id }) else { throw PadError.rejected("This notebook is no longer available.") }
+        try verifyCurrentIndex()
+        let now = Date()
+        let titles = Set(notes.filter { $0.notebookId == notebook.id }.map(\.title))
+        var number = 1
+        while titles.contains("Untitled note \(number)") { number += 1 }
+        let noteId = identifier()
+        let (page, data) = blankPage(noteId: noteId, number: 1, at: now)
+        let note = PadNotebookNote(id: noteId, notebookId: notebook.id, title: "Untitled note \(number)", pageIds: [page.id], revision: 1, createdAt: now, updatedAt: now, lastOpenedPageId: page.id)
+        try commitBlankPageAsset(page, data: data) {
+            notes.insert(note, at: 0)
+            pages.append(page)
+            touchNotebook(notebook.id, at: now)
+        }
+        return page
+    }
+
+    func resumePage(for note: PadNotebookNote) throws -> PadNotebookPage {
+        guard let latest = notes.first(where: { $0.id == note.id && $0.notebookId == note.notebookId }) else { throw PadError.rejected("This note is no longer available.") }
+        let ordered = pages(in: latest)
+        if let remembered = latest.lastOpenedPageId,
+           let page = ordered.first(where: { $0.id == remembered }) { return page }
+        if let first = ordered.first { return first }
+        return try addPage(to: latest)
+    }
+
+    func rememberOpenedPage(_ page: PadNotebookPage) throws {
+        guard pages.contains(where: { $0.id == page.id && $0.noteId == page.noteId }),
+              let position = notes.firstIndex(where: { $0.id == page.noteId && $0.pageIds.contains(page.id) }) else {
+            throw PadError.rejected("This notebook page is no longer available.")
+        }
+        guard notes[position].lastOpenedPageId != page.id else { return }
+        try commit { notes[position].lastOpenedPageId = page.id }
+    }
+
     func renameNote(_ note: PadNotebookNote, title: String) throws {
         guard let position = notes.firstIndex(where: { $0.id == note.id }) else { throw PadError.rejected("This note is no longer available.") }
         let updated = cleanTitle(title, fallback: notes[position].title)
@@ -236,16 +292,41 @@ final class NotebookStore: ObservableObject {
         guard let latest = notes.first(where: { $0.id == note.id }) else { throw PadError.rejected("This note is no longer available.") }
         try verifyCurrentIndex()
         let now = Date()
-        let data = PKDrawing().dataRepresentation()
-        let page = PadNotebookPage(id: identifier(), noteId: note.id, title: "Page \(latest.pageIds.count + 1)", revision: 0, contentHash: data.sha256, paperStyle: .squared, canvasHeight: PaperGeometry.minimumHeight, createdAt: now, updatedAt: now)
-        try ensureParent(pageDirectory(page.id))
-        try data.write(to: drawingURL(page), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-        try commit {
+        let (page, data) = blankPage(noteId: note.id, number: latest.pageIds.count + 1, at: now)
+        try commitBlankPageAsset(page, data: data) {
             pages.append(page)
-            if let position = notes.firstIndex(where: { $0.id == note.id }) { notes[position].pageIds.append(page.id) }
+            if let position = notes.firstIndex(where: { $0.id == note.id }) {
+                notes[position].pageIds.append(page.id)
+                notes[position].lastOpenedPageId = page.id
+            }
             touchNote(note.id, at: now)
         }
         return page
+    }
+
+    private func blankPage(noteId: String, number: Int, at date: Date) -> (PadNotebookPage, Data) {
+        let data = PKDrawing().dataRepresentation()
+        return (PadNotebookPage(id: identifier(), noteId: noteId, title: "Page \(number)", revision: 0, contentHash: data.sha256, paperStyle: .squared, canvasHeight: PaperGeometry.minimumHeight, createdAt: date, updatedAt: date), data)
+    }
+
+    private func commitBlankPageAsset(_ page: PadNotebookPage, data: Data, mutation: () throws -> Void) throws {
+        let folder = pageDirectory(page.id)
+        let parent = folder.deletingLastPathComponent()
+        let parentWasMissing = try itemType(at: parent) == nil
+        do {
+            try ensureParent(folder)
+            try data.write(to: drawingURL(page), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            try commit(mutation)
+        } catch {
+            // Remove only this new UUID's safe local tree. Never follow a
+            // substituted pages-directory link while recovering an error.
+            if (try? requireDirectory(parent)) != nil,
+               (try? itemType(at: folder)) == .typeDirectory,
+               (try? validateDeletionTree(folder)) != nil { try? removeItem(folder) }
+            if parentWasMissing, (try? requireDirectory(parent)) != nil,
+               (try? FileManager.default.contentsOfDirectory(atPath: parent.path).isEmpty) == true { try? removeItem(parent) }
+            throw error
+        }
     }
 
     private func touchNotebook(_ id: String, at date: Date) {
@@ -279,7 +360,10 @@ final class NotebookStore: ObservableObject {
         return latest.pageIds.compactMap { id in pages.first { $0.id == id && $0.noteId == latest.id } }
     }
 
-    func hasInk(for page: PadNotebookPage) throws -> Bool { try !drawing(for: page).strokes.isEmpty }
+    func hasInk(for page: PadNotebookPage) throws -> Bool {
+        let artwork = try artwork(for: page)
+        return NotebookArtwork.hasVisibleContent(drawing: artwork.drawing, shapes: artwork.shapes)
+    }
 
     /// A missing/corrupt drawing is an error, never an empty page. The send
     /// preview can explicitly tell the user that genuine blank pages are omitted.
@@ -288,7 +372,32 @@ final class NotebookStore: ObservableObject {
     }
 
     func drawing(for page: PadNotebookPage) throws -> PKDrawing {
-        try PKDrawing(data: drawingData(for: page))
+        try artwork(for: page).drawing
+    }
+
+    func shapes(for page: PadNotebookPage) throws -> [NotebookShape] { try artwork(for: page).shapes }
+
+    private func artwork(for page: PadNotebookPage) throws -> PageArtwork { try decodeArtwork(drawingData(for: page)) }
+
+    private func decodeArtwork(_ data: Data) throws -> PageArtwork {
+        let ink: Data
+        let shapes: [NotebookShape]
+        if data.starts(with: Self.artworkMarker) {
+            let saved = try PropertyListDecoder().decode(ArtworkArchive.self, from: Data(data.dropFirst(Self.artworkMarker.count)))
+            guard saved.version == 1 else { throw PadError.rejected("This diagram page needs a newer Recall Pad. Existing work is kept.") }
+            try NotebookArtwork.validate(shapes: saved.shapes)
+            ink = saved.ink; shapes = saved.shapes
+        } else { ink = data; shapes = [] }
+        let drawing = try PKDrawing(data: ink)
+        guard drawing.strokes.isEmpty || PaperGeometry.hasFiniteInkBounds(drawing.bounds) else { throw PadError.rejected("This page has invalid drawing bounds. Existing work is kept.") }
+        return PageArtwork(drawing: drawing, shapes: shapes)
+    }
+
+    private func encodeArtwork(drawing: PKDrawing, shapes: [NotebookShape], keepCompound: Bool) throws -> Data {
+        let ink = drawing.dataRepresentation()
+        if shapes.isEmpty && !keepCompound { return ink }
+        let encoder = PropertyListEncoder(); encoder.outputFormat = .binary
+        return Self.artworkMarker + (try encoder.encode(ArtworkArchive(version: 1, ink: ink, shapes: shapes)))
     }
 
     private func drawingData(for page: PadNotebookPage) throws -> Data {
@@ -298,23 +407,32 @@ final class NotebookStore: ObservableObject {
         try requireDirectory(pageDirectory(latest.id))
         let url = drawingURL(latest)
         guard try itemType(at: url) == .typeRegular else { throw PadError.rejected("This page’s ink file is missing or linked. Existing work has been kept.") }
+        guard let size = try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber,
+              size.intValue <= 32 * 1024 * 1024 else { throw PadError.tooLarge }
         let data = try Data(contentsOf: url)
         guard data.sha256 == latest.contentHash else { throw PadError.rejected("This page’s ink failed its integrity check. Existing work has been kept.") }
         return data
     }
 
-    @discardableResult func savePage(_ page: PadNotebookPage, drawing: PKDrawing, style: PaperStyle, canvasHeight: Double) throws -> PadNotebookPage {
+    @discardableResult func savePage(_ page: PadNotebookPage, drawing: PKDrawing, style: PaperStyle, canvasHeight: Double, shapes: [NotebookShape]? = nil) throws -> PadNotebookPage {
         guard let position = pages.firstIndex(where: { $0.id == page.id && $0.noteId == page.noteId }) else { throw PadError.rejected("This page was deleted. A stale edit has not recreated it.") }
         try verifyCurrentIndex()
         let latest = pages[position]
         guard latest.revision == page.revision else { throw PadError.rejected("This page has a newer saved revision. Reopen it before changing the ink.") }
-        let data = drawing.dataRepresentation()
+        let earlierData = try drawingData(for: latest)
+        let earlierArtwork = try decodeArtwork(earlierData)
+        let savedShapes = shapes ?? earlierArtwork.shapes
+        try NotebookArtwork.validate(shapes: savedShapes)
+        guard drawing.strokes.isEmpty || PaperGeometry.hasFiniteInkBounds(drawing.bounds) else { throw PadError.rejected("This page has invalid drawing bounds. Existing work is kept.") }
+        let sameInk = (drawing.strokes.isEmpty && earlierArtwork.drawing.strokes.isEmpty) || drawing == earlierArtwork.drawing
+        let contentChanged = !sameInk || savedShapes != earlierArtwork.shapes
+        let data = contentChanged ? try encodeArtwork(drawing: drawing, shapes: savedShapes, keepCompound: earlierData.starts(with: Self.artworkMarker)) : earlierData
         guard data.count <= 32 * 1024 * 1024 else { throw PadError.tooLarge }
-        let height = PaperGeometry.canvasHeight(current: canvasHeight, inkBounds: drawing.strokes.isEmpty ? nil : drawing.bounds)
+        let height = PaperGeometry.canvasHeight(current: canvasHeight, inkBounds: NotebookArtwork.contentBounds(drawing: drawing, shapes: savedShapes))
         let title = cleanTitle(page.title, fallback: latest.title)
         // PencilKit serialization is not byte-stable after decoding. Compare
         // actual drawing content; keep the committed bytes for unchanged ink.
-        let inkChanged = try drawing != self.drawing(for: latest) || style != latest.paperStyle || title != latest.title
+        let inkChanged = contentChanged || style != latest.paperStyle || title != latest.title
         guard inkChanged || height != latest.canvasHeight else { return latest }
 
         var saved = latest
@@ -342,9 +460,13 @@ final class NotebookStore: ObservableObject {
     }
 
     func thumbnail(for page: PadNotebookPage) -> UIImage? {
-        guard let drawing = try? drawing(for: page), !drawing.strokes.isEmpty, PaperGeometry.hasFiniteInkBounds(drawing.bounds) else { return nil }
-        let bounds = drawing.bounds.insetBy(dx: -16, dy: -16)
-        return paperImage(drawing, bounds: bounds, scale: min(1, 320 / max(bounds.width, 1)))
+        guard let artwork = try? artwork(for: page),
+              let content = NotebookArtwork.contentBounds(drawing: artwork.drawing, shapes: artwork.shapes) else { return nil }
+        var bounds = content.insetBy(dx: -16, dy: -16)
+        // A cover is a readable first-content preview, not a coverage claim.
+        // Full-height reduction makes a long continuous sheet a thin stripe.
+        bounds.size.height = min(bounds.height, bounds.width * 1.3)
+        return NotebookArtwork.render(drawing: artwork.drawing, shapes: artwork.shapes, bounds: bounds, scale: min(1, 320 / max(bounds.width, 1)))
     }
 
     @discardableResult func prepareSubmission(_ note: PadNotebookNote, selectedPageIds: [String]? = nil, recipientInstallationId: String? = nil) throws -> NotebookSubmission {
@@ -388,10 +510,11 @@ final class NotebookStore: ObservableObject {
             throw PadError.rejected("Select between 1 and 20 pages from this note. Larger notes can be sent in separate selections.")
         }
         let sourcePages = available.filter { selected.contains($0.id) }
-        let drawings = try sourcePages.map { page -> PKDrawing in
-            let drawing = try self.drawing(for: page)
-            guard !drawing.strokes.isEmpty, page.revision > 0, PaperGeometry.hasFiniteInkBounds(drawing.bounds) else { throw PadError.rejected("‘\(page.title)’ is blank. Select pages with writing before sending to Recall.") }
-            return drawing
+        let artworks = try sourcePages.map { page -> PageArtwork in
+            let artwork = try self.artwork(for: page)
+            guard NotebookArtwork.hasVisibleContent(drawing: artwork.drawing, shapes: artwork.shapes), page.revision > 0,
+                  NotebookArtwork.contentBounds(drawing: artwork.drawing, shapes: artwork.shapes) != nil else { throw PadError.rejected("‘\(page.title)’ is blank. Select pages with writing before sending to Recall.") }
+            return artwork
         }
         let sources = sourcePages.map { NotebookSourcePage(id: $0.id, revision: $0.revision, hash: $0.contentHash) }
         struct SnapshotHash: Codable {
@@ -411,7 +534,7 @@ final class NotebookStore: ObservableObject {
             var images: [NotebookSubmissionPage] = []
             var editable: [NotebookDrawingAsset] = []
             var byteCount = 0
-            for (page, drawing) in zip(sourcePages, drawings) {
+            for (page, artwork) in zip(sourcePages, artworks) {
                 // Send the exact committed editable drawing, not a re-encoded
                 // equivalent whose archive hash may differ after decoding.
                 let drawingData = try self.drawingData(for: page)
@@ -420,16 +543,23 @@ final class NotebookStore: ObservableObject {
                 let drawingFilename = "drawing-\(page.id).data"
                 try drawingData.write(to: directory.appendingPathComponent(drawingFilename), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
                 editable.append(NotebookDrawingAsset(sourcePageId: page.id, filename: drawingFilename, hash: drawingData.sha256, bytes: drawingData.count))
-                let top = max(0, drawing.bounds.minY - 40)
-                let strokeRanges = drawing.strokes.map { Double($0.renderBounds.minY - top)...Double($0.renderBounds.maxY - top) }
-                let totalHeight = max(100, drawing.bounds.maxY + 40 - top)
+                guard let content = NotebookArtwork.contentBounds(drawing: artwork.drawing, shapes: artwork.shapes) else { throw PadError.rejected("The selected page has no visible work.") }
+                let top = max(0, content.minY - 40)
+                var strokeRanges = artwork.drawing.strokes.map { Double($0.renderBounds.minY - top)...Double($0.renderBounds.maxY - top) }
+                for shape in artwork.shapes where shape.hasVisibleContent {
+                    if let bounds = NotebookArtwork.contentBounds(drawing: PKDrawing(), shapes: [shape]) {
+                        strokeRanges.append(Double(bounds.minY - top)...Double(bounds.maxY - top))
+                    }
+                }
+                let totalHeight = max(100, content.maxY + 40 - top)
                 let ranges = PaperPagination.ranges(height: totalHeight, strokeRanges: strokeRanges)
-                guard ranges.count + images.count <= 20 else { throw PadError.rejected("This selection exports more than 20 image pages. Your ink is saved; select fewer notebook pages or split this long page before sending.") }
-                let width = max(800, drawing.bounds.maxX + 40)
+                let exportRanges = ranges.filter { range in strokeRanges.contains(where: { $0.overlaps(range) }) }
+                guard exportRanges.count + images.count <= 20 else { throw PadError.rejected("This selection exports more than 20 image pages. Your ink is saved; select fewer notebook pages or split this long page before sending.") }
+                let width = max(800, content.maxX + 40)
                 guard width * 1.5 <= 16384, width * 1400 * 2.25 <= 32_000_000 else { throw PadError.tooLarge }
-                for range in ranges where strokeRanges.contains(where: { $0.overlaps(range) }) {
+                for range in exportRanges {
                     let bounds = CGRect(x: 0, y: top + range.lowerBound, width: width, height: range.upperBound - range.lowerBound)
-                    let image = paperImage(drawing, bounds: bounds, scale: 1.5)
+                    let image = NotebookArtwork.render(drawing: artwork.drawing, shapes: artwork.shapes, bounds: bounds, scale: 1.5)
                     guard let data = image.pngData(), let cgImage = image.cgImage, data.count <= 12 * 1024 * 1024 else { throw PadError.tooLarge }
                     byteCount += data.count
                     guard byteCount <= 64 * 1024 * 1024 else { throw PadError.tooLarge }
@@ -572,7 +702,13 @@ final class NotebookStore: ObservableObject {
             notes.removeAll { knownNotes.contains($0.id) }
             notebooks.removeAll { knownNotebooks.contains($0.id) }
             submissions.removeAll { deletedSubmissions.contains($0.id) }
-            for position in notes.indices { notes[position].pageIds.removeAll { knownPages.contains($0) } }
+            for position in notes.indices {
+                notes[position].pageIds.removeAll { knownPages.contains($0) }
+                if let remembered = notes[position].lastOpenedPageId,
+                   !notes[position].pageIds.contains(remembered) {
+                    notes[position].lastOpenedPageId = notes[position].pageIds.first
+                }
+            }
             for id in touchedNoteIds { touchNote(id, at: Date()) }
             if !knownPages.isEmpty || !deletedSubmissions.isEmpty { deletions.append(deletion) }
         }

@@ -1,0 +1,829 @@
+<style>
+  .vb {
+  --vb-blue: var(--viz-series-1, #86b7e1);
+  --vb-sage: var(--viz-series-2, #a7bf8f);
+  --vb-amber: var(--viz-series-3, #d8b576);
+  --vb-teal: var(--viz-series-4, #7fc5bb);
+  --vb-ink: var(--text, #e8eee6);
+  --vb-muted: var(--muted, #acb9ad);
+  --vb-line: var(--border, #454d43);
+  --vb-surface: var(--sunken, #262c27);
+  --vb-paper: var(--card, #2d312d);
+  max-width: 850px;
+  margin: auto;
+  color: var(--vb-ink);
+  font: 14px/1.5
+    var(--sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  font-variant-numeric: tabular-nums;
+}
+.vb * {
+  box-sizing: border-box;
+}
+.vb h2,
+.vb h3,
+.vb p {
+  margin: 0;
+}
+.vb h2 {
+  font: 400 clamp(23px, 4vw, 30px)/1.2 var(--serif, Georgia, serif);
+  letter-spacing: -0.025em;
+}
+.vb h3 {
+  font-size: 13px;
+  font-weight: 600;
+}
+.vb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 18px;
+}
+.vb-kicker {
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--vb-muted);
+  font-weight: 650;
+  margin-bottom: 7px !important;
+}
+.vb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--vb-teal);
+  background: color-mix(in srgb, var(--vb-teal) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vb-teal) 30%, transparent);
+  border-radius: 20px;
+  padding: 5px 9px;
+}
+.vb-dot {
+  width: 6px;
+  height: 6px;
+  display: inline-block;
+  border-radius: 50%;
+  background: currentColor;
+}
+.vb-subtitle {
+  font-size: 12px;
+  color: var(--vb-muted);
+  margin-top: 8px !important;
+  max-width: 55ch;
+}
+.vb button {
+  min-height: 34px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid var(--vb-line);
+  border-radius: 8px;
+  padding: 7px 11px;
+  background: transparent;
+  color: var(--vb-ink);
+  line-height: 1.3;
+}
+.vb button:hover:not(:disabled) {
+  border-color: var(--vb-muted);
+  background: var(--vb-surface);
+}
+.vb button:focus-visible,
+.vb input:focus-visible {
+  outline: 2px solid var(--viz-focus, var(--vb-blue));
+  outline-offset: 3px;
+}
+.vb button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--vb-blue) 11%, var(--vb-paper));
+  border-color: color-mix(in srgb, var(--vb-blue) 65%, var(--vb-line));
+  color: var(--vb-blue);
+}
+.vb button:disabled {
+  opacity: 0.43;
+  cursor: default;
+}
+.vb .vb-primary {
+  background: var(--accent, #c7d7ac);
+  color: var(--accent-ink, #243523);
+  border-color: var(--accent, #c7d7ac);
+  font-weight: 600;
+}
+.vb-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.vb-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--vb-line);
+  border-bottom: 1px solid var(--vb-line);
+  margin-bottom: 17px;
+}
+.vb-stat {
+  padding: 13px 12px 13px 0;
+  min-width: 0;
+}
+.vb-stat + .vb-stat {
+  padding-left: 17px;
+  border-left: 1px solid var(--vb-line);
+}
+.vb-stat-label {
+  font-size: 11px;
+  color: var(--vb-muted);
+  display: block;
+}
+.vb-stat-value {
+  font: 400 clamp(23px, 4.3vw, 32px)/1.3 var(--serif, Georgia, serif);
+  letter-spacing: -0.025em;
+  display: block;
+}
+.vb-stat-note {
+  font-size: 10px;
+  color: var(--vb-muted);
+  display: block;
+  min-height: 15px;
+}
+.vb-blue {
+  color: var(--vb-blue);
+}
+.vb-amber {
+  color: var(--vb-amber);
+}
+.vb-teal {
+  color: var(--vb-teal);
+}
+.vb-caption {
+  padding: 12px 14px;
+  border-left: 3px solid var(--vb-teal);
+  background: color-mix(in srgb, var(--vb-teal) 6%, transparent);
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 12px !important;
+}
+.vb-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  padding-top: 17px;
+}
+.vb-control {
+  display: block !important;
+  margin: 0 !important;
+  font-size: 12px !important;
+  color: var(--vb-muted);
+}
+.vb-control-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.vb-control output {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vb-ink);
+}
+.vb input[type="range"] {
+  display: block;
+  width: 100%;
+  margin: 10px 0 3px;
+  accent-color: var(--vb-blue);
+  height: 17px;
+}
+.vb-range-limits {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--vb-muted);
+}
+.vb-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-top: 17px;
+  padding-top: 12px;
+  border-top: 1px solid var(--vb-line);
+}
+.vb-footnote {
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--vb-muted);
+  max-width: 66ch;
+}
+.vb-reset {
+  flex-shrink: 0;
+  font-size: 11px !important;
+}
+.vb-chart {
+  width: 100%;
+  min-width: 0;
+}
+.vb-chart svg {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  overflow: visible;
+}
+.vb-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 10.5px;
+  color: var(--vb-muted);
+  margin-bottom: 7px;
+}
+.vb-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.vb-key i {
+  display: block;
+  width: 17px;
+  height: 3px;
+  background: var(--vb-blue);
+  border-radius: 2px;
+}
+.vb-key i.dashed {
+  background: repeating-linear-gradient(
+    to right,
+    var(--vb-muted) 0 4px,
+    transparent 4px 7px
+  );
+}
+.vb-sr {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.vb-formula {
+  font: 12px/1.7 var(--mono, monospace);
+  color: var(--vb-muted);
+}
+@media (prefers-color-scheme: light) {
+  .vb {
+    --vb-blue: var(--viz-series-1, #3e6c99);
+    --vb-sage: var(--viz-series-2, #647f4c);
+    --vb-amber: var(--viz-series-3, #997027);
+    --vb-teal: var(--viz-series-4, #347d73);
+    --vb-ink: var(--text, #282f2b);
+    --vb-muted: var(--muted, #626b61);
+    --vb-line: var(--border, #dcded4);
+    --vb-surface: var(--sunken, #f2f1ea);
+    --vb-paper: var(--card, #fffefb);
+  }
+}
+@media (max-width: 480px) {
+  .vb-header {
+    gap: 8px;
+  }
+  .vb-badge {
+    font-size: 10px;
+    padding: 4px 7px;
+  }
+  .vb-controls {
+    gap: 14px;
+    grid-template-columns: 1fr;
+  }
+  .vb-stat + .vb-stat {
+    padding-left: 10px;
+  }
+  .vb-stat {
+    padding-right: 8px;
+  }
+  .vb-stat-note {
+    font-size: 9px;
+  }
+  .vb-footer {
+    align-items: flex-start;
+  }
+  .vb-footnote {
+    font-size: 10px;
+  }
+  .vb button {
+    min-height: 38px;
+  }
+  .vb-caption {
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vb * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+</style>
+<section class="vb" aria-labelledby="curve-title" data-benchmark="yield-curve">
+  <header class="vb-header">
+    <div>
+      <p class="vb-kicker">One curve, two ends</p>
+      <h2 id="curve-title">What makes a curve steeper?</h2>
+      <p class="vb-subtitle">
+        Compare the same maturities. Steepening describes a widening long–short
+        spread, not whether yields rise or fall.
+      </p>
+    </div>
+    <span class="vb-badge"><i class="vb-dot"></i>Hypothetical</span>
+  </header>
+  <div class="vb-pills" role="group" aria-label="Yield curve scenarios">
+    <button data-scenario="bear" aria-pressed="true">Bear steepener</button
+    ><button data-scenario="bull" aria-pressed="false">Bull steepener</button
+    ><button data-scenario="parallel" aria-pressed="false">
+      Parallel shift</button
+    ><button data-scenario="flatten" aria-pressed="false">Flattener</button>
+  </div>
+  <div class="vb-stats">
+    <div class="vb-stat">
+      <span class="vb-stat-label">Baseline · 30y − 2y</span
+      ><strong class="vb-stat-value" id="curve-baseline">140 bp</strong
+      ><span class="vb-stat-note">Same reference curve</span>
+    </div>
+    <div class="vb-stat">
+      <span class="vb-stat-label">New spread</span
+      ><strong class="vb-stat-value vb-blue" id="curve-spread"></strong
+      ><span class="vb-stat-note" id="curve-change"></span>
+    </div>
+    <div class="vb-stat">
+      <span class="vb-stat-label">Curve movement</span
+      ><strong
+        class="vb-stat-value"
+        style="font-size: clamp(18px, 3.3vw, 25px)"
+        id="curve-direction"
+      ></strong
+      ><span class="vb-stat-note" id="curve-slope"></span>
+    </div>
+  </div>
+  <div class="vb-legend">
+    <span class="vb-key"><i class="dashed"></i>Baseline</span
+    ><span class="vb-key"><i></i>Scenario</span
+    ><span>Illustrative curve · five maturity points</span>
+  </div>
+  <div class="vb-chart" id="curve-chart">
+    <svg
+      role="img"
+      aria-label="Baseline and scenario yield curves across two to thirty years"
+    ></svg>
+  </div>
+  <p
+    class="vb-caption"
+    id="curve-explanation"
+    role="status"
+    aria-live="polite"
+  ></p>
+  <div class="vb-controls">
+    <label class="vb-control" for="curve-short"
+      ><span class="vb-control-top"
+        >2-year yield change
+        <output id="curve-short-out" for="curve-short"></output></span
+      ><input
+        id="curve-short"
+        type="range"
+        min="-100"
+        max="100"
+        step="5"
+        value="20"
+      /><span class="vb-range-limits"
+        ><span>−100 bp</span><span>+100 bp</span></span
+      ></label
+    ><label class="vb-control" for="curve-long"
+      ><span class="vb-control-top"
+        >30-year yield change
+        <output id="curve-long-out" for="curve-long"></output></span
+      ><input
+        id="curve-long"
+        type="range"
+        min="-100"
+        max="100"
+        step="5"
+        value="80"
+      /><span class="vb-range-limits"
+        ><span>−100 bp</span><span>+100 bp</span></span
+      ></label
+    >
+  </div>
+  <footer class="vb-footer">
+    <p class="vb-footnote">
+      Values are illustrative, not observed JGB data. Intermediate changes are
+      interpolated in log maturity. A curve can steepen while both yields fall.
+    </p>
+    <button class="vb-reset" id="curve-reset">Reset example</button>
+  </footer>
+</section>
+<script>
+  function yieldCurve({ shortBp = 20, longBp = 80 } = {}) {
+  if (![shortBp, longBp].every(Number.isFinite))
+    throw new TypeError("Yield changes must be finite basis points");
+
+  const maturities = [2, 5, 10, 20, 30];
+  const baseline = [0.6, 0.9, 1.3, 1.7, 2];
+  const points = maturities.map((years, i) => {
+    const fraction = Math.log(years / 2) / Math.log(30 / 2);
+    const deltaBp = shortBp + fraction * (longBp - shortBp);
+    return {
+      years,
+      baseline: baseline[i],
+      scenario: baseline[i] + deltaBp / 100,
+      deltaBp,
+    };
+  });
+  const baselineSpreadBp = (baseline.at(-1) - baseline[0]) * 100;
+  const spreadChangeBp = longBp - shortBp;
+  const spreadBp = baselineSpreadBp + spreadChangeBp;
+  const slope =
+    Math.abs(spreadChangeBp) < 1e-9
+      ? "Parallel shift"
+      : spreadChangeBp > 0
+        ? "Steepening"
+        : "Flattening";
+  const direction =
+    shortBp <= 0 && longBp <= 0 && (shortBp < 0 || longBp < 0)
+      ? "Bull"
+      : shortBp >= 0 && longBp >= 0 && (shortBp > 0 || longBp > 0)
+        ? "Bear"
+        : "Mixed";
+  return {
+    points,
+    shortBp,
+    longBp,
+    baselineSpreadBp,
+    spreadBp,
+    spreadChangeBp,
+    slope,
+    direction,
+  };
+}
+
+function durationGap({
+  assetDuration = 12,
+  shockPct = 1,
+  assets = 110,
+  liabilities = 100,
+  liabilityDuration = 18,
+} = {}) {
+  for (const [name, value] of Object.entries({
+    assetDuration,
+    shockPct,
+    assets,
+    liabilities,
+    liabilityDuration,
+  }))
+    if (!Number.isFinite(value)) throw new TypeError(`${name} must be finite`);
+
+  if (
+    assets <= 0 ||
+    liabilities < 0 ||
+    assetDuration < 0 ||
+    liabilityDuration < 0
+  )
+    throw new RangeError(
+      "Use positive assets and nonnegative liabilities and durations",
+    );
+
+  const shock = shockPct / 100;
+  const matchedAssetDuration = (liabilities / assets) * liabilityDuration;
+  const gapYears = assetDuration - matchedAssetDuration;
+  const exposure = assets * assetDuration - liabilities * liabilityDuration;
+  const assetChange = -assets * assetDuration * shock;
+  const liabilityChange = -liabilities * liabilityDuration * shock;
+  const baselineSurplus = assets - liabilities;
+  const surplusChange = -exposure * shock;
+  return {
+    assets,
+    liabilities,
+    assetDuration,
+    liabilityDuration,
+    shockPct,
+    matchedAssetDuration,
+    gapYears,
+    exposure,
+    assetChange,
+    liabilityChange,
+    assetsAfter: assets + assetChange,
+    liabilitiesAfter: liabilities + liabilityChange,
+    baselineSurplus,
+    surplusChange,
+    surplusAfter: baselineSurplus + surplusChange,
+  };
+}
+
+function referenceInitial(strongCache = false) {
+  return {
+    strongCache: Boolean(strongCache),
+    owner: true,
+    closed: false,
+    temporary: false,
+    collected: false,
+    gcRuns: 0,
+    phase: 0,
+  };
+}
+
+function referenceView(state) {
+  const reachable =
+    !state.collected && (state.owner || state.strongCache || state.temporary);
+  return {
+    ...state,
+    reachable,
+    referenceAlive: !state.collected,
+    lifetime: state.collected
+      ? "Collected"
+      : reachable
+        ? "Strongly reachable"
+        : "Unreachable · waiting for GC",
+    referenceRead: state.collected
+      ? "None"
+      : "Object: caller temporarily owns it",
+  };
+}
+
+function referenceTransition(state, action) {
+  const next = { ...state };
+  if (action === "reset") return referenceInitial();
+  if (action === "close" && !next.collected) {
+    next.closed = true;
+    next.phase = Math.max(1, next.phase);
+  } else if (action === "release-owner") {
+    next.owner = false;
+    next.phase = Math.max(2, next.phase);
+  } else if (action === "read" && !next.collected) {
+    next.temporary = true;
+  } else if (action === "release-caller") {
+    next.temporary = false;
+  } else if (action === "collect") {
+    next.gcRuns++;
+    next.phase = 3;
+    if (!next.owner && !next.strongCache && !next.temporary)
+      next.collected = true;
+  }
+  return next;
+}
+  const $ = (id) => document.getElementById(id);
+const number = (value, digits = 1) =>
+  Math.abs(value) < 1e-9 ? (0).toFixed(digits) : value.toFixed(digits);
+const signed = (value, digits = 0) =>
+  (value > 1e-9 ? "+" : value < -1e-9 ? "−" : "") +
+  number(Math.abs(value), digits);
+const svgNode = (tag, attrs = {}, content) => {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [name, value] of Object.entries(attrs))
+    element.setAttribute(name, String(value));
+  if (content !== undefined) element.textContent = content;
+  return element;
+};
+const svgText = (parent, x, y, content, attrs = {}) => {
+  const element = svgNode(
+    "text",
+    {
+      x,
+      y,
+      fill: "var(--vb-muted)",
+      "font-size": 11,
+      "font-family": "var(--sans, sans-serif)",
+      ...attrs,
+    },
+    content,
+  );
+  parent.append(element);
+  return element;
+};
+const setText = (id, value) => {
+  $(id).textContent = value;
+};
+
+// A redraw may change the SVG's height. Observe width only and draw in a later
+// frame, outside ResizeObserver delivery, so the two cannot form a resize loop.
+const observeWidth = (element, draw) => {
+  let lastWidth = Math.round(element.getBoundingClientRect().width);
+  let pending = 0;
+  let disposed = false;
+  const observer = new ResizeObserver((entries) => {
+    const width = Math.round(entries[0]?.contentRect.width ?? lastWidth);
+    if (disposed || width === lastWidth) return;
+
+    lastWidth = width;
+    if (pending) cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(() => {
+      pending = 0;
+      if (!disposed) draw();
+    });
+  });
+  observer.observe(element);
+  const cleanup = () => {
+    disposed = true;
+    observer.disconnect();
+    if (pending) cancelAnimationFrame(pending);
+    pending = 0;
+  };
+  addEventListener("pagehide", cleanup, { once: true });
+  return cleanup;
+};
+
+  (() => {
+    const scenarios = {
+      bear: [20, 80],
+      bull: [-75, -20],
+      parallel: [50, 50],
+      flatten: [80, 20],
+    };
+    let state = { shortBp: 20, longBp: 80, scenario: "bear" };
+    const chart = $("curve-chart"),
+      svg = chart.querySelector("svg");
+    function draw(model) {
+      const width = Math.max(
+          220,
+          Math.round(chart.getBoundingClientRect().width),
+        ),
+        height = 238;
+      const margin = { left: 35, right: 20, top: 28, bottom: 37 };
+      const x = (years) =>
+        margin.left +
+        (Math.log(years / 2) / Math.log(15)) *
+          (width - margin.left - margin.right);
+      const y = (yieldPct) =>
+        height -
+        margin.bottom -
+        ((yieldPct + 0.6) / 3.8) * (height - margin.top - margin.bottom);
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.replaceChildren();
+      for (const tick of [0, 1, 2, 3]) {
+        svg.append(
+          svgNode("line", {
+            x1: margin.left,
+            x2: width - margin.right,
+            y1: y(tick),
+            y2: y(tick),
+            stroke: "var(--viz-grid,var(--vb-line))",
+            "stroke-dasharray": "2 4",
+          }),
+        );
+        svgText(svg, margin.left - 9, y(tick) + 4, `${tick}%`, {
+          "text-anchor": "end",
+        });
+      }
+      svgText(svg, margin.left, 13, "Yield", { "font-size": 10 });
+      for (const point of model.points)
+        svgText(svg, x(point.years), height - 12, `${point.years}y`, {
+          "text-anchor": "middle",
+        });
+      const path = (key) =>
+        model.points
+          .map(
+            (point, i) =>
+              `${i ? "L" : "M"}${x(point.years).toFixed(2)},${y(point[key]).toFixed(2)}`,
+          )
+          .join(" ");
+      const area =
+        path("scenario") +
+        " " +
+        model.points
+          .slice()
+          .reverse()
+          .map(
+            (point) =>
+              `L${x(point.years).toFixed(2)},${y(point.baseline).toFixed(2)}`,
+          )
+          .join(" ") +
+        " Z";
+      svg.append(
+        svgNode("path", { d: area, fill: "var(--vb-blue)", opacity: 0.08 }),
+      );
+      svg.append(
+        svgNode("path", {
+          d: path("baseline"),
+          stroke: "var(--vb-muted)",
+          "stroke-width": 2,
+          "stroke-dasharray": "5 5",
+          fill: "none",
+        }),
+      );
+      svg.append(
+        svgNode("path", {
+          d: path("scenario"),
+          stroke: "var(--vb-blue)",
+          "stroke-width": 3,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          fill: "none",
+        }),
+      );
+      for (const point of model.points)
+        svg.append(
+          svgNode("circle", {
+            cx: x(point.years),
+            cy: y(point.scenario),
+            r: 3.5,
+            fill: "var(--vb-paper)",
+            stroke: "var(--vb-blue)",
+            "stroke-width": 2,
+          }),
+        );
+      const first = model.points[0],
+        last = model.points.at(-1);
+      svgText(
+        svg,
+        x(2) + 4,
+        y(first.scenario) - 10,
+        `${number(first.scenario, 2)}%`,
+        { fill: "var(--vb-blue)", "font-size": 12, "font-weight": 600 },
+      );
+      svgText(
+        svg,
+        x(30) - 4,
+        y(last.scenario) - 10,
+        `${number(last.scenario, 2)}%`,
+        {
+          fill: "var(--vb-blue)",
+          "text-anchor": "end",
+          "font-size": 12,
+          "font-weight": 600,
+        },
+      );
+    }
+    function render() {
+      const model = yieldCurve(state);
+      $("curve-short").value = state.shortBp;
+      $("curve-long").value = state.longBp;
+      setText("curve-short-out", `${signed(model.shortBp)} bp`);
+      setText("curve-long-out", `${signed(model.longBp)} bp`);
+      setText("curve-spread", `${number(model.spreadBp, 0)} bp`);
+      setText(
+        "curve-change",
+        `${signed(model.spreadChangeBp)} bp versus baseline`,
+      );
+      setText(
+        "curve-direction",
+        model.direction === "Mixed" && model.shortBp === 0 && model.longBp === 0
+          ? "Unchanged"
+          : model.direction === "Mixed"
+            ? "Opposite directions"
+            : `${model.direction} move`,
+      );
+      setText("curve-slope", model.slope);
+      const move = (bp) =>
+        bp < 0
+          ? `falls ${number(-bp, 0)} bp`
+          : bp > 0
+            ? `rises ${number(bp, 0)} bp`
+            : "stays unchanged";
+      const conclusion =
+        model.spreadChangeBp > 0
+          ? "The long–short gap widens: steepening."
+          : model.spreadChangeBp < 0
+            ? "The long–short gap narrows: flattening."
+            : "The gap stays the same: no steepening.";
+      setText(
+        "curve-explanation",
+        `The 2-year yield ${move(model.shortBp)}; the 30-year ${move(model.longBp)}. ${conclusion}`,
+      );
+      document
+        .querySelectorAll("[data-scenario]")
+        .forEach((button) =>
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.scenario === state.scenario),
+          ),
+        );
+      document.querySelector("[data-benchmark]").dataset.result =
+        JSON.stringify({
+          spreadBp: model.spreadBp,
+          spreadChangeBp: model.spreadChangeBp,
+          slope: model.slope,
+        });
+      draw(model);
+    }
+    document.querySelectorAll("[data-scenario]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const [shortBp, longBp] = scenarios[button.dataset.scenario];
+        state = { shortBp, longBp, scenario: button.dataset.scenario };
+        render();
+      }),
+    );
+    $("curve-short").addEventListener("input", (event) => {
+      state = { ...state, shortBp: Number(event.target.value), scenario: null };
+      render();
+    });
+    $("curve-long").addEventListener("input", (event) => {
+      state = { ...state, longBp: Number(event.target.value), scenario: null };
+      render();
+    });
+    $("curve-reset").addEventListener("click", () => {
+      state = { shortBp: 20, longBp: 80, scenario: "bear" };
+      render();
+    });
+    observeWidth(chart, () => draw(yieldCurve(state)));
+    render();
+  })();
+</script>

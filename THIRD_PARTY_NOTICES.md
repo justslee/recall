@@ -18,9 +18,14 @@ accompanying licenses.
 | dompurify        | 3.4.14  | (MPL-2.0 OR Apache-2.0) |
 | katex            | 0.18.6  | MIT                     |
 | lucide-react     | 1.41.0  | ISC                     |
+| marked           | 16.4.2  | MIT                     |
 | mermaid          | 11.17.2 | MIT                     |
 | monaco-editor    | 0.56.0  | MIT                     |
 | react            | 19.2.8  | MIT                     |
 | react-dom        | 19.2.8  | MIT                     |
 | ts-fsrs          | 5.4.2   | MIT                     |
 | yaml             | 2.9.1   | ISC                     |
+
+## Connection identification icons
+
+The small Codex, Claude, Notion and Obsidian application icons identify optional third-party integrations. These marks belong to their respective owners (OpenAI, Anthropic, Notion Labs and Obsidian). Their inclusion does not imply endorsement and does not place those marks under Recall’s code license. Recall’s generic paper, microphone and Markdown symbols use the existing Lucide icon set.

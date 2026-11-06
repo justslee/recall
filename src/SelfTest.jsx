@@ -9,6 +9,7 @@ import {
 import "./self-test.css";
 import { FormatPicker } from "./StudyDesk";
 import { formatLabel } from "./model";
+import { PreparationInline } from "./PreparationPanel";
 export function SelfTestTile({ data, onOpen }) {
   const day = data?.days.find((d) => d.day === data.today);
   const needsPractice =
@@ -45,6 +46,7 @@ export function SelfTest({
   onFolder,
   onStudy,
   onBrowse,
+  onConnections,
 }) {
   const [chosen, setChosen] = useState(
     activeSession?.selection?.selfTestDay || null,
@@ -72,6 +74,7 @@ export function SelfTest({
     activeSession && activeSession.index < activeSession.ids.length;
   return (
     <div className="self-test-page">
+      <PreparationInline onOpen={onConnections} />
       <div className="self-test-heading">
         <p>What stayed with you?</p>
         <label>

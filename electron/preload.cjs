@@ -21,6 +21,7 @@ const methods = [
   "paperConnections",
   "paperConnect",
   "progress",
+  "learningMap",
   "reviewHistory",
   "speakSources",
   "speakPreview",
@@ -46,6 +47,9 @@ const methods = [
   "profileInfo",
   "configureLearning",
   "knowledgeSources",
+  "knowledgeStatus", "knowledgeSearch", "knowledgeFolders", "knowledgeRead", "knowledgeAsset", "knowledgeRefresh",
+  "knowledgeDraft", "knowledgeSave", "knowledgeCreate", "knowledgeDiscard", "knowledgeMove", "knowledgeCreateSpace",
+  "knowledgePractice", "knowledgeLink", "knowledgeAuthorPrompt", "knowledgeReveal", "knowledgeOpenLink",
   "knowledgeChooseFolder",
   "knowledgeTestSource",
   "knowledgeSaveSource",
@@ -72,6 +76,10 @@ const methods = [
   "scanLearning",
   "prepareLearning",
   "previewLearning",
+  "previewPreparation",
+  "startPreparation",
+  "stopPreparation",
+  "preparationStatus",
   "codeTrust",
   "retryLearning",
   "selfTests",
@@ -101,6 +109,11 @@ const methods = [
   "challengeSource",
 ];
 contextBridge.exposeInMainWorld("recall", {
+  onKnowledgeEvent: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("recall:knowledge-event", listener);
+    return () => ipcRenderer.removeListener("recall:knowledge-event", listener);
+  },
   onPadEvent: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on("recall:pad-event", listener);

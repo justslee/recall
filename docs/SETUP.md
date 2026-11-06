@@ -44,13 +44,13 @@ Let each command finish before starting the next. Then copy **release → Recall
 
 Your empty study desk offers three starting points:
 
-![Recall’s welcome screen with Try demo, Import cards and Connect learning](images/setup-welcome.png)
+![Recall’s welcome screen with Try a short session, Import cards and Bring my learning](images/setup-welcome.png)
 
-| Action               | What it does                                                                                     |
-| :------------------- | :----------------------------------------------------------------------------------------------- |
-| **Try demo**         | Adds three original sample cards: a concept, a calculation and a coding exercise.                |
-| **Import cards**     | Opens Anki import in **Library**. Your original deck stays unchanged; inspect the import report. |
-| **Connect learning** | Opens settings for your knowledge sources and assistants. You can do this later.                 |
+| Action                  | What it does                                                                                     |
+| :---------------------- | :----------------------------------------------------------------------------------------------- |
+| **Try a short session** | Adds three original sample cards: a concept, a calculation and a coding exercise.                |
+| **Import cards**        | Opens Anki import in **Library**. Your original deck stays unchanged; inspect the import report. |
+| **Bring my learning**   | Opens settings for your knowledge sources and assistants. You can do this later.                 |
 
 <details>
 <summary>Bringing cards from Anki?</summary>
@@ -59,7 +59,7 @@ Import a compatible **.apkg** package containing the older `collection.anki2` fo
 
 </details>
 
-Choose **Try demo** for a first look. Existing libraries open directly without this welcome screen.
+Choose **Try a short session** for a first look. Existing libraries open directly without this welcome screen.
 
 ![Recall’s study desk with collections and separate study formats](images/setup-study-desk.png)
 
@@ -75,9 +75,13 @@ Concept and math study need no additional tools. Running Python or C++ exercises
 
 ## Choose a home for your knowledge
 
+**Using the current source build?** For the simplest local setup, open **Knowledge → Create a space**, choose a folder location, then **New note**. Recall manages the reading, writing and search while your files stay in that folder. [Read the illustrated Knowledge guide →](KNOWLEDGE_SPACE.md)
+
+The unified Connections hub is in the current source build. Older releases may still call this tab **Learning connections**. [A quieter learning loop →](LEARNING_FLOW.md)
+
 **Optional.** A knowledge base holds longer explanations and related notes. Recall holds the questions you use to test yourself. You can connect existing notes or create your first knowledge base without editing configuration files.
 
-Open **Settings & backups → Learning connections → Knowledge sources**.
+Open **Settings & backups → Connections → Your knowledge base**.
 
 ![Knowledge source setup with choices for Local Markdown, Obsidian and Notion](images/setup-knowledge-base.png)
 
@@ -111,14 +115,14 @@ Your primary is the source of truth; mirrors receive the same concepts after a v
 
 **Optional.** Connect the assistants you use so meaningful learning can reach Recall from other local projects, too.
 
-Open **Settings & backups → Learning connections**.
+Open **Settings & backups → Connections → Codex or Claude**.
 
-![Learning connections with capture preferences and assistant setup](images/setup-learning-connections.png)
+![Connections hub with optional assistant, knowledge, iPad and speech setup](images/connections-hub.png)
 
 1. Choose **Connect** for Codex, Claude Code, or both. Review the installation plan, then choose **Install connection**.
-2. Select **Allow learning capture from my configured skills**. Check **Learning date & privacy** for your timezone, then choose **Save learning settings**.
+2. Return to **All connections → Capture preferences & privacy**. Select **Allow learning capture from my configured skills**. Check **Learning date & privacy** for your timezone, then choose **Save learning settings**.
 3. Start a **fresh assistant chat** so it loads the installed instructions.
-4. Return to Recall and choose **Check readiness**. Then choose **Verify learning → Create verification prompt → Copy prompt** and use that prompt in your fresh chat.
+4. Return to the assistant’s tile. Choose **Verify learning → Create verification prompt → Copy prompt** and use that prompt in your fresh chat. **Readiness & connection details → Check readiness** provides diagnostics if needed.
 5. Check Recall for the learning receipt. **Learning verified** confirms that the verification reached this library.
 
 ![Assistant readiness showing instructions, local CLI, sign-in and learning receipt separately](images/setup-assistant-readiness.png)
@@ -131,7 +135,7 @@ Open **Self Test** to review a learning day. You can revisit earlier days. If a 
 
 ## Optional voice and feedback
 
-Open **Settings & backups → Voice & feedback** if you want dictation and answer evaluation, or explanation practice in **Speak**.
+Open **Settings & backups → Connections → Think out loud** if you want dictation and answer evaluation, or explanation practice in **Speak**.
 
 ![Voice settings with optional OpenAI setup and privacy information](images/setup-voice-settings.png)
 
@@ -150,7 +154,7 @@ You can also [build and install Recall Pad through Xcode](IPAD_NATIVE.md). The p
 After installing Recall Pad:
 
 1. Connect your Mac and iPad to the same local network and open both apps.
-2. On the Mac, open **Settings & backups → iPad & handwriting** and select **Enable companion → Pair an iPad**.
+2. On the Mac, open **Settings & backups → Connections → Write on iPad** and select **Enable companion → Pair an iPad**.
 3. On the iPad, choose **Pair with Mac → Scan pairing QR code**. Allow camera and local-network access when requested.
 4. Scan the Mac’s code and choose **Pair this iPad** on the Mac to approve it.
 
@@ -172,7 +176,7 @@ _The native iPad app, shown in a simulator before pairing. It follows your iPad�
 
 ### Learn on paper in your assistant chat
 
-In **iPad & handwriting → Learn on paper with your tutor**, choose **Connect Codex** or **Connect Claude Code**. If already installed, the button says **Refresh … tools**. These paper tools are separate from learning-capture connections.
+In **Connections → Codex or Claude → Use … with Recall Pad**, connect the paper tools. They are also available in **Write on iPad → Learn on paper with your tutor**. If already installed, the button says **Refresh … tools**. These paper tools are separate from learning-capture connections.
 
 Start a fresh chat and ask:
 
@@ -188,7 +192,7 @@ This is a Codex-first beta. One physical-iPad submission has been inspected in a
 
 ### Keep private notebooks
 
-**Private notebooks (new source builds):** open **Notebooks** in Recall Pad to keep notebooks, notes and pages separately from live sessions. They stay on the iPad until you explicitly **Send to Recall**. On the Mac, finish the selected snapshot with Codex or Claude in **Learning connections → From your notebooks**. [Notebook walkthrough →](NOTEBOOKS.md)
+**Private notebooks (new source builds):** open **Notebooks** in Recall Pad to keep notebooks, notes and pages separately from live sessions. They stay on the iPad until you explicitly **Send to Recall**. On the Mac, finish the selected snapshot with Codex or Claude in **Connections → Open preparation queue → From your notebooks**. [Notebook walkthrough →](NOTEBOOKS.md)
 
 ## Update an existing installation
 
