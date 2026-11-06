@@ -94,11 +94,12 @@ const st = require("../electron/self-test.cjs");
       await expect(p.locator(".ratings")).toHaveCount(0);
     }
     await open("recall://card/missing");
-    await expect(p.getByRole("alert")).toContainText(
+    const linkError = p.locator('.toast[role="alert"]');
+    await expect(linkError).toContainText(
       "isn't in this Recall library",
     );
     await open("recall://card/valid?run=true");
-    await expect(p.getByRole("alert")).toContainText("link is invalid");
+    await expect(linkError).toContainText("link is invalid");
     await open(cardLink(cards[0].id));
     await expect(
       p.getByRole("heading", { name: cards[0].title, exact: true }),
