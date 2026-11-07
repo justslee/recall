@@ -192,6 +192,26 @@ Restores clear native-code approvals and reject unexpected database triggers bef
 
 OpenAI keys stay main-process-only in an owner-only local plaintext file, outside Recall exports/profile backups. Recall saves no audio. Software running as the same OS account can read the key; whole-machine backups may include it. See [Privacy](PRIVACY.md).
 
+### Automatic release retention — November 7, 2026
+
+The source release tooling now completes verification with
+`npm run release:mac:verify`. It binds the quality evidence to the downloadable
+ZIP, checks the signatures and stapled ticket, and compares the extracted app
+with the staged and installed copies. It records the verified release and
+automatically retains the previous verified release as rollback.
+Superseded distribution app bundles and ZIPs are pruned with a retryable file
+manifest. Release evidence, active candidates and learning profiles remain
+protected. See [release verification and retention](DISTRIBUTION.md#verify-the-release-and-retain-one-rollback).
+
+Local validation passed all 434 regression tests and the production build.
+Synthetic release fixtures covered rollback rotation, repeated verification,
+incomplete or changed evidence, active builds, path aliases, interrupted removal
+and preservation of learning files. A real macOS extraction check covered
+framework symlinks, and both retained published ZIPs passed read-only archive
+inspection. Physical installation, study, companion and
+learning-preservation checks are supplied through the artifact-bound release QA
+record for each actual release.
+
 ## Verified baseline
 
 Reviewed **October 5, 2026**, on **Node 22.23.3**. The [published source commit](https://github.com/justslee/recall/commit/d2b704e100f2c186743f09317ee96029b6a750b0) passed the full [hosted Verify run](https://github.com/justslee/recall/actions/runs/37405060805).

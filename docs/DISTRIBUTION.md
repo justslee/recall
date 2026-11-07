@@ -66,18 +66,62 @@ Signing identifies the publisher. Notarization checks malware and signing requir
 
 Publish only the tested artifact, checksum and concise release notes. Explain manual updates until a verified updater exists. Do not instruct users to disable Gatekeeper or remove quarantine to install a public release.
 
-### Retain release artifacts
+### Verify the release and retain one rollback
 
-After a replacement release passes its installation and preservation checks,
-retain the current verified distribution, one known-good rollback, and the small
-receipts, checksums, notarization results and verification logs. Remove older
-candidate apps, duplicate installer ZIPs and extracted QA copies. Pin active
-development candidates until their release outcome is known.
+After real installation, study, learning-preservation and companion checks,
+save a private quality record tied to the final ZIP's SHA-256. The booleans below
+start false. Set them true only after the corresponding checks have passed.
 
-QA folders can contain personal learning profiles and nested backups. Verify
-complete preservation elsewhere before removing a profile snapshot. An
-owner-only compressed archive outside the build directory can preserve historical
-state when its full manifest and restored database integrity have been checked.
+```json
+{
+  "schemaVersion": 1,
+  "sha256": "replace-with-the-final-ZIP-SHA256",
+  "checks": {
+    "cleanMacInstallation": false,
+    "study": false,
+    "learningPreservation": false,
+    "companion": false
+  }
+}
+```
+
+Complete the release verification through the normal release command.
+
+```sh
+npm run release:mac:verify -- \
+  --candidate release/distribution/candidate-YOUR-BUILD \
+  --evidence private/release-quality.json
+```
+
+The command rechecks the artifact hash, signatures, stapling and Gatekeeper.
+It inspects ZIP paths and links, extracts the final download into a private
+temporary directory, and compares its complete file contents with the staged
+and installed apps. Inspection limits are 512 MiB compressed, 2 GiB expanded
+and 10,000 entries. The installed app
+defaults to /Applications/Recall.app. Use --installed-app for another installation.
+The quality record attests to the physical and behavioral checks performed by
+release QA. Notarization alone leaves releaseQualityVerified false.
+
+Successful verification automatically retains the current release and the
+previous verified release as rollback. The record lives in ignored
+release/distribution/retention.json. Newer builds and busy candidates remain
+protected. Activity is checked again immediately before each payload removal.
+Receipts, checksums, notarization results and verification logs stay
+with their original candidate directories. Interrupted artifact deletion can be
+retried by repeating the verification command with the same candidate and
+quality record. Inspect retention-result.json when cleanup reports a failure.
+
+On a fresh checkout, cleanup defers until a prior verified rollback is available.
+A maintainer can seed retention.json from existing known-good published artifacts
+using candidate, buildNumber and sha256 references for current and rollback.
+The command revalidates the pinned rollback's bytes and signing gates before
+pruning. Keep this local record private.
+
+Automatic pruning removes superseded distribution app bundles and their ZIPs.
+Learning directories, QA profiles, nested backups and private preservation
+archives remain protected. Review older QA artifacts separately. Before removing
+a profile snapshot, verify complete preservation elsewhere, including historical
+cards, reviews, attempts, handwriting and pending work.
 
 For manual app updates, replace the existing Applications copy after quitting
 Recall, verify launch and learning-state preservation, then remove older
