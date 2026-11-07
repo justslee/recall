@@ -39,6 +39,7 @@
     "build:ipad": "node scripts/build-ipad.cjs",
     "release:mac": "node scripts/distribute-mac.cjs",
     "release:mac:check": "node scripts/distribute-mac.cjs --check",
+    "release:mac:verify": "node scripts/verify-mac-release.cjs",
     "release:ipad": "node scripts/archive-ipad.cjs",
     "release:ipad:check": "node scripts/archive-ipad.cjs --check",
     "test:handwriting": "node scripts/smoke-handwriting.cjs",

@@ -576,6 +576,7 @@ async function prepare({
       mode: 0o600,
     });
   saveReceipt();
+  const unlock = require("../electron/config.cjs").lock(stage);
   try {
     run("/usr/bin/ditto", ["--rsrc", "--extattr", app, stagedApp], {
       releaseError: "Copying the separate distribution candidate failed.",
@@ -739,6 +740,8 @@ async function prepare({
       `Preparation stopped; recovery files remain under ${path.relative(root, stage)}.`,
     );
     throw error;
+  } finally {
+    unlock();
   }
 }
 
@@ -764,4 +767,5 @@ module.exports = {
   defaultRun,
   BUNDLE_ID,
   inspectBundleLayout,
+  hashFile,
 };

@@ -358,31 +358,48 @@ test("removed non-allowlisted prose cannot pass the committed-history audit", (t
   assert(!result.output.includes("ordinary prose"));
 });
 
-test("excluded generated roots are rejected when staged or historically committed", (t) => {
+test("private maintenance archives and local skills stay outside the public source audit", (t) => {
   const folder = temporary(t);
   git(folder, ["init", "--quiet"]);
   write(folder, "README.md", "Synthetic source");
-  write(folder, ".gitignore", "dist/\n");
+  write(folder, ".gitignore", "private/\n.agents/\n");
   commit(folder, "Add synthetic source");
-  write(folder, "dist/fixture.json", "{}");
-  git(folder, ["add", "--force", "dist/fixture.json"]);
+  const secret = fixtureKey();
+  write(folder, "private/profile/recall.sqlite", secret);
+  write(folder, ".agents/skills/local-maintenance/SKILL.md", secret);
+  const result = runAudit(sourceAudit, folder);
+  assert.equal(result.status, 0, result.output);
+  assert(!result.output.includes(secret));
+});
 
-  const staged = runAudit(sourceAudit, folder);
-  assert.notEqual(staged.status, 0);
-  assert.match(
-    staged.output,
-    /"dist\/fixture\.json": tracked file in excluded root/,
-  );
-  commit(folder, "Add synthetic tracked generated fixture");
-  fs.unlinkSync(path.join(folder, "dist/fixture.json"));
-  commit(folder, "Remove synthetic tracked generated fixture");
+test("excluded generated roots are rejected when staged or historically committed", (t) => {
+  for (const name of ["dist", "private", ".agents"]) {
+    const folder = temporary(t);
+    git(folder, ["init", "--quiet"]);
+    write(folder, "README.md", "Synthetic source");
+    write(folder, ".gitignore", name + "/\n");
+    commit(folder, "Add synthetic source");
+    const file = name + "/fixture.json";
+    write(folder, file, "{}");
+    git(folder, ["add", "--force", file]);
 
-  const removed = runAudit(sourceAudit, folder);
-  assert.notEqual(removed.status, 0);
-  assert.match(
-    removed.output,
-    /history: "dist\/fixture\.json": not in release allowlist/,
-  );
+    const staged = runAudit(sourceAudit, folder);
+    assert.notEqual(staged.status, 0);
+    assert(
+      staged.output.includes('"' + file + '": tracked file in excluded root'),
+    );
+    commit(folder, "Add synthetic tracked generated fixture");
+    fs.unlinkSync(path.join(folder, file));
+    commit(folder, "Remove synthetic tracked generated fixture");
+
+    const removed = runAudit(sourceAudit, folder);
+    assert.notEqual(removed.status, 0);
+    assert(
+      removed.output.includes(
+        'history: "' + file + '": not in release allowlist',
+      ),
+    );
+  }
 });
 
 test("nested annotated tag messages and sensitive ref names are scanned without values", (t) => {

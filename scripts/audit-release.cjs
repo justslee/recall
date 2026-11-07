@@ -49,6 +49,8 @@ const excluded = new Set([
   ".git",
   ".DS_Store",
   "dist-native",
+  "private",
+  ".agents",
 ]);
 const generatedNative =
   /^(?:apps\/ipad|native\/mac-handoff)\/(?:\.build|\.core-build|Build|DerivedData)(?:\/|$)|(?:^|\/)xcuserdata(?:\/|$)|^apps\/ipad\/Local\.xcconfig$|^apps\/ipad\/RecallPad\/Resources\/Web\/(?!\.gitkeep$)/;
