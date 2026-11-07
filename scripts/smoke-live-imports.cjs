@@ -108,6 +108,36 @@ const cli = (...args) =>
       window.__libraryChanges = 0;
       window.recall.onLibraryChanged(() => window.__libraryChanges++);
     });
+    const notifications = () => page.evaluate(() => window.__libraryChanges);
+    // Consume an unrelated refresh before recording any import baseline.
+    await app.evaluate(({ BrowserWindow }) => {
+      for (const window of BrowserWindow.getAllWindows())
+        window.webContents.send("recall:library-changed");
+    });
+    await expect.poll(notifications).toBeGreaterThan(0);
+    const waitForImport = async (queued, baseline, count) => {
+      assert.equal(queued.mode, "queued");
+      await expect
+        .poll(() => cli("import-status", queued.requestId).mode, {
+          timeout: 15000,
+        })
+        .toBe("imported");
+      await expect.poll(notifications).toBeGreaterThan(baseline);
+      const expectedIds = [
+        ...before.map((card) => card.id),
+        ...Array.from({ length: count }, (_, i) => `live-${i + 1}`),
+      ].sort();
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            window.recall
+              .snapshot()
+              .then((s) => s.cards.map((card) => card.id).sort()),
+          ),
+        )
+        .toEqual(expectedIds);
+      assert.equal(fs.existsSync(path.join(folder, "backups")), false);
+    };
     const importCard = async (id, deck, checkAttempt) => {
       const file = path.join(folder, id + ".json");
       fs.writeFileSync(
@@ -127,24 +157,9 @@ const cli = (...args) =>
           ],
         }),
       );
+      const baseline = await notifications();
       const queued = cli("import", file, "--apply");
-      assert.equal(queued.mode, "queued");
-      await expect
-        .poll(() => cli("import-status", queued.requestId).mode, {
-          timeout: 15000,
-        })
-        .toBe("imported");
-      assert.equal(fs.existsSync(path.join(folder, "backups")), false);
-      await expect
-        .poll(() => page.evaluate(() => window.__libraryChanges))
-        .toBe(Number(id.slice(-1)));
-      await expect
-        .poll(() =>
-          page.evaluate(() =>
-            window.recall.snapshot().then((s) => s.cards.length),
-          ),
-        )
-        .toBe(before.length + Number(id.slice(-1)));
+      await waitForImport(queued, baseline, Number(id.slice(-1)));
       assert.equal(
         await page.evaluate(() => window.__liveImportCanary),
         "same page",
@@ -178,16 +193,9 @@ const cli = (...args) =>
         ],
       }),
     );
+    const baseline = await notifications();
     const queued = cli("import", file, "--apply");
-    assert.equal(queued.mode, "queued");
-    await expect
-      .poll(() => cli("import-status", queued.requestId).mode, {
-        timeout: 15000,
-      })
-      .toBe("imported");
-    await expect
-      .poll(() => page.evaluate(() => window.__libraryChanges))
-      .toBe(1);
+    await waitForImport(queued, baseline, 1);
     await expect(
       page.getByRole("textbox", { name: "Your spoken answer" }),
     ).toHaveValue(prose);
