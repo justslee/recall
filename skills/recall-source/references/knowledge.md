@@ -36,6 +36,8 @@ If creation may have succeeded but its response was lost, reconcile the exact se
 
 After setup, grow the selected KB from actual discussed learning: search names and aliases, assign broad topics, link related concepts and reuse suitable Recall objectives. Mirror only verified canonical writes, retaining the same concept ID and each destination's own revision. Respect each source's authoring permission and capture pause.
 
+For an authorized local note creation/update, follow [recall-taxonomy](../../recall-taxonomy/SKILL.md) after the canonical save and index refresh. Reuse broader-to-specific branches and map the note's verified source/identity. Keep mapping receipts separate from note-write receipts; classification does not create learning evidence or rewrite the note body.
+
 ## Reading and authoring configured sources
 
 For advanced assistant-driven setup, preview a JSON configuration with `recall config FILE` before applying it with `--apply`. Each source has `id`, `type` (markdown, obsidian, notion), `root` (absolute local scope), and `write` (default false). Notion uses `scopeId` and a propertyMap instead of root. CLI configuration replaces the source list, so retain every existing source and preserve unrelated profile preferences. Authoring permission applies only to that selected source; a separate vault/database is not automatically authorized.

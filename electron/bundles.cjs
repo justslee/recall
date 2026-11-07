@@ -29,6 +29,11 @@ function validateCards(cards) {
       "source",
     ])
       assert(typeof c[key] === "string" && c[key].trim(), key + " required");
+    if (c.objectiveId !== undefined)
+      assert(
+        typeof c.objectiveId === "string" && c.objectiveId.trim(),
+        "objectiveId must be a nonempty stable objective identity",
+      );
     assert(!ids.has(c.id), "Duplicate ID");
     ids.add(c.id);
     assert(["concept", "math", "code"].includes(c.kind));

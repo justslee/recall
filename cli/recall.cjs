@@ -28,7 +28,7 @@ const folder = dataDir(option("data"));
 const apply = flag("apply"),
   json = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const usage =
-  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/revise/revision-status/search/link/trust | cards inspect CARD_ID [--previous] | kb index/read/scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | paper connect codex/claude [--apply] | paper connection-status | paper mcp | paper start/publish/status/wait/read/end JSON_FILE | notebook list/inspect/page/export | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
+  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/revise/revision-status/search/link/trust | cards inspect CARD_ID [--previous] | taxonomy list/preview/apply/status | kb index/read/scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | paper connect codex/claude [--apply] | paper connection-status | paper mcp | paper start/publish/status/wait/read/end JSON_FILE | notebook list/inspect/page/export | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
 function withStore(fn) {
   const { Store } = require("../electron/store.cjs");
   const s = new Store(folder);
@@ -101,7 +101,33 @@ function readonly(fn) {
           { apply, widgets: true },
         ),
       );
-    else if (command === "cards") {
+    else if (command === "taxonomy") {
+      const taxonomy = require("../electron/taxonomy.cjs");
+      const queue = require("../electron/taxonomy-queue.cjs");
+      if (action === "list" && !rest.length)
+        result = readonly((db) => taxonomy.read({ db, folder }));
+      else if (["preview", "apply"].includes(action) && rest.length === 1) {
+        const plan = json(rest[0]);
+        const preview = readonly((db) =>
+          taxonomy.preview({ db, folder }, plan),
+        );
+        if (action === "preview" || !apply) result = preview;
+        else {
+          result = queue.enqueue(folder, plan);
+          try {
+            withStore((store) => queue.applyPending(store));
+          } catch (error) {
+            if (error.code !== "RECALL_WRITER_BUSY") throw error;
+          }
+          result = queue.status(folder, result.requestId);
+        }
+      } else if (action === "status" && rest.length === 1)
+        result = queue.status(folder, rest[0]);
+      else
+        throw Error(
+          "Usage: recall taxonomy list | preview PLAN.json | apply PLAN.json --apply | status REQUEST_ID",
+        );
+    } else if (command === "cards") {
       const bundles = require("../electron/bundles.cjs");
       if (action === "validate") {
         const pack = bundles.normalizePack(json(rest[0]));

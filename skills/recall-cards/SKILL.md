@@ -11,8 +11,11 @@ Read ../recall-source/references/quality.md. Search existing card IDs, titles an
 
 When resolving queued learning, follow ../recall-source/references/inbox.md. Submit validated bundles through the inbox so the app can import while open. Keep failed checks visible; do not mark pending objectives ready.
 
-For interactive visuals, check the installed `RecallVisual` toolkit and read the versioned widget contract through recall-visuals. Use a single state model for inputs, marks and interpretation. Keep actual scenario/screenshot acceptance separate from syntax/import validation; unavailable visual QA leaves a draft. For an authorized visual upgrade, use the widget-only expected-content-hash revision workflow in quality.md under the existing card ID, preserving prose, permissions and review history. Show requested benchmark visuals before proposing wider migration.
+After an authorized card import is confirmed, use [recall-taxonomy](../recall-taxonomy/SKILL.md) to reuse or assign the objective's broader-to-specific placement and narrow concept connections. Preserve canonical concept/card IDs. A pending classification is separate from a successful import; never duplicate a card to retry classification or award expertise from authoring alone.
 
+For newly authored cards, an optional stable `objectiveId` identifies the particular tested capability within a concept and format. Variants testing the same capability reuse it; distinct capabilities may have distinct IDs. Do not mint IDs for paraphrases or replace existing card/concept identities. The app conservatively groups legacy cards without this field by concept and format.
+
+For interactive visuals, check the installed `RecallVisual` toolkit and read the versioned widget contract through recall-visuals. Use a single state model for inputs, marks and interpretation. Keep actual scenario/screenshot acceptance separate from syntax/import validation; unavailable visual QA leaves a draft. For an authorized visual upgrade, use the widget-only expected-content-hash revision workflow in quality.md under the existing card ID, preserving prose, permissions and review history. Show requested benchmark visuals before proposing wider migration.
 
 ## Quiet preparation and verification
 

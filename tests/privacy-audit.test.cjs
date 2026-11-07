@@ -125,6 +125,7 @@ test("private database, credential and export artifacts fail even with harmless 
     "examples/backups/snapshot.json",
     "examples/card-imports/request.json",
     "examples/card-revisions/request.json",
+    "examples/taxonomy-requests/request.json",
     "examples/paper-runtime/endpoint.json",
     "examples/paper-authority/credentials.json",
     "examples/signing.p8",

@@ -65,6 +65,8 @@ class Store {
           require("./paper-store.cjs").migratePaper(this.db);
           this.db.exec("PRAGMA user_version=3");
         });
+      require("./taxonomy.cjs").ensure(this.db);
+      require("./expertise.cjs").install(this.db);
     } catch (error) {
       this.db?.close();
       this.releaseLock();

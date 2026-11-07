@@ -25,6 +25,11 @@
       "type": "string",
       "minLength": 1
     },
+    "objectiveId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
     "title": {
       "type": "string",
       "minLength": 1

@@ -104,6 +104,10 @@ async function run() {
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.getByRole("button", { name: "Knowledge", exact: true }).click();
+    await page
+      .getByRole("group", { name: "Knowledge view" })
+      .getByRole("button", { name: "Notes", exact: true })
+      .click();
     await expect(page.locator(".knowledge-prose h1")).toHaveText(
       "When some observations matter more",
     );
@@ -171,6 +175,10 @@ async function run() {
     page = await app.firstWindow();
     page.on("pageerror", (e) => errors.push(e.message));
     await page.getByRole("button", { name: "Knowledge", exact: true }).click();
+    await page
+      .getByRole("group", { name: "Knowledge view" })
+      .getByRole("button", { name: "Notes", exact: true })
+      .click();
     await expect(page.getByLabel("Write in Markdown")).toHaveValue(
       /A draft that survives a restart/,
     );
@@ -208,6 +216,10 @@ async function run() {
     ).toBeDisabled();
     await page.reload();
     await page.getByRole("button", { name: "Knowledge", exact: true }).click();
+    await page
+      .getByRole("group", { name: "Knowledge view" })
+      .getByRole("button", { name: "Notes", exact: true })
+      .click();
     await expect(page.getByLabel("Write in Markdown")).toHaveValue(
       /A conflicting draft/,
     );
@@ -219,6 +231,10 @@ async function run() {
     ).toBeVisible();
     await page.reload();
     await page.getByRole("button", { name: "Knowledge", exact: true }).click();
+    await page
+      .getByRole("group", { name: "Knowledge view" })
+      .getByRole("button", { name: "Notes", exact: true })
+      .click();
     await expect(
       page.getByRole("button", { name: "Save note", exact: true }),
     ).toBeDisabled();
@@ -258,6 +274,10 @@ async function run() {
         .getByRole("button", { name: "Knowledge", exact: true })
         .click();
       await page
+        .getByRole("group", { name: "Knowledge view" })
+        .getByRole("button", { name: "Notes", exact: true })
+        .click();
+      await page
         .getByRole("button", { name: "Practice this note", exact: true })
         .click();
       assert.deepEqual(
@@ -270,6 +290,10 @@ async function run() {
       await page.reload();
       await page
         .getByRole("button", { name: "Knowledge", exact: true })
+        .click();
+      await page
+        .getByRole("group", { name: "Knowledge view" })
+        .getByRole("button", { name: "Notes", exact: true })
         .click();
     }
     await page.getByRole("button", { name: "New note", exact: true }).click();

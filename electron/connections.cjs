@@ -131,6 +131,8 @@ For ordinary learning questions, follow ${path.join(kit, "recall-source/referenc
 Capture JSON takes a stable id, sessionId, title, objective, context, actual ISO timestamp at, evidence (discussed/explained/solved), source, optional kbUrl and cardIds. Use an empty cardIds array for a gap. If a reused card leaves a specific gap, include needsAuthoring and a reason. Respect opt-out and exclude routine operations, raw transcripts, secrets and assistant-only work.
 
 For requested KB publishing, read ${path.join(kit, "recall-source/references/knowledge.md")}. For explicit or scheduled preparation, read ${path.join(kit, "recall-source/references/inbox.md")} and use the installed personal authoring skills or the portable kit at ${kit}. Submit validated results with \`inbox submit ITEM_ID RESULT_FILE\`. The open app applies results through its writer. With the app closed, use \`inbox apply\`. Preserve review state.
+
+After an authorized local KB save or card import, use ${path.join(kit, "recall-taxonomy/SKILL.md")} to maintain broader-to-specific placement through the installed taxonomy commands. Keep classification receipts separate from content creation; the app computes expertise from recorded assessments.
 `;
   if (
     fs.existsSync(target.skill) &&

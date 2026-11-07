@@ -66,6 +66,24 @@ Signing identifies the publisher. Notarization checks malware and signing requir
 
 Publish only the tested artifact, checksum and concise release notes. Explain manual updates until a verified updater exists. Do not instruct users to disable Gatekeeper or remove quarantine to install a public release.
 
+### Retain release artifacts
+
+After a replacement release passes its installation and preservation checks,
+retain the current verified distribution, one known-good rollback, and the small
+receipts, checksums, notarization results and verification logs. Remove older
+candidate apps, duplicate installer ZIPs and extracted QA copies. Pin active
+development candidates until their release outcome is known.
+
+QA folders can contain personal learning profiles and nested backups. Verify
+complete preservation elsewhere before removing a profile snapshot. An
+owner-only compressed archive outside the build directory can preserve historical
+state when its full manifest and restored database integrity have been checked.
+
+For manual app updates, replace the existing Applications copy after quitting
+Recall, verify launch and learning-state preservation, then remove older
+downloaded installers while retaining one rollback. Keep the user's learning
+profile and its recovery backups under the app's normal preservation policy.
+
 ## 3. Prepare Recall Pad for TestFlight
 
 Run source checks first. An unsigned Release archive can validate bundled assets and release settings without contacting Apple:

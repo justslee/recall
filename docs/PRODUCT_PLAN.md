@@ -16,6 +16,14 @@ Knowledge is a local reading, writing and retrieval space. Ordinary Markdown/HTM
 
 The reusable learning loop includes conceptual teaching and KB creation, source-aware card authoring, purposeful visuals, independently checked math/code, opted-in capture and daily self-tests. Knowledge capture records exposure, not mastery. Recall's FSRS reviews own card scheduling.
 
+Knowledge's Constellation keeps all domain roots on one continuous canvas. Branches expand and collapse in place, retaining context and explicit or suggested cross-connections. Bounded requests load the expanded graph automatically; there are no user-facing pages. Viewport-aware labels and canvas search keep large expansions navigable with keyboard controls as well as pinch and pan.
+
+Domain color remains consistent down the primary hierarchy, and labeled context makes other domains recognizable while exploring a branch. Color expresses subject identity; particle density and review evidence express expertise.
+
+Each profile can lock its approved top-level domains. Content is classified into meaningful broader-to-specific branches; imported tags do not become extra roots under a locked policy. An exact, unique existing label or alias can place a new item within a nested branch; ambiguous or unmatched items remain accessible in Unclassified. Library guides have a separate navigation shelf. The taxonomy skill preserves stable identities and relationships; scoring remains deterministic application code.
+
+The provisional expertise index uses scored review evidence, separately exposes coverage and confidence, keeps unassessed requirements distinct from failures, and never reaches 100. Incremental SQLite projections update affected objectives and ancestor summaries without changing review history or scheduling. See [Constellation and expertise](CONSTELLATION.md).
+
 Recall Pad separates live Study/Tutor sessions from private **Notebooks → Notes → Pages**. Notebook writing saves locally and is never automatically captured. An explicit **Send to Recall** shares a selected, immutable snapshot for source-aware KB and card preparation. Receipts distinguish durable receipt, preparation, actual destination outcomes and the last successfully added version; later edits remain private. See [Notebooks](NOTEBOOKS.md).
 
 New notebook notes open straight into one growing sheet with pinch zoom, Pencil ink and editable shapes with attached labels. Additional sheets and existing multi-page notes remain accessible through an optional page tray. Autosave and explicit sharing preserve both handwriting and diagrams.

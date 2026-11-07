@@ -27,7 +27,7 @@ const runtimeFiles = new Set([
   "examples/LICENSE.md",
 ]);
 const privateName =
-  /(?:^|\/)(?:\.git|\.env[^/]*|auth\.json|\.credentials\.json|config\.local\.json|openai\.key|Local\.xcconfig|credentials|private|pad-identity|paper-authority|learning-inbox|card-imports|card-revisions|self-tests|backups|xcuserdata)(?:\/|$)|(?:^|\/)node_modules\/\.bin(?:\/|$)|\.(?:p12|p8|pem|key|cer|mobileprovision|provisionprofile|sqlite\d*|db|db-wal|db-shm|enc|log|ipa|bcsymbolmap|symbols|xcuserstate|xcactivitylog|o|obj)(?:$|\/)|(?:\.app|\.xcarchive|\.dSYM|\.xcresult)(?:$|\/)/i;
+  /(?:^|\/)(?:\.git|\.env[^/]*|auth\.json|\.credentials\.json|config\.local\.json|openai\.key|Local\.xcconfig|credentials|private|pad-identity|paper-authority|learning-inbox|card-imports|card-revisions|taxonomy-requests|self-tests|backups|xcuserdata)(?:\/|$)|(?:^|\/)node_modules\/\.bin(?:\/|$)|\.(?:p12|p8|pem|key|cer|mobileprovision|provisionprofile|sqlite\d*|db|db-wal|db-shm|enc|log|ipa|bcsymbolmap|symbols|xcuserstate|xcactivitylog|o|obj)(?:$|\/)|(?:\.app|\.xcarchive|\.dSYM|\.xcresult)(?:$|\/)/i;
 
 function ignore(file) {
   if (file === "" || file === "/") return false;

@@ -7,6 +7,7 @@ const paths = [
   "self-tests",
   "learning-inbox",
   "card-revisions",
+  "taxonomy-requests",
   "learning-connections.json",
   "knowledge",
   "packs",
@@ -36,6 +37,24 @@ function backup(store, target) {
   require("./private-files.cjs").directory(dir);
   const dbfile = path.join(dir, "recall.sqlite");
   store.db.exec(`VACUUM INTO '${dbfile.replaceAll("'", "''")}'`);
+  // Projection triggers are app code, not portable backup data. The writer
+  // recreates them on open; unknown triggers still fail restore validation.
+  const portable = new DatabaseSync(dbfile);
+  try {
+    portable.exec("PRAGMA journal_mode=DELETE");
+    for (const name of [
+      "expertise_card_insert",
+      "expertise_card_update",
+      "expertise_content_update",
+      "expertise_card_delete",
+      "expertise_review_insert",
+      "expertise_review_update",
+      "expertise_review_delete",
+    ])
+      portable.exec(`DROP TRIGGER IF EXISTS "${name}"`);
+  } finally {
+    portable.close();
+  }
   for (const name of paths) {
     const file = path.join(store.folder, name);
     if (fs.existsSync(file))
@@ -226,16 +245,18 @@ function restore(folder, input) {
     }
     // Restored revision requests are retained for inspection, never authority
     // to replace card content merely because a backup was opened.
-    const revisionDir = path.join(stage, "card-revisions");
-    if (fs.existsSync(revisionDir))
-      for (const name of fs
-        .readdirSync(revisionDir)
-        .filter((n) => /^[a-f0-9]{64}\.json$/.test(n))) {
-        const file = path.join(revisionDir, name),
-          item = JSON.parse(fs.readFileSync(file, "utf8"));
-        if (item.status === "queued")
-          atomic(file, { ...item, status: "needs_resubmission" });
-      }
+    for (const requestKind of ["card-revisions", "taxonomy-requests"]) {
+      const revisionDir = path.join(stage, requestKind);
+      if (fs.existsSync(revisionDir))
+        for (const name of fs
+          .readdirSync(revisionDir)
+          .filter((n) => /^[a-f0-9]{64}\.json$/.test(n))) {
+          const file = path.join(revisionDir, name),
+            item = JSON.parse(fs.readFileSync(file, "utf8"));
+          if (item.status === "queued")
+            atomic(file, { ...item, status: "needs_resubmission" });
+        }
+    }
     require("./private-files.cjs").directory(saved);
     for (const name of [
       "recall.sqlite",

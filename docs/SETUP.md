@@ -199,8 +199,8 @@ This is a Codex-first beta. One physical-iPad submission has been inspected in a
 Mac updates are manual in this beta:
 
 1. Back up from **Settings & backups → Library & backups**, finish recordings or evaluations, then **Quit Recall**. Closing its window may leave the iPad receiver running.
-2. Download the newest **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases) and unzip it.
-3. Move **Recall.app** into the **same Applications location**, choose **Replace**, and open it again.
+2. Download the newest **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases). Put the ZIP in an empty folder before unzipping it, so Finder can extract it as **Recall.app**.
+3. Move **Recall.app** into the **same Applications location** as your installed copy, choose **Replace**, and open it again. If Finder extracted **Recall 2.app**, move that copy to an empty folder and rename it **Recall.app** before moving it into Applications.
 
 Your library lives separately from the source folder. Replacing the app preserves cards, review history, drafts and configuration; do not delete its data folder or reimport your library to update. New cards appear while Recall is open and do not require an app restart.
 

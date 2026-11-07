@@ -50,6 +50,7 @@ jobs:
       - run: node scripts/smoke-knowledge-setup.cjs
       - run: npm run test:knowledge-bootstrap
       - run: npm run test:knowledge-space
+      - run: npm run test:constellation
       - run: npm run test:voice
       - run: npm run test:speak
       - run: npm run test:handwriting
@@ -85,6 +86,12 @@ jobs:
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:knowledge-bootstrap
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:knowledge-space
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
+      - run: npm run test:constellation
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:security:desktop

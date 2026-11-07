@@ -24,8 +24,10 @@ import {
   Save,
   AlertCircle,
   MoveRight,
+  Orbit,
 } from "lucide-react";
 import { KnowledgeDocument } from "./KnowledgeDocument";
+import { Constellation } from "./Constellation";
 import "./knowledge-space.css";
 import { splitNote, titleInSource, sourceTitle } from "./knowledge-model";
 
@@ -51,6 +53,7 @@ export function KnowledgeSpace({
   notify,
   searchSignal,
 }) {
+  const [knowledgeView, setKnowledgeView] = useState("constellation");
   const [status, setStatus] = useState(null),
     [sourceId, setSourceId] = useState(""),
     [directory, setDirectory] = useState(""),
@@ -109,7 +112,10 @@ export function KnowledgeSpace({
     }
   }, [active]);
   useEffect(() => {
-    if (active && searchSignal) search.current?.focus();
+    if (active && searchSignal) {
+      setKnowledgeView("notes");
+      requestAnimationFrame(() => search.current?.focus());
+    }
   }, [active, searchSignal]);
   useEffect(() => {
     if (status && !status.sources.some((s) => s.id === sourceId)) {
@@ -257,6 +263,7 @@ export function KnowledgeSpace({
       persistDraft().catch(fail);
       return;
     }
+    if (knowledgeView !== "notes") return;
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
@@ -266,13 +273,14 @@ export function KnowledgeSpace({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [active, note, raw, busy, linking]);
+  }, [active, knowledgeView, note, raw, busy, linking]);
   const create = async () => {
     setBusy(true);
     try {
       await persistDraft();
       const value = await api.knowledgeCreate({ sourceId, directory });
       await open(value);
+      setKnowledgeView("notes");
       setEditing(true);
       requestAnimationFrame(() => editor.current?.focus());
       setEpoch((n) => n + 1);
@@ -377,6 +385,25 @@ export function KnowledgeSpace({
       fail(e);
     }
   };
+  const switchKnowledgeView = async (value) => {
+    try {
+      await persistDraft();
+      setKnowledgeView(value);
+    } catch (e) {
+      fail(e);
+    }
+  };
+  const openGraphNote = async (entry) => {
+    try {
+      await persistDraft();
+      await open(entry);
+      if (entry.sourceId && entry.sourceId !== sourceId)
+        changeScope(entry.sourceId);
+      setKnowledgeView("notes");
+    } catch (e) {
+      fail(e);
+    }
+  };
   return (
     <section
       className={`knowledge-space ${rail ? "" : "knowledge-focus"}`}
@@ -388,8 +415,16 @@ export function KnowledgeSpace({
           <span className="eyebrow">
             <Leaf size={13} /> YOUR PERSONAL KNOWLEDGE SPACE
           </span>
-          <h1>Make room for an idea.</h1>
-          <p>Write it down. Make a connection. Put it into practice.</p>
+          <h1>
+            {knowledgeView === "constellation"
+              ? "Your ideas, connected."
+              : "Make room for an idea."}
+          </h1>
+          <p>
+            {knowledgeView === "constellation"
+              ? "Explore your knowledge, from the big picture to the ideas within."
+              : "Write it down. Make a connection. Put it into practice."}
+          </p>
         </div>
         <div className="knowledge-top-actions">
           <button className="ghost" onClick={onSetup}>
@@ -404,6 +439,26 @@ export function KnowledgeSpace({
           </button>
         </div>
       </header>
+      <div
+        className="knowledge-view-switch"
+        role="group"
+        aria-label="Knowledge view"
+      >
+        <button
+          aria-pressed={knowledgeView === "constellation"}
+          onClick={() => switchKnowledgeView("constellation")}
+        >
+          <Orbit size={15} />
+          Constellation
+        </button>
+        <button
+          aria-pressed={knowledgeView === "notes"}
+          onClick={() => switchKnowledgeView("notes")}
+        >
+          <FileText size={15} />
+          Notes
+        </button>
+      </div>
       {error && (
         <div className="knowledge-message" role="alert">
           <AlertCircle size={17} />
@@ -416,8 +471,15 @@ export function KnowledgeSpace({
           </button>
         </div>
       )}
+      <Constellation
+        active={active && knowledgeView === "constellation"}
+        cards={cards}
+        onOpenNote={openGraphNote}
+        onCard={onCard}
+        onNotes={() => switchKnowledgeView("notes")}
+      />
       {status && !status.sources.length ? (
-        <div className="knowledge-start">
+        <div className="knowledge-start" hidden={knowledgeView !== "notes"}>
           <div className="knowledge-paper-stack">
             <FileText size={42} />
             <span>A place to think.</span>
@@ -438,7 +500,7 @@ export function KnowledgeSpace({
           <small>Works with an Obsidian folder too. No account required.</small>
         </div>
       ) : (
-        <div className="knowledge-layout">
+        <div className="knowledge-layout" hidden={knowledgeView !== "notes"}>
           <aside className="knowledge-shelf" aria-label="Your notes">
             <div className="knowledge-space-picker">
               <label htmlFor="knowledge-source">SPACE</label>

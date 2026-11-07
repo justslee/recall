@@ -58,8 +58,8 @@ Mac updates are manual in this beta. Your library stays outside the app bundle, 
 ### If you installed the Mac download
 
 1. Back up in **Settings & backups → Library & backups**, finish recordings/evaluations, then **Quit Recall**. Closing its window may keep the receiver running.
-2. Download the newest **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases), read its release notes and unzip it.
-3. Move **Recall.app** to the same Applications folder as your current app, choose **Replace**, then open that installed copy.
+2. Download the newest **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases), read its release notes, and unzip it in an empty folder. If Finder creates **Recall 2.app**, move that copy to an empty folder and rename it **Recall.app**.
+3. Move **Recall.app** to the same Applications folder as your current app, choose **Replace**, then open that installed copy. Use `~/Applications` if you originally installed Recall in your home Applications folder.
 
 No Node or rebuild is needed. Preserve the profile at `~/Library/Application Support/Recall`; do not delete it or reimport your cards to update. Normal updates retain the iPad pairing. macOS may request fresh permission when moving from an older development build to the stable signed app; approve only the permissions for features you use.
 
@@ -103,7 +103,7 @@ Download a fresh ZIP from the repository's **Code → Download ZIP** menu and ex
 An app replacement at the same path updates its CLI, but installed assistant instructions and the portable skill kit are separate copies. When an update changes those skills, or you move the app/checkout:
 
 1. Open the updated app from its final location.
-2. In **Settings & backups → Learning connections**, choose **Disconnect**, then **Connect → Install connection** for each assistant you use. Review the proposed paths before installing. This backs up and replaces Recall's managed instructions; it preserves unrelated instructions and skills, capture preferences and study data.
+2. In **Settings & backups → Connections**, choose **Disconnect**, then **Connect → Install connection** for each assistant you use. Review the proposed paths before installing. This backs up and replaces Recall's managed instructions; it preserves unrelated instructions and skills, capture preferences and study data.
 3. Start fresh Codex/Claude sessions. Use **Check readiness** and **Verify learning** to confirm the connection.
 
 Only an app-code update needs a restart. Validated card imports and learning-inbox submissions appear while the app stays open; they do not require these update steps.
@@ -197,7 +197,7 @@ For scripted configuration, see [Optional CLI configuration](KNOWLEDGE.md#option
 
 ## Learning capture
 
-1. Open **Settings & backups → Learning connections**.
+1. Open **Settings & backups → Connections**.
 2. Connect Codex, Claude Code or both, review the installation, and choose **Install connection**.
 3. Enable capture, choose your learning timezone and save.
 4. Start a fresh assistant session and [verify a learning receipt](WORKFLOW.md#2-connect-the-assistants-you-use).

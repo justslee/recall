@@ -14,7 +14,7 @@ const personalPath =
 function privateArtifact(name) {
   const normalized = name.replaceAll("\\", "/");
   return (
-    /(?:^|\/)(?:\.git|evidence|private|tasks|backups|credentials|learning-inbox|card-imports|card-revisions|self-tests|pad-identity|pad-staging|pad-handoff|paper-runtime|paper-authority|xcuserdata)(?:\/|$)/i.test(
+    /(?:^|\/)(?:\.git|evidence|private|tasks|backups|credentials|learning-inbox|card-imports|card-revisions|taxonomy-requests|self-tests|pad-identity|pad-staging|pad-handoff|paper-runtime|paper-authority|xcuserdata)(?:\/|$)/i.test(
       normalized,
     ) ||
     /\.(?:xcarchive|dSYM|xcresult)(?:\/|$)/i.test(normalized) ||

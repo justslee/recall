@@ -22,6 +22,7 @@ const methods = [
   "paperConnect",
   "progress",
   "learningMap",
+  "constellation",
   "reviewHistory",
   "speakSources",
   "speakPreview",

@@ -126,6 +126,7 @@ const handle = (name, fn) =>
         "reviewHistory",
         "progress",
         "learningMap",
+        "constellation",
         "voiceStatus",
         "speakSources",
         "speakDraft",
@@ -507,6 +508,9 @@ app.whenReady().then(async () => {
     require("./progress.cjs").snapshot(store, options),
   );
   handle("learningMap", () => require("./learning-map.cjs").snapshot(store));
+  handle("constellation", (options) =>
+    require("./constellation.cjs").snapshot(store, options),
+  );
   handle("demo", () => {
     if (store.cards().length)
       throw Error(
@@ -551,6 +555,7 @@ app.whenReady().then(async () => {
   );
   const knowledgeModule = require("./knowledge-space.cjs");
   knowledgeSpace = new knowledgeModule.KnowledgeSpace(store.folder, (event) => {
+    require("./constellation.cjs").invalidateNotes(store.folder);
     if (win && !win.isDestroyed()) win.webContents.send("recall:knowledge-event", event);
   });
   // Keep the derived index fresh for assistant lookups even before Knowledge is opened.
@@ -723,6 +728,12 @@ app.whenReady().then(async () => {
       changed =
         !!require("./card-revisions.cjs").applyPending(store).applied ||
         changed;
+      changed =
+        !!require("./taxonomy-queue.cjs").applyPending(store).changed || changed;
+      const expertise = require("./expertise.cjs").refresh(store, {
+        budget: 100,
+      });
+      changed = expertise.processed > 0 || expertise.rebuilt || changed;
       if (scan || catchUpPending)
         catchUpPending = !!catchUp.scan(store.folder).remainingFiles;
       pad.notebookIssues =
