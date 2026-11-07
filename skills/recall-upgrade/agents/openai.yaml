@@ -1,0 +1,4 @@
+interface:
+  display_name: "Recall upgrade"
+  short_description: "Upgrade Recall safely and keep one app rollback"
+  default_prompt: "Use $recall-upgrade to check my installed Recall app and upgrade to the latest compatible published release while preserving all learning data."

@@ -518,3 +518,32 @@ test("Claude tool-use commentary does not prematurely complete a learning turn",
     "assistant",
   );
 });
+
+test("Connections installs the public upgrade skill for Codex and Claude", (t) => {
+  const { home, folder } = setup(t);
+  for (const host of ["codex", "claude"]) {
+    const result = c.connect(folder, host, { home, apply: true });
+    const skill = path.join(home, "." + host, "skills/recall-upgrade");
+    assert.equal(result.upgradeSkill.installed, true);
+    assert(fs.existsSync(path.join(skill, "scripts/upgrade.cjs")));
+    assert(fs.existsSync(path.join(skill, "scripts/mac-release.cjs")));
+    assert(
+      fs
+        .readFileSync(path.join(skill, "SKILL.md"), "utf8")
+        .includes("recall-managed:recall-upgrade"),
+    );
+    const again = c.connect(folder, host, { home, apply: true });
+    assert(fs.existsSync(path.join(again.backup, "upgrade-skill/SKILL.md")));
+  }
+});
+
+test("An unrelated upgrade skill is preserved while the learning connection is installed", (t) => {
+  const { home, folder } = setup(t);
+  const skill = path.join(home, ".codex/skills/recall-upgrade/SKILL.md");
+  fs.mkdirSync(path.dirname(skill), { recursive: true });
+  fs.writeFileSync(skill, "My custom upgrade workflow");
+  const result = c.connect(folder, "codex", { home, apply: true });
+  assert.equal(result.upgradeSkill.preservedExisting, true);
+  assert.equal(fs.readFileSync(skill, "utf8"), "My custom upgrade workflow");
+  assert(c.status(folder).hosts.codex.connected);
+});

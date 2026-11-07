@@ -85,11 +85,15 @@ Voice transcription, Speak evaluation and Recall's handwriting assessment use an
 
 ## Get the latest update
 
+**With Codex or Claude Code:** install the public [recall-upgrade skill](skills/recall-upgrade/SKILL.md), then ask **“Use recall-upgrade to update Recall.”** It checks published releases, verifies the download, quits and replaces the app when needed, reopens it, and retains one previous app. The next source build also installs this skill through **Connections**. Your learning library is preserved. [Upgrade setup and behavior →](docs/SETUP.md#update-an-existing-installation)
+
+**Manual update:**
+
 1. Back up in **Settings & backups → Library & backups**, finish recordings or evaluations, then quit Recall.
 2. Download the newest **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases) and unzip it.
 3. Move **Recall.app** to its existing Applications location, choose **Replace**, and reopen it. Follow any release notes about refreshing assistant connections.
 
-Your library lives separately from the app. Updating preserves your cards, study history and configuration. **New cards appear while Recall is open**; an app-code update requires restarting. There is no automatic Mac updater yet. Source users and custom profiles have [detailed update instructions](docs/SETUP_REFERENCE.md#update-an-existing-installation).
+Your library lives separately from the app. Updating preserves your cards, study history and configuration. **New cards appear while Recall is open**; an app-code update requires restarting. There is no unattended background Mac updater. Source users and custom profiles have [detailed update instructions](docs/SETUP_REFERENCE.md#update-an-existing-installation).
 
 **Recall Pad:** open **TestFlight → Recall Pad → Update**, or enable **Automatic Updates** on its TestFlight page. Save an open sheet before updating. Keep the app installed so its local sheets remain available. [iPad update details →](docs/SETUP.md#update-recall-pad)
 

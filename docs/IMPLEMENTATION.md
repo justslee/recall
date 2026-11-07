@@ -294,3 +294,10 @@ The October 11 Tutor Pad entry update removes the initial destination dialog. Ho
 - A bundled Notion OAuth/API client or connector authentication.
 
 **Next:** [Contributing](../CONTRIBUTING.md) · [Release checklist](RELEASE_CHECKLIST.md) · [Detailed implementation history](history/IMPLEMENTATION_LOG.md)
+
+
+### Assistant-driven app upgrades — November 7, 2026
+
+The public `recall-upgrade` skill checks official GitHub releases using the installed app's bundled runtime. An explicit upgrade verifies the bounded ZIP, SHA-256, signed publisher, notarization and Apple Silicon executable before gracefully replacing the app. Stable and beta installations follow their existing release channel; newer local versions and builds are preserved. One previous app is retained beside the installation. A saved transaction recovers interrupted replacement and removes superseded app/download files only after identity checks. Learning data and profile backups remain outside this transaction. Previously connected assistants can be refreshed through their existing profile launchers. New source Connections installs the standalone skill for Codex and Claude Code, preserving unrelated skills.
+
+**Verified locally:** all 456 regression tests and the production build passed, including a real process-kill/restart fixture, failed replacement and launch recovery, stale cleanup recovery, channel/build selection, bad downloads, incompatible apps, unrelated-skill preservation and unchanged synthetic learning data. The standalone skill was copied outside the checkout and run with the installed Recall runtime against the actual published beta.6 build 17. With app quit, replacement and launch explicitly disabled for that validation, its downloaded artifact matched the installed app and returned `up_to_date`. A follow-up read-only check passed using built-in macOS commands without Xcode tools. Actual app replacement was tested with isolated fixtures; this change did not replace the owner's running app. This is source functionality, not a newly published Mac release.

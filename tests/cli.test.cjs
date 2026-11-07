@@ -64,7 +64,15 @@ test("documented CLI bootstraps KB, imports cards, captures learning, backs up a
   assert.equal(
     run("skills", "install", path.join(root, "skills"), "--apply").skills
       .length,
-    13,
+    14,
+  );
+  assert(
+    fs.existsSync(path.join(root, "skills/recall-upgrade/scripts/upgrade.cjs")),
+  );
+  assert(
+    fs.existsSync(
+      path.join(root, "skills/recall-upgrade/scripts/mac-release.cjs"),
+    ),
   );
   const refused = spawnSync(
     process.execPath,
