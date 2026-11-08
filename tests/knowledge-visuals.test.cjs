@@ -101,3 +101,16 @@ test("Explicit widget permission changes preserve card content, schedules, revie
     expectedAnswer: "approved compatibility visual",
   });
 });
+
+test("Note asset references accept only the bounded content-addressed form", async () => {
+  const { parseKnowledgeVisual: parse } = await model;
+  const asset = "Visuals/" + "a".repeat(64) + ".recall-visual.json";
+  assert.deepEqual(parse(JSON.stringify({ asset })), { asset });
+  for (const ref of [
+    { asset: "../secret" },
+    { asset: asset.toUpperCase() },
+    { asset, html: "<script>" },
+    { asset, cardId: "x", widgetIndex: 0 },
+  ])
+    assert.equal(parse(JSON.stringify(ref)), null);
+});

@@ -24,6 +24,12 @@ The public visual skill now requires comparison with the approved composition an
 
 **Verified locally on November 8, 2026:** 477 Node regression tests, the web build and documentation checks passed. Hidden synthetic Knowledge journeys cover permission/Load separation, direct-request 403s, sandbox isolation, controls, appearance, expansion, navigation unload, missing references, hostile note content, editing/drafts and learning preservation. A separate private-content check reused the exact approved Batch Coalescing visual in its note and verified all 32 control combinations in four width/theme configurations (128 scenarios). These results apply to the source candidate; they do not establish installation or public release of this feature.
 
+### Note-owned diagram assets (source build)
+
+Local Markdown/Obsidian notes can reference immutable visual JSON assets under their configured source’s `Visuals/` directory. The asset hash, source scope and current note reference are verified before serving it through the existing opaque widget sandbox. Explicit per-note permission and a separate Load click remain required. The CLI previews and saves assets without making flashcards or granting trust; changed content gets a new hash and permission boundary. Source backups must include these assets.
+
+Focused regression checks cover stale revisions, content mutation, missing references, path/symlink rejection, read-only sources, preview side effects and permission revocation. Hidden real-renderer tests exercise the asset through its actual note, including the direct 403, independent Load, live controls, expansion and unchanged card/review data. Private library migrations and app installation are separate from this public runtime implementation.
+
 ## Quiet preparation and connections (source build)
 
 The current source build adds a previewed background queue of up to eight captured items, a process-local card search index with exact-content invalidation, and per-item timing/receipt checkpoints. Existing ready objectives keep the immediate capture path. New candidates are refreshed after every item so later work can reuse earlier imports. Provider jobs remain serial, tool-free and cancelable; blocked work remains explicit. Interrupted batches do not retry automatically. Local retrieval measurements do not establish end-to-end model latency.

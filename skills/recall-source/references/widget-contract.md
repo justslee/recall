@@ -90,3 +90,17 @@ A supporting source build recognizes this Markdown reference to an existing libr
 The note contains an identity, not executable HTML. The renderer resolves the library card and uses the existing `recall://widget` sandbox, permission check and explicit Load gate. The reader can enable that card's widgets from the note; authoring a reference never changes its permission. Missing cards/widgets show an unavailable message. Navigating away unloads the frame; returning requires Load again. Expand/Collapse and appearance changes preserve active inputs.
 
 Check runtime support before saving this fence to a live note: older apps display it as code. Verify the selected widget's exact source and destination rendering against the approved example, including meaningful changed states. Keep IDs, surrounding note prose and learning records intact. If an illustrated static fallback is needed, preserve the explanatory scene and state rather than replacing it with a colored text transcription.
+
+
+### Note-owned visuals
+
+When no existing card widget matches, a supporting runtime can store a visual with the configured local Markdown/Obsidian source. Do not create a flashcard just to host a note diagram. Save a JSON asset with exactly `schemaVersion: 1`, `title` (up to 200 characters), and `html` (the widget fragment). The complete asset is limited to 2 MB and follows the same sandbox/CSP and widget syntax contract.
+
+```sh
+recall kb visual save SOURCE_ID ASSET.json
+recall kb visual save SOURCE_ID ASSET.json --apply
+```
+
+Preview validates without writing. Apply creates an immutable `Visuals/<sha256>.recall-visual.json` file and returns its reference. Then revision-save the note with a `recall-visual` fence whose JSON has only the returned `asset` field. Use the exact returned path; do not invent a digest. The referenced file must travel with the source folder when backing it up or moving it. JSON assets are not extra Knowledge Notes.
+
+The reader enables each exact note/asset pair and then clicks Load. Authoring never grants that permission or modifies cards. A changed asset uses a new digest and requires new permission; stale references, missing files, modified bytes and paths outside the source fail closed. Moving a note requires enabling its visuals again. Keep the original figure or its full source recoverable and verify the actual destination, including every control, both appearances, narrow widths and expansion.

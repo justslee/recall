@@ -41,6 +41,29 @@ test("documented CLI bootstraps KB, imports cards, captures learning, backs up a
     "saved",
   );
   assert.equal(run("kb", "search", "kb", "weighted").documents.length, 1);
+  const visualFile = path.join(root, "visual.json");
+  fs.writeFileSync(
+    visualFile,
+    JSON.stringify({
+      schemaVersion: 1,
+      title: "Queue",
+      html: "<p>Bounded queue</p>",
+    }),
+  );
+  const preview = run("kb", "visual", "save", "kb", visualFile);
+  assert.equal(preview.mode, "preview");
+  assert.equal(fs.existsSync(path.join(notes, "Visuals")), false);
+  const visual = run("kb", "visual", "save", "kb", visualFile, "--apply");
+  assert.equal(visual.asset, preview.asset);
+  assert.equal(
+    JSON.parse(fs.readFileSync(path.join(notes, visual.asset), "utf8")).title,
+    "Queue",
+  );
+  assert.equal(
+    fs.existsSync(path.join(profile, "knowledge/visual-permissions")),
+    false,
+  );
+  assert.equal(run("init").cards, 0);
   assert.equal(run("demo", "--apply").inserted, 3);
   assert.equal(run("cards", "search", "weighted").length, 3);
   const capture = path.join(root, "capture.json");

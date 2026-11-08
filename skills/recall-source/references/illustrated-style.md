@@ -26,7 +26,7 @@ For quantitative charts, keep axes and values accurate and readable. Pastel regi
 
 Make every control update marks and interpretation through the same state. Preserve meaningful boundaries and counterexamples. At narrow widths, reflow groups or recompute geometry; never shrink a large SVG until its labels become unreadable. Keep visible diagram labels at least 12 screen pixels where practical. Honor reduced motion and preserve keyboard use.
 
-Static Knowledge Base figures are sanitized SVG/Mermaid. Use SVG presentation attributes such as fill, stroke and font-size, plus direct geometry. Do not depend on scripts, controls, style blocks, style/id attributes or ID-based markers/gradients surviving note sanitization. Interactive controls run in a card widget sandbox; capable Knowledge Note renderers can reference that same widget with a `recall-visual` fence. A static snapshot may accompany an interactive diagram but should say which state it depicts.
+Static Knowledge Base figures are sanitized SVG/Mermaid. Use SVG presentation attributes such as fill, stroke and font-size, plus direct geometry. Do not depend on scripts, controls, style blocks, style/id attributes or ID-based markers/gradients surviving note sanitization. Interactive controls run in the widget sandbox; capable Knowledge Note renderers can reference an existing card widget or a note-owned asset with a `recall-visual` fence. A static snapshot may accompany an interactive diagram but should say which state it depicts.
 
 Compare the old and proposed model results, inspect baseline and changed states at normal/narrow widths in both appearances, and keep the source unchanged until an authorized revision is applied. Preview rendering is not proof that the installed app accepted a revision.
 

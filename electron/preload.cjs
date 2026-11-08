@@ -93,6 +93,8 @@ const methods = [
   "undo",
   "saveCard",
   "setWidgetPermission",
+  "inspectKnowledgeVisual",
+  "setKnowledgeVisualPermission",
   "suspend",
   "newDeck",
   "run",

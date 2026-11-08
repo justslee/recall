@@ -3,6 +3,13 @@ export function parseKnowledgeVisual(text) {
   try {
     const value = JSON.parse(text);
     if (
+      value &&
+      Object.keys(value).length === 1 &&
+      typeof value.asset === "string" &&
+      /^Visuals\/[a-f0-9]{64}\.recall-visual\.json$/.test(value.asset)
+    )
+      return value;
+    if (
       !value ||
       Array.isArray(value) ||
       Object.keys(value).some((k) => !["cardId", "widgetIndex"].includes(k))

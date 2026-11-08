@@ -37,6 +37,7 @@ export function KnowledgeDocument({
   active = true,
   onEnableVisual,
   onCard,
+  assetApi,
 }) {
   const ref = useRef();
   const [figures, setFigures] = useState([]);
@@ -190,6 +191,8 @@ export function KnowledgeDocument({
           f.isVisual ? (
             <KnowledgeVisual
               reference={f.reference}
+              note={note}
+              assetApi={assetApi}
               cards={cards}
               active={active}
               onEnable={onEnableVisual}

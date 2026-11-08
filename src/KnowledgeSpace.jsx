@@ -786,6 +786,10 @@ export function KnowledgeSpace({
                   </div>
                 ) : (
                   <KnowledgeDocument
+                    assetApi={{
+                      inspect: api.inspectKnowledgeVisual,
+                      enable: api.setKnowledgeVisualPermission,
+                    }}
                     cards={cards}
                     active={active && knowledgeView === "notes" && !editing}
                     onEnableVisual={onEnableVisual}

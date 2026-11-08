@@ -44,6 +44,21 @@ async function main() {
     ],
     captureEnabled: false,
   });
+  const assetRef = require("../electron/knowledge-visual-assets.cjs").saveAsset(
+    folder,
+    "notes",
+    {
+      schemaVersion: 1,
+      title: "Inspect a note-owned queue",
+      html: '<label>Queue size<input id="own-size" type="range" min="1" max="8" value="2"></label><output id="own-result">2</output><script>document.querySelector("#own-size").oninput=e=>document.querySelector("#own-result").textContent=e.target.value;</script>',
+    },
+  );
+  fs.writeFileSync(
+    path.join(notes, "Owned.md"),
+    "# Owned\n\nOriginal explanation remains.\n\n```recall-visual\n" +
+      JSON.stringify({ asset: assetRef.asset }) +
+      "\n```",
+  );
   const store = new Store(folder);
   store.import([card]);
   const before = store.card(card.id);
@@ -60,6 +75,7 @@ async function main() {
       env: { ...process.env, RECALL_DATA_DIR: folder, RECALL_VERIFY: "1" },
     });
     const page = await app.firstWindow();
+    await page.emulateMedia({ colorScheme: null });
     assert.equal(
       await app.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows().some(
@@ -81,6 +97,66 @@ async function main() {
         .click();
       await expect(page.locator(".knowledge-prose h1")).toHaveText(title);
     };
+    await open("Owned");
+    await expect(page.locator("iframe")).toHaveCount(0);
+    const own = await page.evaluate(
+      ({ asset }) =>
+        window.recall.inspectKnowledgeVisual({
+          sourceId: "notes",
+          path: "Owned.md",
+          asset,
+        }),
+      assetRef,
+    );
+    assert.equal(
+      await app.evaluate(
+        async ({ net }, id) =>
+          (await net.fetch("recall://widget/" + encodeURIComponent(id) + "/0"))
+            .status,
+        own.id,
+      ),
+      403,
+    );
+    await page
+      .getByRole("button", { name: "Enable this visual", exact: true })
+      .click();
+    await expect(page.locator("iframe")).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Load interactive", exact: true })
+      .click();
+    await expect(page.locator(".visual-widget")).toHaveAttribute(
+      "data-widget-status",
+      "ready",
+    );
+    const ownedFrame = page.frameLocator(".visual-widget iframe");
+    await ownedFrame.locator("#own-size").fill("7");
+    await expect(ownedFrame.locator("#own-result")).toHaveText("7");
+    assert.equal(
+      await page.locator("iframe").getAttribute("sandbox"),
+      "allow-scripts",
+    );
+    assert.equal(
+      await ownedFrame.locator("body").evaluate(() => typeof window.recall),
+      "undefined",
+    );
+    await page.getByRole("button", { name: "Expand", exact: true }).click();
+    await page.getByRole("button", { name: "Collapse", exact: true }).click();
+    await expect(ownedFrame.locator("#own-size")).toHaveValue("7");
+    const originalAsset = fs.readFileSync(path.join(notes, assetRef.asset));
+    fs.writeFileSync(
+      path.join(notes, assetRef.asset),
+      "changed after permission",
+    );
+    assert.equal(
+      await app.evaluate(
+        async ({ net }, id) =>
+          (await net.fetch("recall://widget/" + encodeURIComponent(id) + "/0"))
+            .status,
+        own.id,
+      ),
+      404,
+    );
+    fs.writeFileSync(path.join(notes, assetRef.asset), originalAsset);
     await open("Grouping");
     await expect(page.locator("iframe")).toHaveCount(0);
     assert.equal(

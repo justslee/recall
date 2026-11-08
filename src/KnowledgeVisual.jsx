@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { KnowledgeAssetVisual } from "./KnowledgeAssetVisual";
 import { WidgetFrame } from "./WidgetFrame";
 import { resolveKnowledgeVisual } from "./knowledge-visual-model";
 
 export function KnowledgeVisual({
   reference,
+  note,
+  assetApi,
   cards,
   active,
   onEnable,
@@ -11,6 +14,16 @@ export function KnowledgeVisual({
 }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  if (reference?.asset)
+    return (
+      <KnowledgeAssetVisual
+        key={JSON.stringify([note.sourceId, note.path, reference.asset])}
+        reference={reference}
+        note={note}
+        active={active}
+        assetApi={assetApi}
+      />
+    );
   const visual = reference && resolveKnowledgeVisual(reference, cards);
   if (!visual)
     return (
