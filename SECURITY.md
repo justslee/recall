@@ -14,6 +14,8 @@
 
 ## Security boundaries
 
+See the [November 8, 2026 review](docs/history/SECURITY_REVIEW_2026-11-08.md) for the latest dated source/history, image, dependency and public-download findings. Checks are scoped evidence, not a guarantee that no vulnerability exists.
+
 - **Widgets:** no privileged app APIs.
 - **Native code:** explicit local review and execution within the supported macOS sandbox.
 - **Learning inbox:** submissions cannot grant execution trust.

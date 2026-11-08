@@ -72,6 +72,13 @@ test("hosted privacy audit checks a full checkout without persisted Git credenti
   );
 
   assert(checkoutIndex >= 0 && auditIndex > checkoutIndex);
+  const setupIndex = steps.findIndex(
+    (step) => step.run === "npm run setup -- --no-launch",
+  );
+  assert(
+    setupIndex > auditIndex,
+    "Audit private content before dependency setup",
+  );
   assert.equal(steps[checkoutIndex].with?.["fetch-depth"], 0);
   assert.equal(steps[checkoutIndex].with?.["persist-credentials"], false);
   assert.equal(workflow.permissions.contents, "read");

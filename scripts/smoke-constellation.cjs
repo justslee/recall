@@ -597,15 +597,46 @@ async function run() {
       "Japanese yen funding",
     );
     await page.getByRole("button", { name: "Edit", exact: true }).click();
+    // Retain the editor's old event handler to exercise a key event already
+    // queued when a view commits, before passive-effect cleanup removes it.
+    await page.evaluate(() => {
+      const add = window.addEventListener;
+      window.__noteShortcutProbe = {
+        handlers: [],
+        restore: () => {
+          window.addEventListener = add;
+        },
+      };
+      window.addEventListener = function (type, handler, ...options) {
+        if (type === "keydown")
+          window.__noteShortcutProbe.handlers.push(handler);
+        return add.call(this, type, handler, ...options);
+      };
+    });
     const draft =
       (await page.getByLabel("Write in Markdown").inputValue()) +
       "\nA draft preserved while exploring.";
     await page.getByLabel("Write in Markdown").fill(draft);
+    await page.waitForFunction(
+      () => window.__noteShortcutProbe.handlers.length > 0,
+    );
     await switcher
       .getByRole("button", { name: "My Brain", exact: true })
       .click();
     await expect(constellation).toBeVisible();
     await page.keyboard.press("Meta+s");
+    await page.evaluate(() => {
+      const probe = window.__noteShortcutProbe;
+      probe.restore();
+      for (const handler of probe.handlers) {
+        const event = new KeyboardEvent("keydown", { key: "s", metaKey: true });
+        Object.defineProperty(event, "target", { value: document.body });
+        handler(event);
+      }
+      delete window.__noteShortcutProbe;
+    });
+    // Let a mistakenly dispatched save reach the writer before checking disk.
+    await page.waitForTimeout(300);
     assert.equal(
       fs.readFileSync(seeded.noteFile, "utf8"),
       seeded.noteText,

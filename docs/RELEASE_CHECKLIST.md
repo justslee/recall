@@ -4,7 +4,7 @@
 
 **Distribution preparation:** [Mac download and iPad TestFlight](DISTRIBUTION.md) · [Submission packet](submission/README.md). Use a private copy of the [candidate record](submission/RELEASE_RECORD.md) to keep build, notarization and review evidence distinct. These guides do not close the checks below.
 
-**Mac source version:** `0.6.0-beta.8`. Confirm the published download on [GitHub Releases](https://github.com/justslee/recall/releases) and the candidate version against `package.json` when freezing a build. Record each signed candidate's exact source commit and build separately; later documentation or tooling commits do not change an already signed app. Apple Silicon macOS beta; code/docs are MIT, original demo content is CC0-1.0, and imported material retains its own terms.
+**Mac source version:** read [`package.json`](../package.json), then confirm the published download on [GitHub Releases](https://github.com/justslee/recall/releases) when freezing a build. Record each signed candidate's exact source commit and build separately; later documentation or tooling commits do not change an already signed app. Apple Silicon macOS beta; code/docs are MIT, original demo content is CC0-1.0, and imported material retains its own terms.
 
 Use actual candidate output as evidence. Earlier test counts or audits do not validate later changes. [Implementation](IMPLEMENTATION.md) records the reviewed baseline.
 
@@ -35,6 +35,8 @@ npm run audit:package
 - [ ] Label synthetic microphone/provider/Notion receipts as synthetic.
 - [ ] Audit full Git history; shallow history must fail.
 - [ ] Inspect image pixels and commit attribution manually.
+- [ ] Inspect image metadata and QR payloads as well as visible text; never publish live pairing or session credentials.
+- [ ] Check the dependency versions inside every still-public app download against current advisories. A clean current lockfile does not validate older binaries. Withdraw obsolete affected downloads as recoverable drafts and direct existing users to a reviewed replacement.
 
 Packaged check pattern:
 
@@ -47,7 +49,7 @@ The [Verify workflow](https://github.com/justslee/recall/actions/workflows/verif
 ## 3. Follow only the README from a fresh clone
 
 - [ ] Commit the reviewed candidate and test `npm run setup` in a fresh clone with an isolated profile.
-- [ ] Verify **Try demo**, **Import cards** → Card Deck and **Connect learning** → Learning connections.
+- [ ] Verify **Try a short session**, **Import cards** → Card Deck and **Bring my learning** → Connections.
 - [ ] Complete a Concepts/Math/Coding/Mixed review: math starts hidden, flip replaces the front, and widgets/code need explicit actions.
 - [ ] Connect Markdown/Obsidian scopes with explicit access and **Test connection**; the check must not author notes or change other sources.
 - [ ] Create a multi-destination KB: primary/mirror choices, preview without writes, explicit consent and safe retry without overwritten notes.

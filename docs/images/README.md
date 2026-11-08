@@ -36,3 +36,15 @@ Refresh these only in a disposable simulator with no pairing or personal sheets.
 - Keep full labels and relevant controls readable; avoid screenshots of API keys or live QR codes.
 - Keep captions honest about demo data, unverified integrations and simulator captures.
 - Run the documentation link check and release privacy audit. Text audits cannot establish pixel-level privacy.
+
+## Article illustrations
+
+The following are original concept illustrations, not screenshots or measured learning outcomes. They use no personal data. Each has an editable SVG and a PNG rendered at twice the SVG's dimensions:
+
+| Illustration | PNG size | Use |
+| --- | --- | --- |
+| `recall-article-cover` | 3200 × 1280 | Article cover |
+| `recall-learning-loop` | 3200 × 1920 | Explore → Capture → Practice → Revisit |
+| `recall-architecture` | 3200 × 2240 | Local storage and optional connections |
+
+The SVGs contain static shapes and text, with no scripts or external resources. Review their wording against current capabilities before reuse. See the [article and upload notes](../launch/README.md).

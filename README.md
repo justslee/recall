@@ -1,4 +1,4 @@
-In the world of AI, we consume more text and move faster than ever. But how much do we actually learn and retain? Recall helps you continuously capture what you’re learning, log it, and test yourself—so more of it stays with you.
+In the world of AI, we consume more text and move faster than ever. But how much do we actually learn and retain? Recall helps you capture what you're learning, keep it organized, and test yourself—so more of it stays with you.
 
 > “All of learning is anti-forgetting.”
 >
@@ -6,115 +6,115 @@ In the world of AI, we consume more text and move faster than ever. But how much
 
 # Recall
 
-**Turn what you learn into what you can recall.**
+**Your knowledge. A place to keep it. A way to practice it.**
 
-A local study desk for concepts, mathematics and code—with a knowledge-base connection, daily self-tests, spoken explanations and an optional iPad notepad.
+A local Mac app for notes, flashcards, coding challenges, math practice and spoken explanations. An optional iPad companion adds handwriting and personal notebooks.
 
-**Mac · Local first · Light & dark · Your own knowledge**
+**[Download for Mac](https://github.com/justslee/recall/releases/tag/v0.6.0-beta.10) · [Illustrated setup guide](docs/SETUP.md) · [See it in use](docs/demos/README.md) · [Get help](docs/TROUBLESHOOTING.md)**
 
 [![Verify](https://github.com/justslee/recall/actions/workflows/verify.yml/badge.svg)](https://github.com/justslee/recall/actions/workflows/verify.yml)
 
-**[Start here: illustrated setup guide →](docs/SETUP.md)**
-
-[See Recall in use](docs/demos/README.md) · [Get updates](#get-the-latest-update) · [Get help](docs/TROUBLESHOOTING.md)
-
-|                                             Light                                             |                                                 Dark                                                 |
-| :-------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------: |
-| ![Recall Study Desk in light mode with original demo cards](docs/images/study-desk-light.png) | ![Recall Study Desk in dark mode with the same original demo cards](docs/images/study-desk-dark.png) |
-
-_Appearance follows your Mac. All documentation screenshots use original demo or synthetic content._
-
 <a id="start-in-five-minutes"></a>
+<a id="get-started"></a>
 
-## Get started
+## Start here
 
-You need an **Apple Silicon Mac running macOS 13 or later**.
+You need an **Apple Silicon Mac (M1 or newer) running macOS 13 or later**.
 
-Download the **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases), unzip it, move **Recall.app** to **Applications**, and open it. The signed, notarized app includes its runtime: **no Node, Terminal or source build is needed**.
+1. **Download** the newest release's **Mac app ZIP** under **Assets**. Choose the file ending in `macos-arm64.zip`, rather than GitHub's “Source code” ZIP.
+2. **Install:** double-click the ZIP, drag **Recall.app** into **Applications**, and open it there.
+3. **Try one session:** choose **Try a short session**. Or choose **Import cards** to bring a compatible Anki deck.
 
-The [illustrated setup guide](docs/SETUP.md) takes you from download to your first study session. It keeps the knowledge base, assistant connections and iPad setup on the same page, with screenshots and optional sections. Developers can still [build from source](docs/SETUP_REFERENCE.md#install-and-open-recall); that route requires **Node.js 22.18 or later**, installed separately.
+The download is signed and notarized. **No Terminal, Node, API key, knowledge base or iPad is needed to start.** Ordinary card review works offline after installation. Appearance follows your Mac.
 
-Choose **Try demo** for three original sample cards, **Import cards** for a compatible Anki deck, or **Connect learning** to make the system yours. You can study without an account, API key, knowledge base or iPad. Setup needs internet; ordinary study works offline afterward.
+![Recall Study Desk in light mode with original demo cards](docs/images/study-desk-light.png)
 
-> [!NOTE]
-> This is a beta. Mac updates happen only when you request them. Recall Pad is a separate iPad app: invited testers use TestFlight, and a [personal Xcode build](docs/IPAD_NATIVE.md) remains available. There is no public TestFlight invitation yet.
+*Demo content shown. [See dark mode](docs/images/study-desk-dark.png).*
 
-## Choose the practice you have room for
+## Build a learning habit around your work
 
-| Format       | Your task                                   | What helps                                         |
-| :----------- | :------------------------------------------ | :------------------------------------------------- |
-| **Concepts** | Explain the idea from memory.               | Definitions, concrete examples and useful visuals. |
-| **Math**     | Solve on paper or iPad, or enter an answer. | Worked steps, revealed when you choose.            |
-| **Coding**   | Complete a focused Python or C++ challenge. | A matching editor, starter code and tests.         |
-| **Mixed**    | Combine formats that fit your session.      | Independent review history for each question.      |
+![Explore, capture, practice and revisit: the Recall learning loop](docs/images/recall-learning-loop.png)
 
-Choose a **topic** or **collection** separately from format. Cards can contain LaTeX, images and interactive diagrams. Your own **Again / Hard / Good / Easy** rating drives the next review; optional AI feedback never rates a card for you.
+With capture enabled, your assistant records useful concepts in a local inbox. Existing questions are reused; missing ones are prepared separately. **Self Test** brings captured learning back by day. Capture records exposure, not mastery.
 
-[Walk through a study session →](docs/demos/STUDY.md)
+Choose a topic or collection in **Card Deck**, then choose the kind of practice you have room for:
 
-## Connect your learning
+| Practice | What you do |
+| :--- | :--- |
+| **Concepts** | Explain an idea from memory; check definitions, examples and useful interactive visuals. |
+| **Math** | Solve a problem and reveal its worked solution when you're ready. |
+| **Coding** | Complete a Python or C++ challenge with starter code and tests. |
+| **Mixed** | Combine the formats you want in one session. |
 
-The current source build also adds **Knowledge**, a local home for Markdown and HTML notes. Write and read in the app, search an indexed folder with **⌘K**, and practice the connected ideas. An Obsidian folder can be used directly. [See the illustrated Knowledge guide →](docs/KNOWLEDGE_SPACE.md)
+Your **Again / Hard / Good / Easy** rating schedules the next review. Optional AI feedback never rates a card for you. **Progress** shows recorded practice; **Knowledge → My Brain** maps connected ideas and review evidence.
 
-Knowledge now opens to **My Brain**: expand and collapse topic branches on one continuous canvas, follow connections, and inspect a provisional expertise index derived from scored reviews. Domain roots stay on the same canvas as you explore; pinch, pan, Fit all, and canvas search help you navigate without page controls. The bundled taxonomy skill respects each profile's approved domains, while incremental checkpoints keep review updates local and bounded. [My Brain and scoring details →](docs/CONSTELLATION.md)
+## Add only what you need
 
-The current source build brings assistant, knowledge-base, iPad and speech setup into one **Connections** hub. **Progress** opens your Review journal with daily activity, a seven-day recall trend, upcoming scheduled reviews and format/topic breakdowns. Explore relationships in **Knowledge → My Brain**. [Explore setup, background preparation and progress →](docs/LEARNING_FLOW.md)
+Start with one option. You can add the others later from the **gear icon → Connections**.
 
-**Learn → capture → self-test → revisit.**
+| I want to… | Start here | What I need |
+| :--- | :--- | :--- |
+| **Keep notes in Recall** | **Knowledge → Create a space → New note**. [Guide](docs/KNOWLEDGE_SPACE.md) | A local folder for Markdown or HTML files. |
+| **Use existing notes** | Connect Markdown, Obsidian or Notion. [Guide](docs/SETUP.md#choose-a-home-for-your-knowledge) | A folder/vault, or an assistant with Notion connected. |
+| **Capture learning with Codex or Claude Code** | Connect, enable capture, start a fresh chat, then **Verify learning**. [Guide](docs/SETUP.md#learning-capture) | Your assistant account/client. |
+| **Practice explaining aloud** | Connect **Think out loud**, then open **Speak**. [Guide](docs/demos/SPEAK.md) | An OpenAI API key with billing; separate from ChatGPT. |
+| **Write with Apple Pencil** | Install Recall Pad, then pair it in **iPad & handwriting**. [Guide](docs/SETUP.md#optional-ipad-companion) | An iPad on iPadOS 17+, Apple Pencil, and a separate Recall Pad installation. |
 
-Recall includes a portable skill kit for Codex and Claude Code. Connect once, then learn in your other local projects. Suitable cards are reused; genuinely missing objectives are prepared and validated. Receipts distinguish **new**, **reused** and **pending** work.
+**No knowledge base yet?** Create a local space and start writing, or [set up Markdown, Obsidian or Notion](docs/SETUP.md#create-your-first-knowledge-base). Recall and Obsidian can share one folder. Notion updates go through your assistant; there is no continuous two-way sync.
 
-A knowledge base is optional. Create or connect **Local Markdown**, **Obsidian**, **Notion**, or several destinations. Choose a primary home, optional mirrors and scoped read-only or authoring access. Notion needs your assistant's working connector; mirrors follow verified primary writes rather than continuous two-way sync.
-
-Capture is opt-in. It records what you actually discuss, without inferring mastery. Daily scheduling and scoped catch-up are separate choices. Say **“Don't capture this discussion”** to keep it out.
-
-[Set up the connections →](docs/SETUP.md#learning-capture) · [See the learning-to-Self-Test flow →](docs/demos/LEARNING.md)
-
-## Explain it. Write it. Test it.
-
-| When you want to…                                  | Use…                                             | See it in action                                                          |
-| :------------------------------------------------- | :----------------------------------------------- | :------------------------------------------------------------------------ |
-| Answer a card aloud or in writing                  | The compact **Speak / Type** strip.              | [Study walkthrough](docs/demos/STUDY.md)                                  |
-| Explain a concept or your own topic to an audience | **Speak**, with references and focused coaching. | [Speak walkthrough](docs/demos/SPEAK.md)                                  |
-| Solve a Recall question with your Pencil           | **Recall Study** in the optional iPad app.       | [Paper walkthrough](docs/demos/PAPER.md)                                  |
-| Work by hand during an assistant conversation      | Chat-linked **Tutor Pad**.                       | [Paper-learning workflow](docs/demos/PAPER.md#learn-with-your-chat-tutor) |
-| Keep personal notebooks and submit chosen pages    | **Notebooks** in new source builds.              | [Notebook walkthrough](docs/NOTEBOOKS.md)                                 |
-| See what needs more practice                       | **Progress** and **Review history**.             | [Review your learning](docs/demos/LEARNING.md#test-the-day)               |
-
-Voice transcription, Speak evaluation and Recall's handwriting assessment use an optional **OpenAI API account with billing**, separate from a ChatGPT subscription. Chat-linked Tutor Pad uses your existing assistant conversation instead. No Accessibility permission or automatic chat sending is part of the paper workflow.
+**Recall Pad is in beta.** Invited testers use TestFlight; there is no public invitation yet. Developers can [build it with Xcode](docs/IPAD_NATIVE.md). It supports handwritten answers, Codex-first paper learning and private notebooks. [Paper walkthrough](docs/demos/PAPER.md)
 
 ## Get the latest update
 
-**In the app (v0.6.0-beta.10 and later):** open **Settings & backups → General → Recall updates**, choose **Check for updates**, then **Update & restart**. Recall verifies the download, replaces itself in the same location, refreshes existing assistant connections and reopens with your library intact. It keeps one previous app for recovery and removes older managed copies. If you also maintain a Git clone, expand **Also update my source code** and select it once. Local edits and diverged branches are preserved. Older releases need the assistant or manual route below once to gain this button.
+**In v0.6.0-beta.10 or later:** open **gear icon → General → Recall updates → Check for updates → Update & restart**. Recall verifies the download, replaces the app in the same location, reopens your library and retains one previous app for recovery.
 
-**With Codex or Claude Code:** install the public [recall-upgrade skill](skills/recall-upgrade/SKILL.md), then ask **“Use recall-upgrade to update Recall.”** It checks published releases, verifies the download, quits and replaces the app when needed, reopens it, and retains one previous app. Recall also installs this skill through **Connections**. Your learning library is preserved. [Upgrade setup and behavior →](docs/SETUP.md#update-an-existing-installation)
+**On an older version?** Quit Recall, download the newest Mac app ZIP, then replace the existing **Recall.app** in Applications. Your cards, notes and history stay in place. If you use an assistant, open **Connections → Codex or Claude → Refresh instructions**, then start a fresh chat.
 
-**Manual update:**
+New cards appear without restarting. [More update options](docs/SETUP.md#update-an-existing-installation)
 
-1. Back up in **Settings & backups → Library & backups**, finish recordings or evaluations, then quit Recall.
-2. Download the newest **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases) and unzip it.
-3. Move **Recall.app** to its existing Applications location, choose **Replace**, and reopen it. Follow any release notes about refreshing assistant connections.
+If you installed **beta.3 or beta.7**, update to **beta.10 or later**. Those older downloads were withdrawn because they contain dependency versions with known security advisories. [Review details](docs/history/SECURITY_REVIEW_2026-11-08.md)
 
-Your library lives separately from the app. Updating preserves your cards, study history and configuration. **New cards appear while Recall is open**; an app-code update requires restarting. There is no unattended background Mac updater. Source users and custom profiles have [detailed update instructions](docs/SETUP_REFERENCE.md#update-an-existing-installation).
+## How it works
 
-**Recall Pad:** open **TestFlight → Recall Pad → Update**, or enable **Automatic Updates** on its TestFlight page. Save an open sheet before updating. Keep the app installed so its local sheets remain available. [iPad update details →](docs/SETUP.md#update-recall-pad)
+The Mac app uses **Electron + React**. **SQLite** stores cards and review history; **FSRS** schedules reviews from your ratings. Local Markdown/HTML notes remain the source of truth, with a separate **SQLite FTS5** index maintained in a background worker. Codex/Claude skills connect learning and card preparation through a local queue.
+
+<details>
+<summary>See the architecture and optional connections</summary>
+
+![Recall's local architecture and optional assistant, iPad and OpenAI connections](docs/images/recall-architecture.png)
+
+Recall Pad uses **SwiftUI + PencilKit**, paired to the Mac over authenticated local HTTPS/WebSocket connections. A scoped MCP connection supports the paper-learning workflow. Optional OpenAI requests provide transcription and answer feedback. [Implementation and verification boundaries](docs/IMPLEMENTATION.md)
+
+</details>
 
 ## Your data stays yours
 
-Recall has no hosted database or telemetry service. Cards, reviews, drafts and learning logs stay in your local profile. Optional provider requests send selected context; backups and exports can contain private learning material and should remain private.
+There is **no hosted Recall database or telemetry service**. Your learning profile stays local. Optional AI features send selected context to the provider; notebook submissions and learning capture are explicit choices. Saved API keys live in an owner-only local file, outside library exports and backups.
 
-Interactive widgets load only when requested inside a sandbox. Native coding runs require source review and an explicit **Run** action. Saved API keys stay in a local owner-only file and are excluded from Recall exports and profile backups.
+The repository includes reusable skills and demo content, with no personal cards or credentials. Interactive diagrams load on request in a sandbox. Coding exercises require source review and an explicit **Run** action.
 
-**A clone contains the reusable system:** app source, learning skills, original demo cards, setup guides and contributor tools. It does not include the author's cards, knowledge base, API keys, paired devices or completed Apple submission records. Your own library is created locally. Build archives, debug symbols and private release evidence stay outside Git; the [publisher templates](docs/submission/README.md) are optional references for people distributing their own build.
+[Privacy](docs/PRIVACY.md) · [Security](SECURITY.md) · [Backups](docs/MIGRATION.md)
 
-[Privacy & execution](docs/PRIVACY.md) · [Security](SECURITY.md) · [Backups and migration](docs/MIGRATION.md)
+## Customize or build
 
-## Go further
+Ask Codex or Claude to make card answers more concise, adjust visual styles, or change your learning workflow. [Customization guide](docs/CUSTOMIZE.md) · [Card authoring](docs/AUTHORING.md) · [Learning skills](skills/)
 
-**Start:** [Illustrated setup](docs/SETUP.md) · [Walkthroughs](docs/demos/README.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
+<details>
+<summary>Clone and build from source</summary>
 
-**Customize:** [Make Recall yours with Codex or Claude](docs/CUSTOMIZE.md) · [Card authoring](docs/AUTHORING.md) · [Interactive visuals](docs/WIDGETS.md) · [Learning skills](skills/)
+Install **Node.js 22.18 or later** first using the [official installer](https://nodejs.org/en/download); npm is included. Recall does not install Node for you. The packaged Mac download above includes its own runtime.
 
-**Develop:** [Contributing](CONTRIBUTING.md) · [Advanced setup](docs/SETUP_REFERENCE.md) · [All references](docs/README.md)
+```sh
+git clone https://github.com/justslee/recall.git
+cd recall
+npm run setup -- --no-launch
+npm run package
+```
 
-Built by [justslee](https://github.com/justslee). Code is **MIT**; original demo content is **CC0-1.0**. Imported material retains its own terms. Recall is not affiliated with the services it connects to.
+Copy **release/Recall-darwin-arm64/Recall.app** into Applications and open it. A local build does not inherit the publisher's signing or notarization. [Detailed build instructions](docs/SETUP_REFERENCE.md#install-and-open-recall) · [Contributing](CONTRIBUTING.md)
+
+</details>
+
+[All guides](docs/README.md) · [Why I built Recall](docs/launch/ARTICLE.md)
+
+Built by [justslee](https://github.com/justslee). Code: **MIT**. Original demo content: **CC0-1.0**. Imported material retains its own terms. Recall is not affiliated with the services it connects to.

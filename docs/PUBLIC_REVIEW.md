@@ -6,6 +6,8 @@
 
 ## Verified publication baseline
 
+**Latest security review: November 8, 2026.** The [review record](history/SECURITY_REVIEW_2026-11-08.md) covers the current source and full reachable history, public images, repository controls and seven published Mac archives. No private-content exposure was identified in the checked surfaces. Two outdated downloads, beta.3 and beta.7, were withdrawn after their bundled dependency versions matched current advisories. Use beta.10 or later. The older baseline below remains historical evidence.
+
 The reviewed [source commit](https://github.com/justslee/recall/commit/d2b704e100f2c186743f09317ee96029b6a750b0) passed [hosted Verify](https://github.com/justslee/recall/actions/runs/37405060805) on October 5, 2026. Check the [current workflow](https://github.com/justslee/recall/actions/workflows/verify.yml) for later commits.
 
 | Area                  | Verified evidence                                                                                                                      |

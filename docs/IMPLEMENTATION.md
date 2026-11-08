@@ -6,6 +6,12 @@ Recall is an Apple Silicon macOS beta. Install a published app from [GitHub Rele
 
 **Study → capture → prepare → self-test → revisit.**
 
+## Hidden note shortcut guard (source update, November 8, 2026)
+
+Knowledge's save handler checks the current visible view when the key event arrives. A retained handler from the Notes view cannot save its draft after switching to My Brain or leaving Knowledge, even before React's previous event listener is removed. The local draft remains recoverable. This closes an intermittent preservation failure observed in hosted CI.
+
+All 493 regression tests and the build passed. The invisible My Brain journey also passed with a deliberately retained stale shortcut callback, unchanged note bytes, restored draft text and unchanged synthetic cards/reviews/session. This is a source fix; it does not change the already published beta.10 app or update an installed library. See the [security review](history/SECURITY_REVIEW_2026-11-08.md).
+
 ## Navigation labels (v0.6.0-beta.10)
 
 Knowledge’s graph is labeled **My Brain**, with a matching brain icon. The card browser is labeled **Card Deck**, including its back links, search guidance and current setup documentation. Existing route keys, saved view preferences, graph identities and learning data are unchanged. Older verification records below retain the names used at the time.

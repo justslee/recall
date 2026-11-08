@@ -87,7 +87,7 @@ export function KnowledgeSpace({
     draftWrite = useRef(Promise.resolve()),
     latest = useRef(null);
   const dirty = !!note && raw !== note.raw;
-  latest.current = { note, raw, dirty };
+  latest.current = { note, raw, dirty, active, knowledgeView };
   const fail = (e) =>
     setError(
       e.message?.replace(
@@ -236,6 +236,11 @@ export function KnowledgeSpace({
     };
   }, [epoch, note?.path]);
   const save = async () => {
+    // A key event can arrive after a view commits but before the previous
+    // effect's listener is removed. Never save a now-hidden editor's draft.
+    if (!latest.current.active || latest.current.knowledgeView !== "notes")
+      return;
+
     if (!note || !dirty || busy) return;
     setBusy(true);
     setError("");
@@ -266,6 +271,9 @@ export function KnowledgeSpace({
     }
     if (knowledgeView !== "notes") return;
     const handler = (e) => {
+      if (!latest.current.active || latest.current.knowledgeView !== "notes")
+        return;
+
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         save();
