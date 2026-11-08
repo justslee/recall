@@ -82,6 +82,9 @@ test("hosted privacy audit checks a full checkout without persisted Git credenti
   assert.equal(steps[checkoutIndex].with?.["fetch-depth"], 0);
   assert.equal(steps[checkoutIndex].with?.["persist-credentials"], false);
   assert.equal(workflow.permissions.contents, "read");
+  assert.deepEqual(workflow.on.push.branches, ["main"]);
+  assert(Object.hasOwn(workflow.on, "pull_request"));
+  assert.equal(workflow.concurrency["cancel-in-progress"], true);
 
   const knowledgeChecks = steps.filter(
     (step) => step.run === "node scripts/smoke-knowledge-setup.cjs",
