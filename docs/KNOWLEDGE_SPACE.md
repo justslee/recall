@@ -73,3 +73,15 @@ Run `npm test`, `npm run build`, then `npm run test:knowledge-space`. The deskto
 `npm run benchmark:knowledge -- 10000` measures the production index and worker against synthetic files. It reports initial indexing, unchanged metadata reconciliation and warm query round trips separately. These are local retrieval measurements, not model response times or comparisons with other note applications.
 
 The index uses [SQLite FTS5](https://www.sqlite.org/fts5.html). Markdown is parsed by [Marked](https://marked.js.org/using_advanced) and sanitized before rendering.
+
+## Interactive visuals in notes (source build)
+
+A note can reuse a library card's interactive diagram through a `recall-visual` reference. It uses the same illustrated scene and controls as the card. The note itself contains no executable code.
+
+````markdown
+```recall-visual
+{"cardId":"example:bounded-batches","widgetIndex":0}
+```
+````
+
+Widget indexes start at zero. If widgets are disabled, choose **Enable interactive visuals for this card**, then **Load interactive**. Permission also applies to that card in the library. The isolated frame has no file, network or library access. Expand/Collapse and appearance changes retain inputs; leaving the note unloads the visual. Missing cards or widgets leave the note readable with an unavailable message. Older releases display the reference as a code block; install a release that includes this feature before adding live references.

@@ -144,6 +144,7 @@ const handle = (name, fn) =>
         "knowledgeRead",
         "knowledgeAsset",
         "knowledgePractice",
+        "setWidgetPermission",
         "knowledgeRefresh",
         "knowledgeBootstrapState",
         "learningConnections",
@@ -774,6 +775,7 @@ app.whenReady().then(async () => {
   handle("rate", (request) => store.rate(request));
   handle("undo", () => store.undo());
   handle("saveCard", (card) => store.saveCard(card));
+  handle("setWidgetPermission", (input) => store.setWidgetPermission(input));
   handle("suspend", (id, value) => store.suspend(id, value));
   handle("newDeck", (name) => {
     name = String(name).trim();

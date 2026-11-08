@@ -1,7 +1,7 @@
 {
   "name": "recall-local",
   "productName": "Recall",
-  "version": "0.6.0-beta.7",
+  "version": "0.6.0-beta.8",
   "private": true,
   "description": "A local study desk for concepts, mathematics and code",
   "type": "module",
@@ -51,7 +51,8 @@
     "docs:screenshots": "node scripts/capture-docs.cjs",
     "test:learning-ux": "node scripts/smoke-learning-ux.cjs",
     "test:constellation": "node scripts/smoke-constellation.cjs",
-    "verify:cards": "node scripts/verify-cards.cjs"
+    "verify:cards": "node scripts/verify-cards.cjs",
+    "test:knowledge-visuals": "node scripts/smoke-knowledge-visuals.cjs"
   },
   "dependencies": {
     "@peculiar/x509": "2.1.0",

@@ -92,6 +92,7 @@ const methods = [
   "rate",
   "undo",
   "saveCard",
+  "setWidgetPermission",
   "suspend",
   "newDeck",
   "run",

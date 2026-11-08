@@ -4,6 +4,8 @@ import { Marked } from "marked";
 import DOMPurify from "dompurify";
 import renderMath from "katex/contrib/auto-render";
 import { Diagram, SvgFigure } from "./RichContent";
+import { KnowledgeVisual } from "./KnowledgeVisual";
+import { parseKnowledgeVisual } from "./knowledge-visual-model";
 
 // Preserve TeX before Markdown interprets backslashes or underscores.
 const markdown = new Marked({
@@ -28,7 +30,14 @@ const markdown = new Marked({
   ],
 });
 
-export function KnowledgeDocument({ note, onLink }) {
+export function KnowledgeDocument({
+  note,
+  onLink,
+  cards = [],
+  active = true,
+  onEnableVisual,
+  onCard,
+}) {
   const ref = useRef();
   const [figures, setFigures] = useState([]);
   useEffect(() => {
@@ -63,12 +72,15 @@ export function KnowledgeDocument({ note, onLink }) {
     });
     const visuals = [];
     for (const element of fragment.querySelectorAll(
-      "pre > code.language-mermaid, svg",
+      "pre > code.language-mermaid, pre > code.language-recall-visual, svg",
     )) {
       const host = document.createElement("div");
       const isSvg = element.tagName.toLowerCase() === "svg";
+      const isVisual = element.classList.contains("language-recall-visual");
       visuals.push({
         host,
+        isVisual,
+        reference: isVisual ? parseKnowledgeVisual(element.textContent) : null,
         svg: isSvg ? element.outerHTML : null,
         source: isSvg ? null : element.textContent,
       });
@@ -175,7 +187,19 @@ export function KnowledgeDocument({ note, onLink }) {
       <div ref={ref} className="knowledge-prose" />
       {figures.map((f, i) =>
         createPortal(
-          f.svg ? <SvgFigure markup={f.svg} /> : <Diagram source={f.source} />,
+          f.isVisual ? (
+            <KnowledgeVisual
+              reference={f.reference}
+              cards={cards}
+              active={active}
+              onEnable={onEnableVisual}
+              onCard={onCard}
+            />
+          ) : f.svg ? (
+            <SvgFigure markup={f.svg} />
+          ) : (
+            <Diagram source={f.source} />
+          ),
           f.host,
           String(i),
         ),

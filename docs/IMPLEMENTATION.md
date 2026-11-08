@@ -16,6 +16,14 @@ A dedicated worker owns a separate SQLite FTS5 cache with exact title/alias look
 
 [Illustrated Knowledge guide](KNOWLEDGE_SPACE.md)
 
+## Interactive diagrams inside Knowledge Notes (source build)
+
+Knowledge Notes can reference an existing card widget with a `recall-visual` fence. The note uses the exact library visual through the existing sandbox, without accepting scripts from the note. An explicit per-card enable action and a separate Load click remain required. The permission-only update rejects stale content and preserves the card revision, content, schedule, drafts and review history. Missing references remain readable. Leaving Notes, switching Knowledge views or editing removes the frame; Expand/Collapse and appearance changes retain active inputs.
+
+The public visual skill now requires comparison with the approved composition and controls. Render counts, label preservation or colored text transcriptions cannot establish that a requested illustrated redesign was applied. Runtime support must be checked before adding live note references; older releases show the fence as code.
+
+**Verified locally on November 8, 2026:** 477 Node regression tests, the web build and documentation checks passed. Hidden synthetic Knowledge journeys cover permission/Load separation, direct-request 403s, sandbox isolation, controls, appearance, expansion, navigation unload, missing references, hostile note content, editing/drafts and learning preservation. A separate private-content check reused the exact approved Batch Coalescing visual in its note and verified all 32 control combinations in four width/theme configurations (128 scenarios). These results apply to the source candidate; they do not establish installation or public release of this feature.
+
 ## Quiet preparation and connections (source build)
 
 The current source build adds a previewed background queue of up to eight captured items, a process-local card search index with exact-content invalidation, and per-item timing/receipt checkpoints. Existing ready objectives keep the immediate capture path. New candidates are refreshed after every item so later work can reuse earlier imports. Provider jobs remain serial, tool-free and cancelable; blocked work remains explicit. Interrupted batches do not retry automatically. Local retrieval measurements do not establish end-to-end model latency.
@@ -323,3 +331,31 @@ The public `recall-upgrade` skill checks official GitHub releases using the inst
 Version 2 visual revision requests can restyle one existing SVG or Mermaid figure per card, with a same-kind presentation proof and exact source-span replacement outside widget/code blocks. Text, geometry and topology changes are rejected. The transaction preserves the exact existing expertise cutoff and leaves normal dirty refresh to replay review evidence under the unchanged objective hash function; it never directly rewrites confidence or cached statistics. Version 1 widget revisions retain their existing contract. Both versions use the existing sole writer, expected-content hash, atomic batch, previous-version record and durable idempotent receipt. Numeric grading, identities, prose outside the selected figure, widget permission and learning state remain preserved. A conservative inert-markup gate accepts presentation-only SVG themes and local references while rejecting executable/network features; the renderer keeps its existing sanitization and isolation.
 
 **Verified locally:** all 469 regression tests and the production build passed in a disposable source checkout, including static math preservation, code/widget overlap exclusion, stale hashes, atomic rollback, malformed/hostile markup receipt-failure recovery, fixed-time expertise equality, prior semantic cutoffs, future rating/undo and normal semantic-edit invalidation. Actual private diagram rendering and installation acceptance remain separate gates. This is a source extension, not a published release or an update to a running app. See [Scoped static-figure revisions](STATIC_FIGURE_REVISIONS.md).
+
+
+### Installer archive-cache recovery — November 7, 2026
+
+The standalone upgrade helper now hashes physical bundle files through Electron's
+`original-fs` and reads package metadata in a fresh runtime. This prevents the
+old path-keyed ASAR cache from misidentifying an app after replacement. Existing
+transaction identities are converted only after fresh identity and signed-app
+inspection; new journals identify the physical hash format. Existing receipts
+are revalidated against the published artifact. Signature, publisher, checksum,
+notarization and rollback checks remain required; learning profiles are outside
+the replacement transaction.
+
+The previous helper reproduced its interrupted-verification error on disposable
+copies of the actual notarized build 17 and build 18. The fixed standalone helper
+completed the same replacement, retained build 17, cleared its transaction, and
+returned `up_to_date` on a second check. GUI quit/launch were stubbed for this
+isolated installer test; the real signing and Gatekeeper checks ran. A real
+Electron regression warms the old archive cache and checks successful replacement,
+failed launch rollback, tampering rejection, process-kill recovery and legacy
+journal recovery while preserving synthetic learning files. This source fix does
+not modify an already published signed Mac app.
+
+Final local verification passed all 475 regression tests, the production build,
+41 focused installer/retention tests, and documentation checks. Existing Codex,
+Claude and portable profile skill copies were refreshed with backups. The current
+build 18 receipt was revalidated against the published ZIP with app replacement
+and launch forbidden; the subsequent installed check returned `up_to_date`.

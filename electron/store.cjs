@@ -269,6 +269,33 @@ class Store {
       .all(id)
       .map((r) => ({ ...r, result: unpack(r.result) }));
   }
+  setWidgetPermission({ id, expectedRevision, expectedAnswer, allowed } = {}) {
+    if (
+      typeof id !== "string" ||
+      typeof allowed !== "boolean" ||
+      !Number.isSafeInteger(expectedRevision) ||
+      typeof expectedAnswer !== "string"
+    )
+      throw Error("Invalid visual permission request.");
+
+    return this.transaction(() => {
+      const card = unpack(this.card(id).content);
+      const shown = presentationFor(card, this.presentations);
+      if (
+        (card.revision || 0) !== expectedRevision ||
+        (shown.presentation?.answer ?? card.answer) !== expectedAnswer
+      )
+        throw Error(
+          "This card changed. Reopen the note before enabling its visual.",
+        );
+
+      card.widgetsAllowed = allowed;
+      this.db
+        .prepare("UPDATE cards SET content=? WHERE id=?")
+        .run(JSON.stringify(card), id);
+      return id;
+    });
+  }
   saveCard(card) {
     if (!card.title?.trim() || !card.answer?.trim() || !card.topic?.trim())
       throw Error("Question, answer and topic are required.");

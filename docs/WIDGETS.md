@@ -19,7 +19,7 @@ The sandbox has no network, files, storage or library access. It does not receiv
 
 ## Illustrated diagrams
 
-The public [visual skill](../skills/recall-visuals/SKILL.md) uses a shared [illustrated recipe](../skills/recall-source/references/illustrated-style.md): pastel category surfaces, readable outlines, technical labels and a small active marker. Depth is optional and should explain real layers or ownership; quantitative charts retain their axes and scales. Both appearances and the densest narrow layout are checked. Static Knowledge Base figures use the same visual language within the note sanitizer’s limits. Updating the skill does not automatically modify existing cards.
+The public [visual skill](../skills/recall-visuals/SKILL.md) uses a shared [illustrated recipe](../skills/recall-source/references/illustrated-style.md): pastel category surfaces, readable outlines, technical labels and a small active marker. Depth is optional and should explain real layers or ownership; quantitative charts retain their axes and scales. Both appearances and the densest narrow layout are checked. Static Knowledge Base figures use the same visual language within the note sanitizer’s limits. The source build also lets a note reference an existing card widget with a `recall-visual` fence, reusing its exact content, permission and Load gate; note scripts remain inert. See [Knowledge space](KNOWLEDGE_SPACE.md). Updating the skill does not automatically modify existing cards.
 
 ## Build with the supported toolkit
 

@@ -1,4 +1,7 @@
-const fs = require("node:fs");
+// Bundle verification must bypass Electron's path-keyed ASAR cache.
+const fs = process.versions.electron
+  ? require("original-fs")
+  : require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const { spawnSync } = require("node:child_process");
@@ -282,17 +285,17 @@ function verifySigned(app, run) {
   return team;
 }
 
-function hashFile(file) {
+function hashFile(file, io = fs) {
   const hash = crypto.createHash("sha256");
   // Hash incrementally: the Electron archive can be hundreds of megabytes.
-  const fd = fs.openSync(file, "r"),
+  const fd = io.openSync(file, "r"),
     buffer = Buffer.alloc(1024 * 1024);
   try {
     let bytes;
-    while ((bytes = fs.readSync(fd, buffer, 0, buffer.length, null)) > 0)
+    while ((bytes = io.readSync(fd, buffer, 0, buffer.length, null)) > 0)
       hash.update(buffer.subarray(0, bytes));
   } finally {
-    fs.closeSync(fd);
+    io.closeSync(fd);
   }
   return hash.digest("hex");
 }
@@ -424,30 +427,30 @@ function sameApp(expected, actual) {
     );
 }
 
-function tree(folder, payloads) {
+function tree(folder, payloads, io = fs) {
   const result = {};
   function visit(file) {
-    const stat = fs.lstatSync(file);
+    const stat = io.lstatSync(file);
     const name = path.relative(folder, file);
-    if (stat.isSymbolicLink()) result[name] = { link: fs.readlinkSync(file) };
+    if (stat.isSymbolicLink()) result[name] = { link: io.readlinkSync(file) };
     else if (stat.isDirectory()) {
       result[name] = { directory: true };
-      for (const child of fs.readdirSync(file).sort())
+      for (const child of io.readdirSync(file).sort())
         visit(path.join(file, child));
-    } else if (stat.isFile()) result[name] = { sha256: hashFile(file) };
+    } else if (stat.isFile()) result[name] = { sha256: hashFile(file, io) };
     else throw Error("Unexpected release payload file type.");
   }
   for (const name of payloads) {
     const file = path.join(folder, name);
-    if (fs.lstatSync(file, { throwIfNoEntry: false })) visit(file);
+    if (io.lstatSync(file, { throwIfNoEntry: false })) visit(file);
   }
   return result;
 }
 
-function hashApp(app) {
+function hashApp(app, io = fs) {
   return crypto
     .createHash("sha256")
-    .update(JSON.stringify(tree(app, fs.readdirSync(app).sort())))
+    .update(JSON.stringify(tree(app, io.readdirSync(app).sort(), io)))
     .digest("hex");
 }
 module.exports = {
