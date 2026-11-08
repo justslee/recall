@@ -23,7 +23,7 @@ npm run setup -- --check
 node --version
 ```
 
-Source builds require Apple Silicon, macOS 13 or later and Node 22.18 or later. Install a supported version from [Node.js](https://nodejs.org/en/download), reopen Terminal and check again. An older macOS version must be updated before this Electron build can run.
+Source builds require Apple Silicon, macOS 13 or later and Node 24 or later. Install a supported version from [Node.js](https://nodejs.org/en/download), reopen Terminal and check again. An older macOS version must be updated before this Electron build can run.
 
 If you already use nvm, the checkout's `.nvmrc` selects the tested baseline:
 

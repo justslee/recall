@@ -10,7 +10,7 @@ Start with the [illustrated setup guide](SETUP.md) if you are new to Recall. Thi
 
 The [signed Mac download](https://github.com/justslee/recall/releases) is the simplest installation path: unzip, move **Recall.app** to Applications, and open it. It includes its runtime and discovery helper. No Node or Terminal is needed.
 
-**To build from source:** Apple Silicon Mac, macOS 13 or later, and Node 22.18 or later. A current Node 22 LTS release is recommended; `.nvmrc` records the tested baseline.
+**To build from source:** Apple Silicon Mac, macOS 13 or later, and Node 24 or later. A current Node 24 LTS release is recommended; `.nvmrc` records the tested baseline.
 
 **Install Node before running setup.** Use the [Node.js 22 macOS installer](https://nodejs.org/en/download), which includes npm. Open a new Terminal window and run `node --version` and `npm --version` to verify installation. Recall's setup checks prerequisites; it does not install Node.
 

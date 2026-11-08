@@ -27,7 +27,7 @@ The download is signed and notarized. Its runtime and iPad discovery helper are 
 <details>
 <summary>Prefer to build from source?</summary>
 
-Install **Node 22.18 or later** using the [official macOS installer](https://nodejs.org/en/download); it includes npm. Recall checks Node but does not install it. Download the repository's **Code → Download ZIP** and unzip it, or clone it with Git.
+Install **Node 24 or later** using the [official macOS installer](https://nodejs.org/en/download); it includes npm. Recall checks Node but does not install it. Download the repository's **Code → Download ZIP** and unzip it, or clone it with Git.
 
 In a new Terminal window, type `cd `, drag the source folder into Terminal, and press Return. Run these commands one at a time:
 

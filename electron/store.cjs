@@ -1,10 +1,11 @@
 const { DatabaseSync } = require("node:sqlite");
-const { fsrs, createEmptyCard, Rating } = require("ts-fsrs");
+const { createEmptyCard, Rating } = require("ts-fsrs");
+const { createScheduler } = require("./scheduler.cjs");
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const { presentationFor } = require("./presentation.cjs");
-const scheduler = fsrs({ request_retention: 0.9, enable_fuzz: false });
+const scheduler = createScheduler();
 const unpack = (s) => JSON.parse(s);
 const hydrate = (s) => ({
   ...s,
