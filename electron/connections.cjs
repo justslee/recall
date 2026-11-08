@@ -101,6 +101,33 @@ function replaceBlock(text, block) {
     ? text.trimEnd() + "\n\n" + block + "\n"
     : text.slice(0, a) + block + text.slice(b + END.length);
 }
+function installUpgradeSkill(target, kit, backup) {
+  const destination = path.join(
+    path.dirname(path.dirname(target.skill)),
+    "recall-upgrade",
+  );
+  const file = path.join(destination, "SKILL.md");
+  const marker = "<!-- recall-managed:recall-upgrade -->";
+  if (fs.lstatSync(destination, { throwIfNoEntry: false })) {
+    if (
+      fs.lstatSync(destination).isSymbolicLink() ||
+      !fs.existsSync(file) ||
+      !fs.lstatSync(file).isFile() ||
+      !fs.readFileSync(file, "utf8").includes(marker)
+    )
+      return { installed: false, preservedExisting: true, path: destination };
+
+    require("../shared/copy-tree.cjs").copyTree(
+      destination,
+      path.join(backup, "upgrade-skill"),
+    );
+  }
+  require("../shared/copy-tree.cjs").copyTree(
+    path.join(kit, "recall-upgrade"),
+    destination,
+  );
+  return { installed: true, path: destination };
+}
 function connect(folder, host, options = {}) {
   const {
     apply = false,
@@ -145,6 +172,10 @@ After an authorized local KB save or card import, use ${path.join(kit, "recall-t
       host,
       ...target,
       wrapper,
+      upgradeSkill: path.join(
+        path.dirname(path.dirname(target.skill)),
+        "recall-upgrade",
+      ),
       instructionBlock: block,
     };
   const backup = path.join(
@@ -185,7 +216,8 @@ After an authorized local KB save or card import, use ${path.join(kit, "recall-t
       },
     },
   });
-  return { connected: host, backup, wrapper };
+  const upgradeSkill = installUpgradeSkill(target, kit, backup);
+  return { connected: host, backup, wrapper, upgradeSkill };
 }
 function disconnect(folder, host, options = {}) {
   if (!["codex", "claude"].includes(host)) throw Error("Unknown assistant");

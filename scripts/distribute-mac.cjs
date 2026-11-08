@@ -1,13 +1,16 @@
-// Prepare a separate Developer ID candidate. Default invocation is read-only.
-// A signed candidate is not a verified release until the actual artifact has
-// passed device/clean-Mac checks. Notarization uploads only with --notarize.
 const fs = require("node:fs"),
-  path = require("node:path"),
-  crypto = require("node:crypto"),
-  { spawnSync } = require("node:child_process");
+  path = require("node:path");
+const {
+  BUNDLE_ID,
+  failure,
+  within,
+  defaultRun,
+  plistJSON,
+  inspectBundleLayout,
+  verifySigned,
+  hashFile,
+} = require("../skills/recall-upgrade/scripts/mac-release.cjs");
 
-const BUNDLE_ID = "com.justslee.recall";
-const NATIVE_IDENTIFIER = "com.recall.pad-handoff";
 const TOKEN = /^[A-Za-z0-9_.-]{1,128}$/;
 const HELPER_IDS = {
   "Recall Helper.app": BUNDLE_ID + ".helper",
@@ -15,12 +18,6 @@ const HELPER_IDS = {
   "Recall Helper (GPU).app": BUNDLE_ID + ".helper.gpu",
   "Recall Helper (Plugin).app": BUNDLE_ID + ".helper.plugin",
 };
-
-function failure(message) {
-  const error = Error(message);
-  error.releaseMessage = message;
-  return error;
-}
 
 function parseArgs(args) {
   const options = { sign: false, notarize: false, staple: false };
@@ -48,45 +45,6 @@ function parseArgs(args) {
   return options;
 }
 
-function within(parent, child) {
-  const relative = path.relative(parent, child);
-  return (
-    relative &&
-    !relative.startsWith(".." + path.sep) &&
-    relative !== ".." &&
-    !path.isAbsolute(relative)
-  );
-}
-
-function defaultRun(command, args, options = {}) {
-  const result = spawnSync(command, args, {
-    encoding: "utf8",
-    timeout: 120000,
-    maxBuffer: 4 * 1024 * 1024,
-    ...options,
-    // Provider/tool errors can contain local paths, credentials or identities.
-    // Capture them; publish only the fixed operation-level error below.
-    stdio: options.input === undefined ? "pipe" : undefined,
-  });
-  if (result.error || result.status !== 0)
-    throw failure(
-      options.releaseError || "A release tool failed; preparation stopped.",
-    );
-
-  return { stdout: result.stdout || "", stderr: result.stderr || "" };
-}
-
-function plistJSON(file, run) {
-  const result = run("/usr/bin/plutil", ["-convert", "json", "-o", "-", file], {
-    releaseError: "The packaged app metadata could not be inspected.",
-  });
-  try {
-    return JSON.parse(result.stdout);
-  } catch {
-    throw failure("The packaged app metadata was invalid.");
-  }
-}
-
 function sourceApp(root, candidate) {
   const release = path.join(root, "release");
   const app = path.resolve(
@@ -105,121 +63,6 @@ function sourceApp(root, candidate) {
     throw failure("The packaged app path must not be a symbolic-link alias.");
 
   return app;
-}
-
-function inspectBundleLayout(
-  app,
-  { verifyStapledTicket = false, run = defaultRun } = {},
-) {
-  const contents = path.join(app, "Contents");
-  const allowed = new Set([
-    "Info.plist",
-    "PkgInfo",
-    "_CodeSignature",
-    "MacOS",
-    "Frameworks",
-    "Resources",
-  ]);
-  if (verifyStapledTicket === true) {
-    // Apple stapler adds this separate binary ticket after signing. A matching
-    // filename or header is insufficient: Apple must validate the ticket too.
-    const ticket = path.join(contents, "CodeResources");
-    let metadata, header;
-    try {
-      metadata = fs.lstatSync(ticket);
-      if (!metadata.isFile() || metadata.size < 16 || metadata.size > 65536)
-        throw Error("invalid ticket");
-
-      const fd = fs.openSync(
-        ticket,
-        fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW,
-      );
-      try {
-        header = Buffer.alloc(4);
-        if (fs.readSync(fd, header, 0, 4, 0) !== 4)
-          throw Error("invalid ticket");
-      } finally {
-        fs.closeSync(fd);
-      }
-    } catch {
-      throw failure(
-        "The stapled ticket must be a regular, bounded binary file.",
-      );
-    }
-    if (!header.equals(Buffer.from("s8ch")))
-      throw failure("The stapled ticket has an unexpected binary format.");
-
-    allowed.add("CodeResources");
-  }
-  if (fs.readdirSync(contents).some((name) => !allowed.has(name)))
-    throw failure(
-      "The app has an unexpected loose bundle item; review it before distribution.",
-    );
-
-  if (
-    fs
-      .readdirSync(path.join(contents, "MacOS"))
-      .some((name) => name !== "Recall")
-  )
-    throw failure("The app has an unexpected main executable item.");
-  const resources = path.join(contents, "Resources");
-  for (const name of fs.readdirSync(resources)) {
-    if (
-      !["app.asar", "app.asar.unpacked", "electron.icns"].includes(name) &&
-      !/^[a-z]{2,3}(?:_(?:[A-Z]{2}|\d{3}))?\.lproj$/.test(name)
-    )
-      throw failure(
-        "The app has an unexpected loose resource; private source files must not ship outside the audited archive.",
-      );
-  }
-  const frameworks = new Set([
-    "Electron Framework.framework",
-    "ReactiveObjC.framework",
-    "Squirrel.framework",
-    "Mantle.framework",
-    "Recall Helper.app",
-    "Recall Helper (Renderer).app",
-    "Recall Helper (GPU).app",
-    "Recall Helper (Plugin).app",
-  ]);
-  if (
-    fs
-      .readdirSync(path.join(contents, "Frameworks"))
-      .some((name) => !frameworks.has(name))
-  )
-    throw failure("The app has an unexpected framework or executable bundle.");
-
-  const unpacked = path.join(resources, "app.asar.unpacked");
-  if (
-    fs.readdirSync(unpacked).some((name) => name !== "dist-native") ||
-    fs
-      .readdirSync(path.join(unpacked, "dist-native"))
-      .some((name) => name !== "RecallPadHandoff")
-  )
-    throw failure("The app has unexpected unpacked first-party files.");
-
-  const sensitive =
-    /(?:^|\/)(?:\.env[^/]*|auth\.json|openai\.key|Local\.xcconfig|credentials|pad-identity|paper-authority)(?:\/|$)|\.(?:p12|p8|pem|key|mobileprovision|provisionprofile|sqlite\d*|db|db-wal|db-shm)$/i;
-  function walk(directory) {
-    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-      const file = path.join(directory, entry.name);
-      if (sensitive.test(path.relative(app, file).split(path.sep).join("/")))
-        throw failure(
-          "A private credential, profile or data file is present in the app bundle.",
-        );
-      if (entry.isSymbolicLink()) {
-        if (!within(app, fs.realpathSync(file)))
-          throw failure("A bundle symbolic link points outside the candidate.");
-      } else if (entry.isDirectory()) walk(file);
-      else if (!entry.isFile())
-        throw failure("A non-regular file is present in the app bundle.");
-    }
-  }
-  walk(contents);
-  if (verifyStapledTicket === true)
-    run("/usr/bin/xcrun", ["stapler", "validate", app], {
-      releaseError: "Apple could not validate the app's stapled ticket.",
-    });
 }
 
 function configForSigning(root, app, identity) {
@@ -267,130 +110,6 @@ async function defaultSign(options) {
     if (previousDebug === undefined) delete process.env.DEBUG;
     else process.env.DEBUG = previousDebug;
   }
-}
-
-function entitledCode(metadata, expectedEntitlements, run) {
-  const text = metadata.stdout + "\n" + metadata.stderr;
-  const xml = text.match(/<plist[\s\S]*<\/plist>/)?.[0];
-  // codesign may omit the XML entirely for a component with no entitlements.
-  if (
-    !xml &&
-    !metadata.stdout.trim() &&
-    !Object.keys(expectedEntitlements).length
-  )
-    return;
-  if (!xml)
-    throw failure("A signed component's entitlements could not be inspected.");
-
-  let actual;
-  try {
-    actual = JSON.parse(
-      run("/usr/bin/plutil", ["-convert", "json", "-o", "-", "-"], {
-        input: xml,
-        releaseError: "A signed component's entitlements were invalid.",
-      }).stdout,
-    );
-  } catch {
-    throw failure("A signed component's entitlements were invalid.");
-  }
-  const keys = Object.keys(actual).sort();
-  if (
-    JSON.stringify(keys) !==
-      JSON.stringify(Object.keys(expectedEntitlements).sort()) ||
-    keys.some((key) => actual[key] !== expectedEntitlements[key])
-  )
-    throw failure(
-      "A signed component has unexpected entitlements. Distribution stopped.",
-    );
-}
-
-function verifySigned(app, run) {
-  run("/usr/bin/codesign", ["--verify", "--deep", "--strict", app], {
-    releaseError: "Strict verification of the signed bundle failed.",
-  });
-  const frameworks = path.join(app, "Contents/Frameworks");
-  const apps = fs
-    .readdirSync(frameworks)
-    .filter((name) => name.endsWith(".app"));
-  const native = path.join(
-    app,
-    "Contents/Resources/app.asar.unpacked/dist-native/RecallPadHandoff",
-  );
-  let team;
-  for (const component of [
-    app,
-    ...apps.map((name) => path.join(frameworks, name)),
-    native,
-  ]) {
-    const metadata = run(
-      "/usr/bin/codesign",
-      ["-d", "--verbose=4", component],
-      {
-        releaseError: "A signed component's identity could not be inspected.",
-      },
-    );
-    const text = metadata.stdout + "\n" + metadata.stderr;
-    const currentTeam = /^TeamIdentifier=([A-Z0-9]{10})$/m.exec(text)?.[1];
-    const timestamp = /^Timestamp=(.+)$/m.exec(text)?.[1];
-    if (
-      !currentTeam ||
-      (team && team !== currentTeam) ||
-      !/^Authority=Developer ID Application:/m.test(text) ||
-      !/^CodeDirectory .*flags=.*\bruntime\b/m.test(text) ||
-      !timestamp ||
-      /^none$/i.test(timestamp)
-    )
-      throw failure(
-        "Signed components must use the same Developer ID team, hardened runtime and secure timestamp.",
-      );
-
-    team = currentTeam;
-    const expectedId =
-      component === app
-        ? BUNDLE_ID
-        : component === native
-          ? NATIVE_IDENTIFIER
-          : HELPER_IDS[path.basename(component)];
-    if (expectedId && !text.split("\n").includes("Identifier=" + expectedId))
-      throw failure(
-        "A signed component has an unexpected application identifier.",
-      );
-
-    const expectedEntitlements =
-      component === native
-        ? {}
-        : {
-            "com.apple.security.cs.allow-jit": true,
-            "com.apple.security.device.audio-input": true,
-          };
-    entitledCode(
-      run(
-        "/usr/bin/codesign",
-        ["-d", "--xml", "--entitlements", "-", component],
-        {
-          releaseError:
-            "A signed component's entitlements could not be inspected.",
-        },
-      ),
-      expectedEntitlements,
-      run,
-    );
-  }
-}
-
-function hashFile(file) {
-  const hash = crypto.createHash("sha256");
-  // Hash incrementally: the Electron archive can be hundreds of megabytes.
-  const fd = fs.openSync(file, "r"),
-    buffer = Buffer.alloc(1024 * 1024);
-  try {
-    let bytes;
-    while ((bytes = fs.readSync(fd, buffer, 0, buffer.length, null)) > 0)
-      hash.update(buffer.subarray(0, bytes));
-  } finally {
-    fs.closeSync(fd);
-  }
-  return hash.digest("hex");
 }
 
 async function prepare({

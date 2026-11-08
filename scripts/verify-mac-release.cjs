@@ -6,10 +6,14 @@ const { atomic, lock } = require("../electron/config.cjs");
 const { read } = require("../electron/private-files.cjs");
 const {
   hashFile,
-  inspectBundleLayout,
-  verifySigned,
   defaultRun,
-} = require("./distribute-mac.cjs");
+  directory,
+  regular,
+  validateApp,
+  inspectMacArchive,
+  sameApp,
+  tree,
+} = require("../skills/recall-upgrade/scripts/mac-release.cjs");
 
 const CHECKS = [
   "cleanMacInstallation",
@@ -22,16 +26,6 @@ const CANDIDATE = /^candidate-[A-Za-z0-9_-]+$/;
 
 function json(file) {
   return JSON.parse(read(file, 8 * 1024 * 1024));
-}
-
-function directory(folder) {
-  if (!fs.lstatSync(folder).isDirectory() || fs.realpathSync(folder) !== folder)
-    throw Error("A release directory is missing or aliased.");
-}
-
-function regular(file) {
-  if (!fs.lstatSync(file).isFile() || fs.realpathSync(file) !== file)
-    throw Error("A release file is missing or aliased.");
 }
 
 function candidate(out, name) {
@@ -67,16 +61,6 @@ function app(value) {
   return path.join(value.folder, apps[0]);
 }
 
-function validateApp(folder, { stapled, run }) {
-  directory(folder);
-  inspectBundleLayout(folder, { verifyStapledTicket: stapled, run });
-  verifySigned(folder, run);
-  if (stapled)
-    run("/usr/sbin/spctl", ["--assess", "--type", "execute", folder], {
-      releaseError: "Release Gatekeeper verification failed.",
-    });
-}
-
 function validateArtifact(value, { run, checkApp }) {
   const receipt = value.receipt;
   if (
@@ -99,111 +83,6 @@ function validateArtifact(value, { run, checkApp }) {
     throw Error("The staged app differs from its release receipt.");
 
   return staged;
-}
-
-function inspectMacArchive(file) {
-  if (fs.statSync(file).size > 512 * 1024 * 1024)
-    throw Error("The release ZIP exceeds the inspection limit.");
-
-  const entries = new (require("adm-zip"))(file).getEntries();
-  if (!entries.length || entries.length > 10000)
-    throw Error("The release ZIP contains an unexpected number of files.");
-
-  // macOS paths can alias through case and Unicode normalization.
-  const folded = (name) =>
-    name.normalize("NFD").toUpperCase().toLowerCase().normalize("NFD");
-  const names = new Set();
-  const apps = new Set();
-  const links = new Set();
-  let bytes = 0;
-  for (const entry of entries) {
-    const name = entry.entryName.replace(/\/$/, "");
-    const parts = name.split("/");
-    if (
-      !name ||
-      entry.entryName.includes("\\") ||
-      name.includes("\0") ||
-      parts.some((part) => !part || part === "." || part === "..") ||
-      names.has(folded(name)) ||
-      entry.header.size > 512 * 1024 * 1024
-    )
-      throw Error("The release ZIP contains an unsafe or duplicate path.");
-
-    names.add(folded(name));
-    bytes += entry.header.size;
-    if (bytes > 2 * 1024 * 1024 * 1024)
-      throw Error("The expanded release ZIP exceeds the inspection limit.");
-
-    if (parts[0] !== "__MACOSX") apps.add(parts[0]);
-    const type = (entry.header.attr >>> 16) & 0o170000;
-    if (![0, 0o100000, 0o040000, 0o120000].includes(type))
-      throw Error("The release ZIP contains an unsupported file type.");
-
-    if (type === 0o120000) {
-      if (entry.header.size > 4096 || parts[0] === "__MACOSX")
-        throw Error("The release ZIP contains an unsafe symbolic link.");
-
-      const target = entry.getData().toString("utf8");
-      const resolved = path.posix.resolve(
-        "/",
-        path.posix.dirname(name),
-        target,
-      );
-      if (
-        !target ||
-        target.includes("\0") ||
-        target.includes("\\") ||
-        path.posix.isAbsolute(target) ||
-        (resolved !== "/" + parts[0] &&
-          !resolved.startsWith("/" + parts[0] + "/"))
-      )
-        throw Error("A release ZIP link escapes its application.");
-
-      links.add(folded(name));
-    }
-  }
-  if (apps.size !== 1 || !/^[A-Za-z0-9 _-]+\.app$/.test([...apps][0]))
-    throw Error("The release ZIP must contain exactly one application.");
-
-  for (const name of names) {
-    let parent = path.posix.dirname(name.replace(/^__macosx\//, ""));
-    while (parent !== ".") {
-      if (links.has(parent))
-        throw Error("A release ZIP entry traverses a symbolic link.");
-
-      parent = path.posix.dirname(parent);
-    }
-  }
-  return [...apps][0];
-}
-
-function sameApp(expected, actual) {
-  const expectedFiles = tree(expected, fs.readdirSync(expected).sort());
-  const actualFiles = tree(actual, fs.readdirSync(actual).sort());
-  if (JSON.stringify(expectedFiles) !== JSON.stringify(actualFiles))
-    throw Error(
-      "The staged or installed app differs from the final release ZIP.",
-    );
-}
-
-function tree(folder, payloads) {
-  const result = {};
-  function visit(file) {
-    const stat = fs.lstatSync(file);
-    const name = path.relative(folder, file);
-    if (stat.isSymbolicLink()) result[name] = { link: fs.readlinkSync(file) };
-    else if (stat.isDirectory()) {
-      result[name] = { directory: true };
-      for (const child of fs.readdirSync(file).sort())
-        visit(path.join(file, child));
-    } else if (stat.isFile()) result[name] = { sha256: hashFile(file) };
-    else throw Error("Unexpected release payload file type.");
-  }
-  for (const name of payloads) {
-    const file = path.join(folder, name);
-    if (fs.lstatSync(file, { throwIfNoEntry: false })) visit(file);
-  }
-  return result;
 }
 
 function prune(value, { run, checkApp, activeFiles, remove }) {

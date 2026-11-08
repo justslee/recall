@@ -196,7 +196,17 @@ This is a Codex-first beta. One physical-iPad submission has been inspected in a
 
 ## Update an existing installation
 
-Mac updates are manual in this beta:
+### Update with an assistant
+
+Install the public [`recall-upgrade`](../skills/recall-upgrade/SKILL.md) folder through your assistant's skill installer or the Recall plugin, then start a fresh chat. For example, ask Codex **“Install the recall-upgrade skill from justslee/recall, path skills/recall-upgrade.”** This source change must be available on the selected Git branch. The next Mac source build also installs it globally when connecting Codex or Claude Code in **Connections**. An existing unrelated skill with the same name is preserved.
+
+Ask **“Use recall-upgrade to update Recall.”** The skill uses the installed app's bundled runtime, so no separate Node installation or GitHub login is needed. It follows the installed release channel: stable installations use stable releases; beta installations include published betas. A version-check request only checks. An explicit upgrade request downloads and verifies the official ZIP, quits Recall gracefully when replacement is needed, replaces it at the same path, and reopens it. A same-version build may need one download before its build number can be confirmed.
+
+The helper checks the checksum, signed publisher, Apple Silicon architecture and notarization. It preserves newer local builds, retains one previous **app** in a private directory beside the installation, and cleans its superseded app and temporary download after successful replacement. Interrupted replacements reconcile on the next upgrade attempt. Unknown or changed saved files are retained for review. Learning profiles, reviews, notes, handwriting, credentials and their backups are outside the upgrade transaction; an app rollback never restores an older learning database.
+
+Finish active recordings or evaluations before requesting an upgrade. Refresh previously connected assistant instructions from the updated app when needed. This skill is an explicit update action, not an unattended background updater. Current support is Apple Silicon macOS.
+
+### Update manually
 
 1. Back up from **Settings & backups → Library & backups**, finish recordings or evaluations, then **Quit Recall**. Closing its window may leave the iPad receiver running.
 2. Download the newest **Mac app ZIP** from [GitHub Releases](https://github.com/justslee/recall/releases). Put the ZIP in an empty folder before unzipping it, so Finder can extract it as **Recall.app**.

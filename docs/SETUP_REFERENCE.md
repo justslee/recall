@@ -53,7 +53,9 @@ Source builds are separate from the publisher's signed, notarized releases. Inte
 
 ## Update an existing installation
 
-Mac updates are manual in this beta. Your library stays outside the app bundle, so replacing **Recall.app** does not replace your cards or study history.
+For a verified assistant-driven Mac update, use the public [recall-upgrade skill](SETUP.md#update-with-an-assistant). The manual and source-checkout options below remain available.
+
+Your library stays outside the app bundle, so replacing **Recall.app** does not replace your cards or study history.
 
 ### If you installed the Mac download
 
