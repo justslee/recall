@@ -387,3 +387,20 @@ Final local verification passed all 475 regression tests, the production build,
 Claude and portable profile skill copies were refreshed with backups. The current
 build 18 receipt was revalidated against the published ZIP with app replacement
 and launch forbidden; the subsequent installed check returned `up_to_date`.
+
+### Scheduler dependency compatibility — November 8, 2026
+
+The ts-fsrs 6 dependency update retains its supported legacy FSRS-6 model and
+elapsed-day semantics. A shared scheduler policy preserves the previous
+whole-minute learning intervals; review evidence uses the renamed retrievability
+API. This does not switch Recall to FSRS-7 or migrate stored schedules. Source
+builds now require Node 24, matching the dependency's engine requirement; the
+packaged app continues to include its own runtime.
+
+Local verification passed 503 tests and the production build. Frozen synthetic
+ts-fsrs 5.4.2 fixtures cover all four card states, early/overdue reviews and a
+backward clock. Reopen, preview, rate and Undo checks preserve old schedule JSON
+and historical reviews. Hidden Progress and My Brain checks passed with unchanged
+synthetic cards, schedules, reviews and sessions. Documentation and repository
+privacy checks passed. No personal profile was opened or modified; these are
+source checks, not a new installed app or published release.

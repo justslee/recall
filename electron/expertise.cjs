@@ -1,7 +1,8 @@
 // Derived review evidence. Never rates cards or changes their FSRS schedules.
 const { createHash } = require("node:crypto");
-const { fsrs, createEmptyCard, Rating } = require("ts-fsrs");
-const scheduler = fsrs({ request_retention: 0.9, enable_fuzz: false });
+const { createEmptyCard, Rating } = require("ts-fsrs");
+const { createScheduler } = require("./scheduler.cjs");
+const scheduler = createScheduler();
 const MODEL_VERSION = 1,
   SCORE_PRECISION_VERSION = 2,
   DAY = 86400000;
@@ -262,14 +263,13 @@ function scoreCard(card, stats, now) {
   let readiness = 0;
   try {
     readiness = clamp(
-      scheduler.get_retrievability(
+      scheduler.retrievability(
         {
           ...stats.memory,
           due: new Date(stats.memory.due),
           last_review: new Date(stats.memory.last_review),
         },
         new Date(now),
-        false,
       ),
     );
   } catch {

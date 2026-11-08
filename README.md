@@ -102,7 +102,7 @@ Ask Codex or Claude to make card answers more concise, adjust visual styles, or 
 <details>
 <summary>Clone and build from source</summary>
 
-Install **Node.js 22.18 or later** first using the [official installer](https://nodejs.org/en/download); npm is included. Recall does not install Node for you. The packaged Mac download above includes its own runtime.
+Install **Node.js 24 or later** first using the [official installer](https://nodejs.org/en/download); npm is included. Recall does not install Node for you. The packaged Mac download above includes its own runtime.
 
 ```sh
 git clone https://github.com/justslee/recall.git

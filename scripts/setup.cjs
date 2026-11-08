@@ -10,11 +10,11 @@ function requirements({
   arch = process.arch,
   release = os.release(),
 } = {}) {
-  const [major, minor] = version.split(".").map(Number);
+  const [major] = version.split(".").map(Number);
   const issues = [];
-  if (!Number.isFinite(major) || major < 22 || (major === 22 && minor < 18))
+  if (!Number.isFinite(major) || major < 24)
     issues.push(
-      `Node ${version} is too old. Install Node 22.18 or later from https://nodejs.org/en/download and reopen your terminal.`,
+      `Node ${version} is too old. Install Node 24 or later from https://nodejs.org/en/download and reopen your terminal.`,
     );
   if (platform !== "darwin" || arch !== "arm64")
     issues.push(

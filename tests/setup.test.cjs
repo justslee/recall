@@ -3,12 +3,12 @@ const { test } = require("node:test"),
 const { requirements, main } = require("../scripts/setup.cjs");
 test("setup gives an actionable prerequisite failure before installing anything", () => {
   assert.equal(
-    requirements({ version: "22.18.0", platform: "darwin", arch: "arm64" })
+    requirements({ version: "24.0.0", platform: "darwin", arch: "arm64" })
       .length,
     0,
   );
   assert.match(
-    requirements({ version: "22.17.0", platform: "darwin", arch: "arm64" })[0],
+    requirements({ version: "23.99.0", platform: "darwin", arch: "arm64" })[0],
     /Install Node/,
   );
   assert.match(
@@ -17,7 +17,7 @@ test("setup gives an actionable prerequisite failure before installing anything"
   );
   assert.match(
     requirements({
-      version: "22.18.0",
+      version: "24.0.0",
       platform: "darwin",
       arch: "arm64",
       release: "21.6.0",
@@ -26,7 +26,7 @@ test("setup gives an actionable prerequisite failure before installing anything"
   );
   assert.equal(
     requirements({
-      version: "22.18.0",
+      version: "24.0.0",
       platform: "darwin",
       arch: "arm64",
       release: "22.0.0",
