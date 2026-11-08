@@ -2,6 +2,10 @@
 
 Start with the answer and learning objective. Choose actors, quantities, axes or states that make its mechanism visible. Useful interactions change an input and update the actual plotted marks, annotations and interpretation. Compare before/after, trace a sequence, or expose a relationship. Decorative motion, generic arrows, pan/zoom, or a changing number beside an unrelated plot are insufficient.
 
+## Illustrated technical style
+
+Use [illustrated-style.md](illustrated-style.md) for the default pastel surfaces, readable outlines, technical labels and selective depth. Keep quantitative charts in two dimensions and preserve their scales. Palette-only changes are appropriate when the existing composition already explains the concept. Apply the same guidance to static Knowledge Base figures within their sanitizer restrictions.
+
 ## Composition and interaction
 
 Build a composed explanation rather than a generic box map. Choose a spatial structure that teaches the relationship: ownership lanes for a process, layers for memory or durability, a timeline for cash flows, capacity gauges for a queue, or aligned plots for comparisons. Keep positions stable across states. Use grouped regions, whitespace, readable labels and restrained semantic accents; pair color with text, shape or position. Give the main mechanism more emphasis than supporting detail and adapt the composition to the current app theme.

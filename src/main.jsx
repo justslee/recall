@@ -425,7 +425,7 @@ function App() {
     await api.setting("session", next);
     setActiveSession(next);
   };
-  const startMapSession = async (ids, format = selection.format, origin = "Atlas") => {
+  const startMapSession = async (ids, format = selection.format, origin = "Knowledge") => {
     if (activeSession && activeSession.index < activeSession.ids.length) {
       notify(
         `Your current session is saved. Finish it before starting a ${origin} session.`,
@@ -1070,13 +1070,6 @@ function App() {
         )}
         {view === "progress" && (
           <ProgressView
-            selection={selection}
-            onSelection={changeSelection}
-            onPractice={startMapSession}
-            onExplain={(id) => {
-              setSpeakCard(id);
-              go("speak");
-            }}
             onStudy={() => go("study")}
             onHistory={(day = null) => {
               setHistoryDay(day);

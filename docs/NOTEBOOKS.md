@@ -1,12 +1,15 @@
 # Your private notebooks
 
+**Simplified writing desk — source build.** Use **New note** directly from Home or **Continue [title]** to resume saved work. Notebooks remains in the toolbar for organization. The editor keeps Write, Erase and Undo at the front of its tool strip; **Shapes** opens the shape/text choices, with object selection and contextual actions retained. **Add to Recall…** opens the same explicit selection preview described below. An inline receipt identifies the last submitted copy and marks newer edits private; **Details** opens Sent snapshots. No storage migration or automatic sharing is introduced, and a new app build is required.
+
+
 _TestFlight build 7 has been checked on an iPad: continuous writing, scrolling, pinch zoom, editable diagrams, recovery and a multipage notebook transfer to the Mac work. KB/card preparation is a separate, explicit step. Build 7's Send screen can fail to show that a snapshot was saved; see [checking a send](#check-whether-your-work-arrived) before tapping it again._
 
 _Build 9 combines the direct drawing toolbar and clearer Send confirmation. It is available in internal TestFlight and has been installed on the test iPad with existing work present. A disposable-note check confirmed direct shape deletion, Undo restoring the shape and label, Done/reopen recovery, and returning to Pencil writing. Updated Send feedback and VoiceOver still need separate device checks._
 
 _Build 10 is available in internal TestFlight and opens on the test iPad with existing work present. It expands the writable paper when zooming out and adds arrows that attach to shapes. Physical right-edge writing and attached-arrow gestures remain device checks._
 
-Recall Pad has two spaces: **Live** for Recall Study and your tutor conversation, and **Notebooks** for personal notes you choose to add to Recall later. Writing in a notebook never sends it automatically.
+The newer Home brings recent sheets and notes together while keeping their storage and sharing separate. **Notebooks** holds personal notes you choose to add to Recall later; older installed builds may still show **Live / Notebooks** tabs. Writing in a notebook never sends it automatically.
 
 ## Write first
 
@@ -28,7 +31,7 @@ _Actual simulator captures from the verified direct-entry source using synthetic
 
 A note starts with one continuous vertical sheet. Write with Apple Pencil and scroll with your fingers; pinch to zoom from 35% to 300%. Ink, the paper grid and diagram objects share the same coordinates. Existing multi-page notes remain available through **Pages**.
 
-The drawing toolbar keeps **Write**, ink **Eraser**, **Select objects**, **Rectangle**, **Circle**, **Diamond**, **Line**, **Arrow** and **Text** within direct reach. Every note opens in **Write**, ready for Pencil ink. Drag with a shape tool to draw an object, or tap with **Text** to place a label. Choose **Select objects** and tap an object to move or resize it; its selection outline and handles show what will change. Tap **Write** to resume handwriting. Use one finger to scroll while writing, or two fingers to scroll and pinch while an object tool is active.
+The source drawing toolbar keeps **Write**, ink **Eraser** and **Undo** first. Open **Shapes** for **Rectangle**, **Circle**, **Diamond**, **Line**, **Arrow** and **Text**; **Select objects** remains beside it. Earlier builds show the individual shape tools directly. Every note opens in **Write**, ready for Pencil ink. Drag with a shape tool to draw an object, or tap with **Text** to place a label. Choose **Select objects** and tap an object to move or resize it; its selection outline and handles show what will change. Tap **Write** to resume handwriting. Use one finger to scroll while writing, or two fingers to scroll and pinch while an object tool is active.
 
 Selecting an object shows a floating action bar along the bottom of the canvas: **Text · Style · Duplicate · Delete**. The bar does not shift the sheet or change its scroll position. To remove a shape, choose **Select objects**, tap the shape, then tap **Delete**. Shape deletion needs no confirmation; **Undo** restores both the object and its attached label. The ink **Eraser** removes handwriting; use **Delete** for diagram objects.
 
@@ -62,7 +65,7 @@ _Native editor renderings from synthetic simulator test fixtures for the newer r
 
 ## Send only what you choose
 
-Pair with Recall once using the [iPad setup guide](SETUP.md#pair-once). From the canvas, choose **Send to Recall** for the current page, or **Send this note…** from its menu to include the note's written pages. A notebook's menu also lets you send several notes together.
+Pair with Recall once using the [iPad setup guide](SETUP.md#pair-once). From the canvas, choose **Add to Recall…** for the current page, or **Add this note to Recall…** from its menu to include the note's written pages. A notebook's menu also lets you send several notes together.
 
 On the selection screen, choose the source sheets and tap **Send selected** once. The thumbnails show each sheet's beginning, not every image that a long sheet will export. Opening this screen alone sends nothing. **Snapshot saved** confirms that an immutable copy is queued; **Received on Mac** confirms that the Mac has stored it. Later writing stays private until you send again.
 

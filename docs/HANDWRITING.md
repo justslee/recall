@@ -6,6 +6,8 @@
 
 **Write naturally on your iPad. Keep every attempt. Get feedback on your Mac.**
 
+**Simplified writing desk — source build.** Home offers **Continue [title]**, **New note**, and recent work. Continue remembers the last opened sheet or private note; **Notebooks** remains available from the toolbar. Current questions appear under **From your Mac**. **More → Blank tutor sheet** keeps the manual workflow available. Opening Home does not create or submit work. These changes require a new iPad app build; they do not update the installed app automatically.
+
 Recall Pad is an optional native iPad companion, with a shared PencilKit notepad for two workflows:
 
 | Mode             | Start with                                       | Finish with                                                              |
@@ -35,21 +37,21 @@ For updates, keep both apps installed and follow the [Mac and iPad update steps]
 
 ## Study with your Pencil
 
-Open a concept or math card on the Mac and choose **Write on iPad** once for the session. The iPad follows subsequent questions without another scan. Solutions and review schedules remain on the Mac.
+Open a concept or math card on the Mac and choose **Write on iPad** once for the session. Subsequent questions arrive without another scan. In the newer source UI, **Next question ready → Open** saves the current sheet before opening the new question; arrival and reconnection never switch it automatically. Solutions and review schedules remain on the Mac.
 
 Question text and LaTeX render locally. Embedded PNG, JPEG and WebP figures are supported, with up to four figures of 2 MiB each. Questions requiring an executable widget, vector figure or external image stay on the Mac; use Tutor Pad beside those questions. A cached session supports up to 200 fronts and 16 MiB of question content.
 
 **Questions on your desk** shows a rolling buffer of at most **three** questions: the current question and the next two. Advancing on the Mac removes earlier questions from this list; the final question appears alone, and finishing clears the desk. Coding stays on the Mac, with upcoming concept/math questions buffered on the iPad. Your handwritten work remains in **Recent sheets**. Cached fronts remain available for offline navigation; the compact desk is not a deletion or a review rating.
 
-Write on the scrollable plain, ruled or squared sheet. Pencil writes; fingers scroll and zoom. Undo, eraser and selection tools stay in a small toolbar. Work autosaves, and switching questions preserves each sheet.
+Write on the scrollable plain, ruled or squared sheet. Pencil writes; fingers scroll and zoom. Pen, eraser and Undo stay in a small toolbar. **More writing tools** contains Redo, stroke selection and paper style. Work autosaves, and switching questions preserves each sheet.
 
-Tap **Hide** on the question to give your working more room; **Show** brings it back. A new problem opens its prompt again. The share button at the top previews your current work before export. **Recent sheets** offers **All**, **Study** and **Tutor** filters.
+Tap **Hide** on the question to give your working more room; **Show** brings it back. A new problem opens its prompt again. The share button at the top previews your current work before export. **Recent work** includes notes and sheets; its filter offers **All**, **Notes**, **Study** and **Tutor**. **Show all** exposes older work.
 
 Beside the **Pen**, tap the color swatch to choose graphite, blue, green, red, purple or amber and adjust **Pen thickness**. Select the **Eraser**, then tap its size control to adjust the erasing diameter. The eraser removes the ink you touch rather than an entire stroke. These preferences are remembered on this iPad and affect new marks; earlier ink keeps its colors and thickness. In a narrow window, swipe the toolbar to reach its other controls.
 
 The writing surface follows **iPad Settings → Display & Brightness**: warm paper in light mode, dark forest paper in dark mode. Ink and grid lines adapt while you keep the sheet open; switching appearance preserves your strokes and selected tool. Export previews, PNG/PDF pages and thumbnails retain your ink colors on white paper for readable sharing and assessment.
 
-Choose **Send for feedback** to save an immutable attempt and its ordered pages. Recall retains the original question/reference snapshot for that attempt. Correcting your work and resubmitting creates a new attempt rather than replacing the old one.
+Choose **Send for feedback** to save an immutable attempt and its ordered pages. Recall retains the original question/reference snapshot for that attempt. Correcting your work and resubmitting creates a new attempt rather than replacing the old one. The newer source keeps the canvas open after sending and shows an inline receipt. Tap it for submitted pages and delivery details. An unchanged submitted revision is not sent as a new attempt; explicit delivery retry keeps the original identity. Newer ink remains unsent until you submit it.
 
 On the Mac, expand **Your written work** to inspect pages and feedback. The evaluator should credit valid alternative methods, distinguish arithmetic, method and conceptual errors, and request clarification for unreadable notation. **Show worked solution** and your review rating remain explicit choices. Evaluation never automatically rates a card or changes its schedule.
 
@@ -71,13 +73,13 @@ Cancelled, interrupted or failed assessments keep your attempt. Retry manually: 
 
 For the Codex-first [paper-learning workflow](PAPER_LEARNING.md), open **Settings & backups → iPad & handwriting → Learn on paper with your tutor** and choose **Connect Codex** or **Connect Claude Code**. Start a fresh chat, then ask it to start a paper session. This connection is separate from learning capture.
 
-Keep discussing the subject normally. When useful, ask for a problem or writing prompt on the pad; each published prompt has its own sheet. With **Follow tutor** on, the next published prompt saves your working before switching sheets. Hints and discussion keep the same sheet. Reconnecting leaves your current work open; turn **Follow tutor** back on to continue.
+Keep discussing the subject normally. When useful, ask for a problem or writing prompt on the pad; each published prompt has its own sheet. The newer source shows **Next question ready → Open** when another prompt arrives. Choose Open when ready; the current work is saved first. Hints, discussion and reconnects keep the same sheet. Older builds may still show **Follow tutor**.
 
 Choose **Send to tutor** to save the pages on the Mac. The assistant can read selected pages into that same active turn through its tools. A tool can wait briefly for work; if the assistant is idle, say **“Check my paper”** after submitting. This does not attach to a draft, send a chat message, wake an idle chat or automatically grade each turn. Claude setup is available, and ChatGPT desktop on a supported shared Codex host can reuse the local MCP registration. Live image delivery in each client still needs separate verification; ordinary web chats do not inherit local tools.
 
 ### Manual blank sheets
 
-Without a connected chat prompt, **Tutor Pad** continues your latest manual sheet or opens a blank one. Choose **New sheet** for a different problem. In a chat-bound sheet, **Blank sheet** opens a separate manual sheet; it does not move your original work to another prompt. Ask for a problem in any conversation you already use. On the Mac, open **File → Tutor Pad** (or the Recall Pad menu-bar item). Choose **Start receiving pages** if needed; **Page receiver ready** confirms that the tray is ready. No Recall card, reference answer, OpenAI API key or Accessibility permission is needed. Keep the shared local Mac receiver running.
+Use Home’s **Continue** or **Recent work** to reopen a manual sheet. **More → Blank tutor sheet** opens a separate blank manual sheet. Inside the editor, choose **… → New sheet** for a different problem. In a chat-bound sheet, **… → Blank sheet** opens a separate manual sheet; it does not move your original work to another prompt. Ask for a problem in any conversation you already use. On the Mac, open **File → Tutor Pad** (or the Recall Pad menu-bar item). Choose **Start receiving pages** if needed; **Page receiver ready** confirms that the tray is ready. No Recall card, reference answer, OpenAI API key or Accessibility permission is needed. Keep the shared local Mac receiver running.
 
 Write on the iPad and choose **Send to Mac**. **Received on Mac** confirms durable storage. In the Mac tray, choose **Copy page**, switch to your chat’s message input, and paste with **⌘V**. Check the attachment and press Send yourself. Multiple pages stay ordered; copy and attach them one at a time. The iPad's export preview and system sharing offer PNG/PDF files as another route. [Page transfer details](PAD_HANDOFF.md).
 
@@ -85,7 +87,7 @@ Receiving pages never changes the clipboard or controls another app. There is no
 
 Sending keeps the canvas open with a compact delivery receipt. Earlier sheets remain available. Tutor sheets do not automatically become flashcards, knowledge-base notes or Self Test captures.
 
-To delete a sheet, **swipe left** on its Recent sheets row and tap **Delete**, touch and hold for its actions, or use **… → Delete sheet…** in Recent sheets or the editor. Swiping alone never deletes work. A centered confirmation card names the sheet and offers **Cancel** and **Delete sheet**; Escape also cancels when using a keyboard. Cancel keeps the current writing canvas in place. A successful deletion removes its Recent sheets row immediately, including offline. This permanently removes its ink, local submissions and queued transfers from the iPad. Copies already received on the Mac or attached to a chat remain there. A sheet actively sending must finish its transfer before deletion.
+To delete a sheet, **swipe left** on its Recent work row and tap **Delete**, touch and hold for its actions, or use **… → Delete sheet…** in Recent work or the editor. Swiping alone never deletes work. A centered confirmation card names the sheet and offers **Cancel** and **Delete sheet**; Escape also cancels when using a keyboard. Cancel keeps the current writing canvas in place. A successful deletion removes its Recent work row immediately, including offline. This permanently removes its ink, local submissions and queued transfers from the iPad. Copies already received on the Mac or attached to a chat remain there. A sheet actively sending must finish its transfer before deletion.
 
 ## Offline and recovery
 

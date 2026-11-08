@@ -25,9 +25,28 @@ function summarize(
     day: shift(start, i),
     reviews: 0,
     recalled: 0,
+    firstReviews: 0,
+    repeatReviews: 0,
+    rollingReviews: 0,
+    rollingRecallRate: null,
     ratings: Object.fromEntries(RATINGS.map((r) => [r, 0])),
   }));
   const dayMap = new Map(daily.map((d) => [d.day, d]));
+  const trendDays = Array.from({ length: days + 6 }, (_, i) => ({
+    day: shift(start, i - 6),
+    reviews: 0,
+    recalled: 0,
+  }));
+  const trendMap = new Map(trendDays.map((d) => [d.day, d]));
+  const forecast = {
+    overdue: 0,
+    today: 0,
+    days: Array.from({ length: 7 }, (_, i) => ({
+      day: shift(today, i),
+      due: 0,
+    })),
+  };
+  const forecastMap = new Map(forecast.days.map((d) => [d.day, d]));
   const byId = new Map(cards.map((c) => [c.id, c]));
   const eligible = cards.filter((c) => c.status === "ready" && !c.suspended);
   const ratings = Object.fromEntries(RATINGS.map((r) => [r, 0]));
@@ -50,6 +69,7 @@ function summarize(
     return topics.get(name);
   };
   const latest = new Map(),
+    first = new Map(),
     activeDates = new Set(),
     unique = new Set();
   let practice = 0;
@@ -68,6 +88,20 @@ function summarize(
       if (bucket) practice++;
       continue;
     }
+
+    const recalled = event.rating !== "Again" ? 1 : 0;
+    const trend = trendMap.get(day);
+    if (trend) {
+      trend.reviews++;
+      trend.recalled += recalled;
+    }
+    const earliest = first.get(event.card_id);
+    if (
+      !earliest ||
+      at < new Date(earliest.at).getTime() ||
+      (at === new Date(earliest.at).getTime() && event.id < earliest.id)
+    )
+      first.set(event.card_id, event);
     activeDates.add(day);
     const previous = latest.get(event.card_id);
     if (
@@ -77,7 +111,6 @@ function summarize(
     )
       latest.set(event.card_id, event);
     if (!bucket) continue;
-    const recalled = event.rating !== "Again" ? 1 : 0;
     bucket.reviews++;
     bucket.ratings[event.rating]++;
     bucket.recalled += recalled;
@@ -91,6 +124,28 @@ function summarize(
     topic.reviews++;
     topic.recalled += recalled;
   }
+  for (const event of first.values()) {
+    const bucket = dayMap.get(dateOf(event.at));
+    if (bucket) bucket.firstReviews++;
+  }
+  let rollingReviews = 0,
+    rollingRecalled = 0;
+  for (let i = 0; i < trendDays.length; i++) {
+    rollingReviews += trendDays[i].reviews;
+    rollingRecalled += trendDays[i].recalled;
+    if (i >= 7) {
+      rollingReviews -= trendDays[i - 7].reviews;
+      rollingRecalled -= trendDays[i - 7].recalled;
+    }
+    const bucket = dayMap.get(trendDays[i].day);
+    if (!bucket) continue;
+
+    bucket.repeatReviews = bucket.reviews - bucket.firstReviews;
+    bucket.rollingReviews = rollingReviews;
+    bucket.rollingRecallRate = rollingReviews
+      ? Math.round((100 * rollingRecalled) / rollingReviews)
+      : null;
+  }
   const needsPractice = [];
   let due = 0;
   for (const card of eligible) {
@@ -101,6 +156,14 @@ function summarize(
     if (isDue) {
       due++;
       topic.due++;
+    }
+    const scheduledAt = new Date(card.schedule?.due).getTime();
+    if (card.schedule?.state > 0 && Number.isFinite(scheduledAt)) {
+      const day = dateOf(scheduledAt);
+      if (day < today) forecast.overdue++;
+      if (day === today) forecast.today++;
+      const bucket = forecastMap.get(day);
+      if (bucket) bucket.due++;
     }
     const review = latest.get(card.id);
     if (review && ["Again", "Hard"].includes(review.rating)) {
@@ -142,6 +205,7 @@ function summarize(
     streak,
     practice,
     due,
+    forecast,
     library: {
       available: eligible.length,
       reviewed: eligible.filter((c) => latest.has(c.id)).length,

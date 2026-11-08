@@ -27,24 +27,14 @@ Routine authoring verification uses hidden, disposable windows and saved screens
 
 ## See where to practice next
 
-Open **Progress → Atlas**. Topics form regions; select a region to explore its ideas, then select an idea to inspect the evidence and practice its cards. Search works across the selected topics and collection. Larger libraries show six regions at a time and twelve ideas per focused page.
+Open **Progress** for your **Review journal**. Choose 7, 28 or 90 days. Select a day in the activity chart to inspect its counts and open that day’s review history. The journal uses your configured time zone and never records a review merely because you opened it.
 
-![Atlas with topic regions and a selected idea's practice evidence](images/learning-map.png)
+- **Study rhythm:** switch between the four ratings and first/repeat reviews. “First” means a card’s first surviving scored review in all recorded history, not its creation or import date. “Repeat” includes subsequent reviews of that card, including same-day attempts.
+- **Seven-day recall trend:** each point divides successful ratings by all scored reviews in the trailing seven calendar days. It weights reviews equally rather than averaging daily percentages. The first visible point can include up to six days before the selected period. No reviews means no estimate, not 0% recall.
+- **Scheduled reviews:** today and the following six days show the current due dates of available, previously studied cards. Older overdue cards appear separately. This is a snapshot of existing schedules; it does not predict the new reviews that future ratings may create. It is independent of the selected activity period.
+- **Formats and topics:** compare where your recorded practice went. Counts are activity, not a measure of topic mastery.
+- **Worth another look:** available cards whose latest scored result was Again or Hard, across all dates. Due cards appear first. Opening a card keeps its answer hidden; continuing study preserves any unfinished session.
 
-**Concepts, Math, Coding and Mixed stay separate.** A math-only Atlas shows math evidence and starts math-only sessions. Collection and difficulty filters also stay in force. Mixed can show **Some evidence** when a concept has a successful attempt but an applicable math or coding card remains untried. An untried optional Speak explanation does not erase a successful scored review.
+“Recalled” includes **Hard, Good and Easy**; Hard still deserves practice. Skips, undone ratings and practice runs are excluded from these scored-review charts. Practice ratings remain a separate count. These are self-ratings, not independently measured retention or a prediction of permanent mastery.
 
-Use **A week ago / Now** to replay the evidence recorded by that time. The comparison uses today's available cards and explicit relationships, not a historical library snapshot. Capturing a new idea alone never fills a point. A successful self-rating, linked feedback or exact-revision test result supplies evidence.
-
-| Lane    | What counts                                                                                                                            |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Recall  | Scored concept-card ratings. “Recalled after a day+” requires a successful rating at least 24 hours after the previous scored attempt. |
-| Explain | Speak feedback tied to that specific Recall card and its saved reference.                                                              |
-| Apply   | Math/coding ratings, local exercise tests for the exact exercise revision, or saved handwriting feedback.                              |
-
-An empty point is **not tried**, amber means **needs practice**, a half-filled point means **some evidence**, and a filled point means a **successful attempt**. A ring requires delayed scored recall for every displayed card in the idea. Unclear feedback is labeled **needs clarification**. Inapplicable formats have no card or point. These are evidence labels, not a mastery score; custom/unlinked explanations and assistant conversations are not scored here.
-
-Select an idea to inspect dates, sources and recorded attempts. **Practice this idea** starts up to three of its matching cards; **Review a small set** chooses a small set from the current region and filters, prioritizing gaps. Answers stay hidden and you choose every rating. An unfinished session is preserved; finish it before starting an Atlas session. New background cards never rearrange an active session.
-
-Lines connect explicitly related cards; sharing a topic alone does not imply a dependency. Where an exercise explicitly references multiple parent ideas, a successful exercise result can mark their connection as demonstrated. **Connected ideas** exposes the supporting card. Atlas never invents a cross-concept challenge or awards a connection just for viewing cards.
-
-Your original charts and counts remain under **Progress → Review journal**. Review history is unchanged.
+Use **Knowledge → Constellation** for the topic graph, relationships and the provisional review-based expertise index. Atlas is no longer a second dashboard tab. Removing that view does not remove its underlying recorded reviews, explanations, code attempts or handwriting evidence. [Constellation and its evidence boundaries](CONSTELLATION.md)

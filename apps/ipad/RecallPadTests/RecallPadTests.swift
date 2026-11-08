@@ -9,6 +9,427 @@ import WebKit
 
 final class RecallPadTests: XCTestCase {
     @MainActor
+    func testIncomingQuestionOverlayKeepsCanvasPositionScrollAndPendingInk() async throws {
+        let original = fixtureDrawing()
+        let state = PromptCanvasTestState(drawing: original)
+        var opened = 0
+        var edits = 0
+        let host = UIHostingController(rootView: IncomingCanvasTestView(state: state, onChanged: { edits += 1 }, onOpen: { opened += 1 }).tint(PadPalette.accent))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 320, height: 800)
+        host.traitOverrides.horizontalSizeClass = .compact
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(200))
+        let canvas = try XCTUnwrap(findCanvas(in: host.view))
+        let coordinator = try XCTUnwrap(canvas.delegate as? PaperCanvas.Coordinator)
+        canvas.delegate = nil
+        let pending = PKDrawing(strokes: original.strokes + fixtureDrawing(color: .purple).strokes)
+        canvas.drawing = pending
+        canvas.setContentOffset(CGPoint(x: 0, y: 140), animated: false)
+        let frame = canvas.convert(canvas.bounds, to: host.view)
+        let offset = canvas.contentOffset
+        let undo = try XCTUnwrap(canvas.undoManager)
+        undo.removeAllActions()
+        undo.beginUndoGrouping()
+        undo.registerUndo(withTarget: canvas) { $0.drawing = original }
+        undo.endUndoGrouping()
+        XCTAssertTrue(undo.canUndo)
+
+        state.incomingTitle = "A new tutor question"
+        try await Task.sleep(for: .milliseconds(180))
+        host.view.layoutIfNeeded()
+        let text = try renderedText(in: host.view)
+        XCTAssertTrue(text.contains("NEXT QUESTION READY"))
+        XCTAssertTrue(text.contains("A NEW TUTOR QUESTION"))
+        XCTAssertTrue(findCanvas(in: host.view) === canvas)
+        XCTAssertEqual(canvas.convert(canvas.bounds, to: host.view), frame, "An incoming prompt cannot move the paper under the Pencil")
+        XCTAssertEqual(canvas.contentOffset, offset)
+        XCTAssertEqual(canvas.drawing.dataRepresentation(), pending.dataRepresentation())
+        XCTAssertEqual(state.drawing, original, "Pending Pencil ink must not be rewritten by a notification")
+        XCTAssertTrue(canvas.undoManager === undo)
+        XCTAssertTrue(undo.canUndo)
+        XCTAssertEqual(opened, 0, "The next prompt requires an explicit Open action")
+        XCTAssertEqual(edits, 0)
+        attachUXScreenshot(host.view, name: "paper-next-question-overlay")
+
+        state.incomingTitle = nil
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        XCTAssertTrue(findCanvas(in: host.view) === canvas)
+        XCTAssertEqual(canvas.convert(canvas.bounds, to: host.view), frame)
+        XCTAssertEqual(canvas.contentOffset, offset)
+        XCTAssertEqual(canvas.drawing.dataRepresentation(), pending.dataRepresentation())
+        canvas.delegate = coordinator
+        coordinator.canvasViewDrawingDidChange(canvas)
+        XCTAssertEqual(state.drawing, pending)
+        XCTAssertEqual(edits, 1)
+        XCTAssertEqual(opened, 0)
+    }
+
+    @MainActor
+    func testExportThenSendKeepsExportLocalAndRejectsStaleOrReboundEditors() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = DocumentStore(directory: directory)
+        let initial = try store.open(mode: .tutor, tutorProblem: tutorFixture(), tutorTitle: "Linear algebra")
+        let ink = fixtureDrawing()
+        let firstSend = try PaperSubmissionFlow.submit(initial, drawing: ink, store: store)
+        let beforeExport = try XCTUnwrap(store.documents.first)
+        let exported = try store.submit(beforeExport, drawing: ink)
+        try store.updateAttempt(exported.id, state: .savedOffline, retryAllowed: false)
+        let afterExport = try savedFiles(in: directory)
+        XCTAssertThrowsError(try PaperSubmissionFlow.submit(beforeExport, drawing: ink, store: store), "The old editor revision cannot reuse a receipt from before export")
+        XCTAssertEqual(try savedFiles(in: directory), afterExport)
+        let refreshed = try XCTUnwrap(store.documents.first)
+        let nextSend = try PaperSubmissionFlow.submit(refreshed, drawing: ink, store: store)
+        XCTAssertNotEqual(nextSend.id, exported.id, "A local export is not a network submission")
+        XCTAssertNotEqual(nextSend.id, firstSend.id)
+        XCTAssertEqual(store.attempts.first { $0.id == exported.id }?.state, .savedOffline)
+        XCTAssertEqual(store.attempts.first { $0.id == exported.id }?.retryAllowed, false)
+        let current = try XCTUnwrap(store.documents.first)
+        XCTAssertEqual(try PaperSubmissionFlow.submit(current, drawing: ink, store: store).id, nextSend.id)
+
+        let beforeRejectedRebind = try savedFiles(in: directory)
+        var differentProblem = current
+        differentProblem.tutorProblem = tutorFixture()
+        XCTAssertFalse(PaperSubmissionFlow.matches(document: differentProblem, attempt: nextSend))
+        XCTAssertThrowsError(try PaperSubmissionFlow.submit(differentProblem, drawing: ink, store: store))
+        var differentDestination = current
+        differentDestination.destination = "clipboard"
+        XCTAssertThrowsError(try PaperSubmissionFlow.submit(differentDestination, drawing: ink, store: store))
+        XCTAssertEqual(try savedFiles(in: directory), beforeRejectedRebind, "Rejected context changes must preserve every draft and immutable attempt")
+    }
+
+    @MainActor
+    func testPaperReceiptSeparatesTransportAccessFeedbackAndNewerPrivateInk() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = DocumentStore(directory: directory)
+        let initial = try store.open(mode: .tutor, tutorProblem: tutorFixture(), tutorTitle: "Linear algebra")
+        var attempt = try PaperSubmissionFlow.submit(initial, drawing: fixtureDrawing(), store: store)
+        let document = try XCTUnwrap(store.documents.first)
+        let before = try savedFiles(in: directory)
+        for (state, title) in [(DeliveryState.waitingForMac, "Waiting for Mac"), (.receivedOnMac, "Received on Mac"), (.availableToTutor, "Opened by tutor"), (.evaluating, "Received on Mac"), (.feedbackReady, "Feedback ready on Mac"), (.needsAttention, "Delivery needs attention")] {
+            attempt.state = state
+            let receipt = PaperSubmissionReceipt(document: document, attempt: attempt, dirty: false, connected: false, sending: false)
+            XCTAssertEqual(receipt.title, title)
+            XCTAssertTrue(receipt.isCurrent)
+            let edited = PaperSubmissionReceipt(document: document, attempt: attempt, dirty: true, connected: false, sending: false)
+            XCTAssertFalse(edited.isCurrent)
+            XCTAssertTrue(edited.detail.contains("New changes haven’t been sent"))
+        }
+        attempt.state = .availableToTutor
+        XCTAssertTrue(PaperSubmissionReceipt(document: document, attempt: attempt, dirty: false, connected: true, sending: false).detail.contains("page was accessed"), "Access cannot be presented as completed grading")
+        attempt.state = .savedOffline
+        XCTAssertFalse(PaperSubmissionReceipt(document: document, attempt: attempt, dirty: false, connected: true, sending: false).isCurrent, "An export is not a sent submission")
+        attempt.state = .waitingForMac
+        XCTAssertEqual(PaperSubmissionReceipt(document: document, attempt: attempt, dirty: false, connected: true, sending: true).title, "Sending…")
+        XCTAssertEqual(try savedFiles(in: directory), before)
+    }
+
+    @MainActor
+    func testNotebookInlineReceiptTracksOnlyTheSelectedSnapshotAndKeepsNewEditsPrivate() throws {
+        let fixture = try notebookSendFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let page = try XCTUnwrap(fixture.store.pages.first)
+        let privateReceipt = NotebookWritingReceipt.resolve(page: page, submissions: [], dirty: false)
+        XCTAssertEqual(privateReceipt.title, "Private note")
+        XCTAssertFalse(privateReceipt.hasSubmission)
+        var submission = try fixture.store.prepareSubmission(fixture.note, recipientInstallationId: "synthetic-mac")
+        let before = try savedFiles(in: fixture.directory)
+        XCTAssertEqual(NotebookWritingReceipt.resolve(page: page, submissions: [submission], dirty: false).title, "Waiting for Mac")
+        for state in [NotebookSubmissionState.needsAttention, .paused] {
+            submission.state = state
+            XCTAssertEqual(NotebookWritingReceipt.resolve(page: page, submissions: [submission], dirty: false).title, "Transfer needs attention")
+        }
+        submission.state = .received
+        submission.receivedAt = Date()
+        XCTAssertEqual(NotebookWritingReceipt.resolve(page: page, submissions: [submission], dirty: false).title, "Received on Mac")
+        let unsaved = NotebookWritingReceipt.resolve(page: page, submissions: [submission], dirty: true)
+        XCTAssertTrue(unsaved.detail.contains("Newer edits stay private"))
+        var newer = page
+        newer.revision += 1
+        newer.contentHash = String(repeating: "a", count: 64)
+        XCTAssertTrue(NotebookWritingReceipt.resolve(page: newer, submissions: [submission], dirty: false).detail.contains("Newer edits stay private"))
+        let unrelated = PadNotebookPage(id: UUID().uuidString.lowercased(), noteId: page.noteId, title: "Unsent page", revision: 1, contentHash: page.contentHash, paperStyle: .plain, canvasHeight: 1800, createdAt: Date(), updatedAt: Date())
+        XCTAssertFalse(NotebookWritingReceipt.resolve(page: unrelated, submissions: [submission], dirty: false).hasSubmission, "Sending a different page in the note must not mark this page as shared")
+        XCTAssertEqual(try savedFiles(in: fixture.directory), before)
+    }
+
+    @MainActor
+    func testNotebookReceiptAndCompactToolsPreserveInkShapesAndQueuedCopy() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = NotebookStore(directory: directory)
+        let notebook = try store.createNotebook(title: "Private notebook")
+        let initial = try store.createNoteForWriting(in: notebook)
+        let original = fixtureDrawing(color: .blue)
+        let shape = NotebookShape(kind: .rectangle, x: 300, y: 160, width: 220, height: 120, text: "Saved diagram", filled: true)
+        let page = try store.savePage(initial, drawing: original, style: .squared, canvasHeight: 1800, shapes: [shape])
+        try store.rememberOpenedPage(page)
+        let note = try XCTUnwrap(store.notes.first)
+        let queued = try store.prepareSubmission(note, recipientInstallationId: "synthetic-mac")
+        let before = try savedFiles(in: directory)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil }
+        for (width, appearance) in [(768.0, UIUserInterfaceStyle.light), (320.0, .dark)] {
+            let host = UIHostingController(rootView: NotebookPageEditor(initialPage: page).environmentObject(store).environmentObject(BridgeClient()).tint(PadPalette.accent))
+            window.frame = CGRect(x: 0, y: 0, width: width, height: 1100)
+            window.overrideUserInterfaceStyle = appearance
+            host.overrideUserInterfaceStyle = appearance
+            host.traitOverrides.horizontalSizeClass = width < 600 ? .compact : .regular
+            window.rootViewController = host
+            window.makeKeyAndVisible()
+            host.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(250))
+            let canvas = try XCTUnwrap(findCanvas(in: host.view))
+            XCTAssertEqual(canvas.drawing, original)
+            XCTAssertEqual(try store.shapes(for: page), [shape])
+            XCTAssertGreaterThan(canvas.bounds.height, 500)
+            let text = try renderedText(in: host.view)
+            XCTAssertTrue(text.contains("WAITING FOR MAC"), "The existing queued copy should have an inline receipt: \(text)")
+            XCTAssertTrue(text.contains("ADD TO RECALL"), "Sharing remains an explicit action: \(text)")
+            XCTAssertNil(host.presentedViewController)
+            attachUXScreenshot(host.view, name: "notebook-\(Int(width))-\(appearance == .dark ? "dark" : "light")")
+            window.rootViewController = nil
+            XCTAssertEqual(try savedFiles(in: directory), before, "Opening the new toolbar must not revise notes, ink, shapes or submitted pages")
+        }
+        XCTAssertEqual(store.submissions.map(\.id), [queued.id])
+    }
+
+    @MainActor
+    func testHomeResumeKeepsExactMixedWorkIdentityAndFallsBackAfterRemoval() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let documents = DocumentStore(directory: directory.appendingPathComponent("live"))
+        let notebooks = NotebookStore(directory: directory.appendingPathComponent("notebooks"))
+        var sheet = try documents.open(mode: .tutor)
+        sheet = try documents.save(sheet, drawing: fixtureDrawing())
+        let notebook = try notebooks.createNotebook(title: "Private thinking")
+        let page = try notebooks.createNoteForWriting(in: notebook)
+        _ = try notebooks.savePage(page, drawing: fixtureDrawing(color: .blue), style: .plain, canvasHeight: 1800)
+        var note = try XCTUnwrap(notebooks.notes.first)
+        note.updatedAt = sheet.updatedAt.addingTimeInterval(1)
+        let before = try savedFiles(in: directory)
+
+        XCTAssertEqual(PadHomeWork.resume(documents: [sheet], notes: [note], lastWork: "")?.id, "note:\(note.id)")
+        XCTAssertEqual(PadHomeWork.resume(documents: [sheet], notes: [note], lastWork: "sheet:\(sheet.id)")?.id, "sheet:\(sheet.id)", "Continue must honor the last opened sheet even when a private note was edited later")
+        XCTAssertEqual(PadHomeWork.resume(documents: [sheet], notes: [note], lastWork: "note:\(note.id)")?.id, "note:\(note.id)")
+        XCTAssertEqual(PadHomeWork.resume(documents: [sheet], notes: [], lastWork: "note:\(note.id)")?.id, "sheet:\(sheet.id)", "A removed note must not be resurrected")
+        XCTAssertNil(PadHomeWork.resume(documents: [], notes: [], lastWork: "sheet:\(sheet.id)"))
+        note.updatedAt = sheet.updatedAt
+        let tied = PadHomeWork.recent(documents: [sheet], notes: [note]).map(\.id)
+        XCTAssertEqual(tied, tied.sorted(), "Equal timestamps need deterministic identity ordering")
+        XCTAssertEqual(try savedFiles(in: directory), before, "Choosing Continue is presentation only")
+    }
+
+    @MainActor
+    func testSimplifiedHomeRendersMixedSavedWorkWithoutRewritingAnyFiles() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = DocumentStore(directory: directory.appendingPathComponent("live"))
+        var document = try store.open(mode: .tutor, tutorProblem: tutorFixture(), tutorTitle: "Linear algebra")
+        document.title = "Saved handwritten answer"
+        document = try store.save(document, drawing: fixtureDrawing())
+        _ = try store.submit(document, drawing: fixtureDrawing())
+        let notebooks = NotebookStore(directory: directory.appendingPathComponent("notebooks"))
+        let notebook = try notebooks.createNotebook(title: "Private notebook")
+        let first = try notebooks.createNoteForWriting(in: notebook)
+        let note = try XCTUnwrap(notebooks.notes.first)
+        try notebooks.renameNote(note, title: "Saved diagram note")
+        let shape = NotebookShape(kind: .rectangle, text: "Keep this diagram", filled: true)
+        _ = try notebooks.savePage(first, drawing: fixtureDrawing(color: .blue), style: .squared, canvasHeight: 1800, shapes: [shape])
+        _ = try notebooks.prepareSubmission(try XCTUnwrap(notebooks.notes.first), recipientInstallationId: "synthetic-mac")
+        let before = try savedFiles(in: directory)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil }
+
+        for (width, appearance) in [(1024.0, UIUserInterfaceStyle.light), (1024.0, .dark), (320.0, .light), (320.0, .dark)] {
+            let host = UIHostingController(rootView: HomeView().environmentObject(store).environmentObject(BridgeClient()).environmentObject(notebooks).tint(PadPalette.accent))
+            window.frame = CGRect(x: 0, y: 0, width: width, height: 1100)
+            window.overrideUserInterfaceStyle = appearance
+            host.overrideUserInterfaceStyle = appearance
+            host.traitOverrides.horizontalSizeClass = width < 600 ? .compact : .regular
+            window.rootViewController = host
+            window.makeKeyAndVisible()
+            host.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(250))
+            let text = try renderedText(in: host.view)
+            XCTAssertTrue(text.contains("CONTINUE"), "A populated home needs one obvious resume action: \(text)")
+            XCTAssertTrue(text.contains("NEW NOTE"), "Private writing must remain available offline: \(text)")
+            XCTAssertTrue(text.contains("NOTEBOOKS"), "Existing notebooks must remain reachable: \(text)")
+            XCTAssertFalse(text.contains("OPEN STUDY"), "Opening the app must not require a mode choice")
+            XCTAssertFalse(text.contains("OPEN PAD"))
+            attachUXScreenshot(host.view, name: "home-\(Int(width))-\(appearance == .dark ? "dark" : "light")")
+            window.rootViewController = nil
+            XCTAssertEqual(try savedFiles(in: directory), before, "Home rendering must preserve drawings, shapes, snapshots and indexes byte for byte")
+        }
+        XCTAssertEqual(DocumentStore(directory: store.directory).attempts.count, 1)
+        XCTAssertEqual(NotebookStore(directory: notebooks.directory).submissions.count, 1)
+    }
+
+    @MainActor
+    func testEmptyHomeDoesNotCreateOrShareAFirstNoteByItself() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = DocumentStore(directory: directory.appendingPathComponent("live"))
+        let notebooks = NotebookStore(directory: directory.appendingPathComponent("notebooks"))
+        let before = try savedFiles(in: directory)
+        let host = UIHostingController(rootView: HomeView().environmentObject(store).environmentObject(BridgeClient()).environmentObject(notebooks).tint(PadPalette.accent))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 768, height: 1024))
+        defer { window.isHidden = true; window.rootViewController = nil }
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(200))
+        let text = try renderedText(in: host.view)
+        XCTAssertTrue(text.contains("NEW NOTE"))
+        XCTAssertTrue(store.documents.isEmpty)
+        XCTAssertTrue(notebooks.notes.isEmpty)
+        XCTAssertTrue(store.attempts.isEmpty)
+        XCTAssertTrue(notebooks.submissions.isEmpty)
+        XCTAssertEqual(try savedFiles(in: directory), before)
+    }
+
+    @MainActor
+    func testRepeatedSubmissionReusesItsSavedCopyAndNewInkCreatesANewAttempt() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = DocumentStore(directory: directory)
+        let problem = tutorFixture()
+        var document = try store.open(mode: .tutor, tutorProblem: problem, tutorTitle: "Linear algebra")
+        let original = fixtureDrawing()
+        let first = try PaperSubmissionFlow.submit(document, drawing: original, store: store)
+        document = try XCTUnwrap(store.documents.first)
+        let beforeRepeat = try savedFiles(in: directory)
+        let repeated = try PaperSubmissionFlow.submit(document, drawing: original, store: store)
+        XCTAssertEqual(repeated.id, first.id)
+        XCTAssertEqual(store.attempts.count, 1)
+        XCTAssertEqual(try savedFiles(in: directory), beforeRepeat, "A repeated Send must not make another immutable attempt or rewrite saved ink")
+        let firstPages = try store.pageURLs(for: first).map { try Data(contentsOf: $0) }
+        try store.updateAttempt(first.id, state: .needsAttention, error: "Synthetic interrupted transfer", retryAllowed: false)
+        try store.retry(first.id)
+        XCTAssertEqual(store.attempts.first?.state, .waitingForMac)
+        XCTAssertEqual(store.attempts.first?.retryAllowed, true)
+        XCTAssertNil(store.attempts.first?.lastError)
+        XCTAssertEqual(store.attempts.first?.id, first.id)
+        XCTAssertEqual(store.attempts.first?.tutorProblemId, problem.id)
+        XCTAssertEqual(try store.pageURLs(for: first).map { try Data(contentsOf: $0) }, firstPages)
+
+        let changed = PKDrawing(strokes: original.strokes + fixtureDrawing(color: .blue).strokes)
+        let second = try PaperSubmissionFlow.submit(document, drawing: changed, store: store)
+        XCTAssertNotEqual(second.id, first.id)
+        XCTAssertEqual(store.attempts.count, 2)
+        XCTAssertEqual(second.tutorProblemId, problem.id)
+        XCTAssertEqual(second.handoffId, first.handoffId)
+        XCTAssertEqual(try store.pageURLs(for: first).map { try Data(contentsOf: $0) }, firstPages, "Later handwriting must never replace the submitted copy")
+        let reopened = DocumentStore(directory: directory)
+        XCTAssertEqual(Set(reopened.attempts.map(\.id)), Set([first.id, second.id]))
+        XCTAssertEqual(try reopened.drawing(for: try XCTUnwrap(reopened.documents.first)).strokes.count, changed.strokes.count)
+    }
+
+    @MainActor
+    func testIncomingQuestionsAreOnlyOffersForTheOriginalLiveContext() throws {
+        let first = tutorFixture()
+        let next = tutorFixture(sessionId: first.sessionId)
+        let document = PaperDocument(mode: .tutor, tutorProblem: first, tutorTitle: "Linear algebra")
+        let offered = assistantFixture(current: next, earlier: [first])
+        XCTAssertEqual(PaperIncomingWork.tutor(document: document, session: offered, connected: true)?.id, next.id)
+        XCTAssertNil(PaperIncomingWork.tutor(document: document, session: offered, connected: false))
+        XCTAssertNil(PaperIncomingWork.tutor(document: document, session: assistantFixture(current: first), connected: true))
+        XCTAssertNil(PaperIncomingWork.tutor(document: document, session: assistantFixture(current: tutorFixture()), connected: true), "A different chat must not redirect saved work")
+        XCTAssertEqual(document.tutorProblem?.id, first.id, "Discovering the offer cannot move or rebind the current sheet")
+
+        let initial = QuestionPackage(id: "initial", cardId: "card-a", title: "First question", prompt: "<p>Explain one idea.</p>", topic: "Systems", kind: "concept", referenceHash: "first")
+        let later = QuestionPackage(id: "later", cardId: "card-b", title: "Second question", prompt: "<p>Explain another idea.</p>", topic: "Systems", kind: "concept", referenceHash: "second")
+        var study = PaperDocument(mode: .study, question: initial)
+        study.handoffId = "same-study-session"
+        let session = StudySession(version: 1, installationId: "synthetic-mac", mode: "study", handoffId: study.handoffId, currentQuestionId: later.id, questions: [initial, later])
+        XCTAssertEqual(PaperIncomingWork.study(document: study, session: session, connected: true)?.id, later.id)
+        XCTAssertNil(PaperIncomingWork.study(document: study, session: session, connected: false))
+        XCTAssertNil(PaperIncomingWork.study(document: document, session: session, connected: true))
+        XCTAssertEqual(study.questionPackage?.id, initial.id)
+    }
+
+    @MainActor
+    func testReceiptRefreshLeavesTheSameCanvasAndPendingPencilInkOpen() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = DocumentStore(directory: directory)
+        let initial = try store.open(mode: .tutor, tutorProblem: tutorFixture(), tutorTitle: "Linear algebra")
+        let original = fixtureDrawing()
+        let attempt = try PaperSubmissionFlow.submit(initial, drawing: original, store: store)
+        let document = try XCTUnwrap(store.documents.first)
+        let pageCopies = try store.pageURLs(for: attempt).map { try Data(contentsOf: $0) }
+        let host = UIHostingController(rootView: PaperEditor(initialDocument: document).environmentObject(store).environmentObject(BridgeClient()).tint(PadPalette.accent))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 768, height: 1024)
+        defer { window.isHidden = true; window.rootViewController = nil }
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(250))
+        let canvas = try XCTUnwrap(findCanvas(in: host.view))
+        XCTAssertNil(host.presentedViewController, "A saved submission must not force open its preview")
+        let coordinator = try XCTUnwrap(canvas.delegate as? PaperCanvas.Coordinator)
+        canvas.delegate = nil
+        let pending = PKDrawing(strokes: original.strokes + fixtureDrawing(color: .purple).strokes)
+        canvas.drawing = pending
+        try store.updateAttempt(attempt.id, state: .receivedOnMac)
+        try await Task.sleep(for: .milliseconds(180))
+        host.view.layoutIfNeeded()
+        XCTAssertTrue(findCanvas(in: host.view) === canvas)
+        XCTAssertEqual(canvas.drawing.dataRepresentation(), pending.dataRepresentation())
+        XCTAssertNil(host.presentedViewController, "Receipt updates belong inline rather than interrupting writing")
+        let text = try renderedText(in: host.view)
+        XCTAssertTrue(text.contains("RECEIVED ON MAC"), "The durable receipt must appear on the writing screen: \(text)")
+        XCTAssertFalse(text.contains("FOLLOW TUTOR"))
+        let actionText = try renderedText(in: host.view, regionOfInterest: CGRect(x: 0.5, y: 0, width: 0.5, height: 0.2))
+        XCTAssertTrue(actionText.contains("SAVED"), "The disabled sent-copy action must remain legible: \(actionText)")
+        XCTAssertEqual(try store.pageURLs(for: attempt).map { try Data(contentsOf: $0) }, pageCopies)
+        attachUXScreenshot(host.view, name: "paper-received-inline")
+        window.overrideUserInterfaceStyle = .dark
+        host.overrideUserInterfaceStyle = .dark
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        let darkActionText = try renderedText(in: host.view, regionOfInterest: CGRect(x: 0.5, y: 0, width: 0.5, height: 0.2))
+        XCTAssertTrue(darkActionText.contains("SAVED"), "The disabled sent-copy action must remain legible in dark mode: \(darkActionText)")
+        XCTAssertTrue(findCanvas(in: host.view) === canvas)
+        XCTAssertEqual(canvas.drawing.dataRepresentation(), pending.dataRepresentation())
+        attachUXScreenshot(host.view, name: "paper-received-inline-dark")
+        canvas.delegate = coordinator
+        coordinator.canvasViewDrawingDidChange(canvas)
+        try await Task.sleep(for: .milliseconds(800))
+        XCTAssertEqual(store.attempts.count, 1, "New ink after receipt remains private until another explicit Send")
+        XCTAssertEqual(try store.pageURLs(for: attempt).map { try Data(contentsOf: $0) }, pageCopies)
+    }
+
+    private func savedFiles(in directory: URL) throws -> [String: Data] {
+        let files = try XCTUnwrap(FileManager.default.enumerator(at: directory, includingPropertiesForKeys: [.isRegularFileKey]))
+        var result: [String: Data] = [:]
+        for case let url as URL in files where try url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true {
+            result[String(url.path.dropFirst(directory.path.count))] = try Data(contentsOf: url)
+        }
+        return result
+    }
+
+    @MainActor
+    private func attachUXScreenshot(_ view: UIView, name: String) {
+        let image = UIGraphicsImageRenderer(size: view.bounds.size).image { _ in view.drawHierarchy(in: view.bounds, afterScreenUpdates: true) }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "ipad-ux-\(name)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    @MainActor
     func testTutorPromptRendersOfflineLatexInsteadOfRawDelimiters() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let window = UIWindow(windowScene: scene)
@@ -2616,7 +3037,7 @@ final class RecallPadTests: XCTestCase {
                 let store = DocumentStore(directory: directory.appendingPathComponent(UUID().uuidString))
                 var document = try store.open(mode: configuration.mode, question: configuration.mode == .study ? question : nil, tutorProblem: configuration.bound ? tutorFixture() : nil, tutorTitle: configuration.bound ? "Linear algebra" : nil)
                 document = try store.save(document, drawing: fixtureDrawing())
-                let host = UIHostingController(rootView: PaperEditor(initialDocument: document).environmentObject(store).environmentObject(BridgeClient()))
+                let host = UIHostingController(rootView: PaperEditor(initialDocument: document).environmentObject(store).environmentObject(BridgeClient()).tint(PadPalette.accent))
                 // A real 320-point iPad split view has compact horizontal traits.
                 // Resizing a unit-test UIWindow alone retains the device's regular trait.
                 host.traitOverrides.horizontalSizeClass = .compact
@@ -2677,7 +3098,7 @@ final class RecallPadTests: XCTestCase {
         deleted.title = "DELETE TARGET SHEET"
         _ = try store.submit(deleted, drawing: fixtureDrawing())
         let bridge = BridgeClient() // No connection activation is needed to delete local work.
-        let host = UIHostingController(rootView: HomeView().environmentObject(store).environmentObject(bridge))
+        let host = UIHostingController(rootView: HomeView().environmentObject(store).environmentObject(bridge).environmentObject(NotebookStore(directory: directory.appendingPathComponent("private-notebooks"))))
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let window = UIWindow(windowScene: scene)
         window.frame = CGRect(x: 0, y: 0, width: 1024, height: 1366)
@@ -3117,13 +3538,14 @@ final class RecallPadTests: XCTestCase {
     }
 
     @MainActor
-    private func renderedText(in view: UIView) throws -> String {
+    private func renderedText(in view: UIView, regionOfInterest: CGRect? = nil) throws -> String {
         view.layoutIfNeeded()
         let image = UIGraphicsImageRenderer(size: view.bounds.size).image { _ in
             XCTAssertTrue(view.drawHierarchy(in: view.bounds, afterScreenUpdates: true))
         }
         add(XCTAttachment(image: image))
         let request = VNRecognizeTextRequest()
+        if let regionOfInterest { request.regionOfInterest = regionOfInterest }
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = false
         request.recognitionLanguages = ["en-US"]
@@ -3215,9 +3637,24 @@ private final class PromptCanvasTestState: ObservableObject {
     @Published var drawing: PKDrawing
     @Published var height = 1800.0
     @Published var expanded = true
+    @Published var incomingTitle: String?
     @Published var command: PaperCanvas.CanvasCommand?
 
     init(drawing: PKDrawing) { self.drawing = drawing }
+}
+
+private struct IncomingCanvasTestView: View {
+    @ObservedObject var state: PromptCanvasTestState
+    let onChanged: () -> Void
+    let onOpen: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text("Current question").padding()
+            PaperCanvas(drawing: $state.drawing, height: $state.height, style: .squared, tool: .pen, onChanged: onChanged, command: state.command)
+                .modifier(PaperIncomingPromptOverlay(title: state.incomingTitle, onOpen: onOpen))
+        }
+    }
 }
 
 private struct PromptCanvasTestView: View {

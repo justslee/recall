@@ -1,25 +1,58 @@
-// Explicit, widget-only revisions. Card identity, prose, permissions and learning
+// Explicit visual-only revisions. Card identity, prose, permissions and learning
 // records cannot be changed by this request contract.
 const fs = require("node:fs"),
   path = require("node:path"),
   crypto = require("node:crypto");
 const files = require("./private-files.cjs"),
   { stable } = require("./catalog.cjs");
+const {
+  figuresOf,
+  validateFigureSource,
+  replaceFigure,
+  assertPresentationOnly,
+  figureSource,
+} = require("./static-figures.cjs");
+const scopeOf = (raw) =>
+  raw.schemaVersion === 2 ? "static-figure-only" : "widget-only";
 const root = (folder) => path.join(folder, "card-revisions");
 const hash = (value) =>
   crypto.createHash("sha256").update(stable(value)).digest("hex");
 const fence = () => /```widget[^\S\n]*([^\n]*)\r?\n([\s\S]*?)```/g;
 function request(raw) {
   if (
-    raw?.schemaVersion !== 1 ||
+    ![1, 2].includes(raw?.schemaVersion) ||
     !Array.isArray(raw.cards) ||
     !raw.cards.length ||
     raw.cards.length > 20 ||
     Object.keys(raw).some((k) => !["schemaVersion", "cards"].includes(k))
   )
-    throw Error("Expected a version 1 widget revision with 1–20 cards");
+    throw Error(
+      "Expected a version 1 widget or version 2 static-figure revision with 1–20 cards",
+    );
   const seen = new Set();
   for (const c of raw.cards) {
+    if (raw.schemaVersion === 2) {
+      if (
+        !c ||
+        Object.keys(c).some(
+          (k) =>
+            !["id", "expectedContentHash", "figureIndex", "figure"].includes(k),
+        ) ||
+        typeof c.id !== "string" ||
+        !c.id ||
+        seen.has(c.id) ||
+        !/^[a-f0-9]{64}$/.test(c.expectedContentHash || "") ||
+        !Number.isSafeInteger(c.figureIndex) ||
+        c.figureIndex < 0 ||
+        !c.figure ||
+        Object.keys(c.figure).some((k) => !["kind", "source"].includes(k))
+      )
+        throw Error("Invalid static-figure revision or duplicate card ID");
+      validateFigureSource(c.figure.kind, c.figure.source);
+      seen.add(c.id);
+      continue;
+    }
+
     if (
       !c ||
       Object.keys(c).some(
@@ -44,7 +77,7 @@ function request(raw) {
     seen.add(c.id);
   }
   if (Buffer.byteLength(JSON.stringify(raw)) > 5_000_000)
-    throw Error("Widget revision exceeds 5 MB");
+    throw Error("Visual revision exceeds 5 MB");
   return raw;
 }
 function plan(store, raw) {
@@ -66,21 +99,37 @@ function plan(store, raw) {
       throw Error("Unsupported stored card identity or revision");
     if (hash(card) !== edit.expectedContentHash)
       throw Error("Card changed; preview a fresh revision: " + edit.id);
-    const matches = [...card.answer.matchAll(fence())],
-      match = matches[edit.widgetIndex];
-    if (!match) throw Error("Widget not found: " + edit.id);
-    const replacement =
-      "```widget " + edit.widget.title + "\n" + edit.widget.html + "\n```";
-    const answer =
-      card.answer.slice(0, match.index) +
-      replacement +
-      card.answer.slice(match.index + match[0].length);
+    let answer;
+    if (raw.schemaVersion === 2) {
+      const figure = figuresOf(card.answer)[edit.figureIndex];
+      if (!figure) throw Error("Static figure not found: " + edit.id);
+      if (figure.kind !== edit.figure.kind)
+        throw Error("Static figure kind cannot change: " + edit.id);
+
+      assertPresentationOnly(
+        figure.kind,
+        figureSource(card.answer, figure),
+        edit.figure.source,
+      );
+      answer = replaceFigure(card.answer, figure, edit.figure.source);
+    } else {
+      const matches = [...card.answer.matchAll(fence())],
+        match = matches[edit.widgetIndex];
+      if (!match) throw Error("Widget not found: " + edit.id);
+
+      const replacement =
+        "```widget " + edit.widget.title + "\n" + edit.widget.html + "\n```";
+      answer =
+        card.answer.slice(0, match.index) +
+        replacement +
+        card.answer.slice(match.index + match[0].length);
+      require("./bundles.cjs").validateWidgetMarkup(replacement);
+    }
     const next = { ...card, answer, revision: (card.revision || 0) + 1 };
     // This narrow operation cannot repair unrelated legacy metadata (for
     // example an old card with an empty optional prompt). Validate the new
-    // executable markup using the same check as new imports, and preserve all
+    // visual markup using its scoped check, and preserve all
     // other fields byte-for-byte semantically instead of normalizing them.
-    require("./bundles.cjs").validateWidgetMarkup(replacement);
     return { id: card.id, previous: row.content, next };
   });
 }
@@ -90,7 +139,7 @@ function preview(store, raw) {
     mode: "preview",
     requestId: hash(raw),
     cards: edits.map((e) => ({ id: e.id, revision: e.next.revision })),
-    scope: "widget-only",
+    scope: scopeOf(raw),
   };
 }
 function status(folder, id) {
@@ -163,14 +212,41 @@ function applyPending(store) {
         receipt = store.transaction(() => {
           const edits = plan(store, item.request);
           for (const e of edits) {
-            store.set("widget-revision-previous:" + e.id, JSON.parse(e.previous));
+            // Only the validated v2 presentation proof permits restoring this
+            // exact prior epoch. Ordinary edits keep the normal trigger path.
+            // Leave the dirty marker and cache alone: refresh replays existing
+            // reviews from the preserved cutoff under the new objective hash.
+            const epoch =
+              item.request.schemaVersion === 2
+                ? store.db
+                    .prepare(
+                      "SELECT cutoff FROM expertise_epochs WHERE card_id=?",
+                    )
+                    .get(e.id)
+                : null;
+            store.set(
+              "widget-revision-previous:" + e.id,
+              JSON.parse(e.previous),
+            );
             store.db
               .prepare("UPDATE cards SET content=? WHERE id=?")
               .run(JSON.stringify(e.next), e.id);
+            if (item.request.schemaVersion === 2) {
+              if (epoch)
+                store.db
+                  .prepare(
+                    "INSERT INTO expertise_epochs(card_id,cutoff) VALUES(?,?) ON CONFLICT(card_id) DO UPDATE SET cutoff=excluded.cutoff",
+                  )
+                  .run(e.id, epoch.cutoff);
+              else
+                store.db
+                  .prepare("DELETE FROM expertise_epochs WHERE card_id=?")
+                  .run(e.id);
+            }
           }
           return store.set(receiptKey, {
             cardIds: edits.map((e) => e.id),
-            scope: "widget-only",
+            scope: scopeOf(item.request),
             appliedAt: new Date().toISOString(),
           });
         });

@@ -22,7 +22,7 @@ Inbox imports leave widgets disabled. The reader must enable **Allow this card�
 
 The app and widget use the packaged canonical palette in `shared/visual-theme.css`. Use `--text`, `--muted`, `--faint`, `--card`, `--sunken`, `--raised`, `--border`, `--accent`, `--accent-soft`, `--accent-ink`, `--warm`, `--sans`, `--serif` and `--mono`. For graphical marks use `--viz-series-1` through `--viz-series-6`, `--viz-grid`, `--viz-axis`, `--viz-label` and `--viz-focus`. Pair color with a label, position or line pattern.
 
-Compatibility aliases include `--foreground`, `--primary`, `--background`, `--muted-foreground`, `--color-background`, `--color-text-primary`, `--color-text-secondary`, `--color-border`, `--color-accent` and `--font-sans`. Do not invent undefined tokens or override the document with a fixed light/dark palette. Native labels, inputs, buttons, `.grid`, `.metric`, `.panel` and `.row` have baseline styling; these are primitives, not a mandatory dashboard layout.
+Compatibility aliases include `--foreground`, `--primary`, `--background`, `--muted-foreground`, `--color-background`, `--color-text-primary`, `--color-text-secondary`, `--color-border`, `--color-accent` and `--font-sans`. Define any custom diagram tokens locally with both light and dark values. The approved [illustrated palette](illustrated-style.md) supplements the shared app tokens; it must not recolor app chrome or force one appearance. Native labels, inputs, buttons, `.grid`, `.metric`, `.panel` and `.row` have baseline styling; these are primitives, not a mandatory dashboard layout.
 
 Content determines frame height, bounded at **96–1400 px**. Never give `html` or `body` a viewport-sized height. Recompose at narrow widths instead of shrinking SVG labels until unreadable. Avoid host-height feedback loops, oversized articles and decorative panels. Use one dominant explanatory scene, a few relevant controls and a short interpretation derived from the same state.
 
@@ -64,6 +64,15 @@ The repository’s [visual benchmarks](../../../examples/visual-benchmarks) cont
 
 ## Static SVG
 
+Knowledge Base figures use direct SVG presentation attributes such as `fill`, `stroke`, `font-size` and `font-family`. Note sanitization removes scripts, controls, style blocks and style/id attributes; do not depend on CSS classes or ID-based markers and gradients. Keep interactive controls in the card widget sandbox.
+
 Provide a `viewBox`, readable labels, theme-token colors and an accessible description of what the figure shows. SVG and Mermaid render as sanitized image documents in the zoomable viewer; their CSS cannot style app controls. Scripts, event handlers and `foreignObject` do not provide interaction. Do not include external resources. A failed figure shows a fallback note while the rest of the card remains readable.
 
 For the composition and actual acceptance checks, read [visuals.md](visuals.md). Changes to this contract do not revise existing cards.
+
+
+## Static figure revisions
+
+A compatible `cards revise` writer accepts `schemaVersion: 2` with 1–20 entries shaped as `{id, expectedContentHash, figureIndex, figure: {kind, source}}`. Use `cards inspect` for the current hash. The index counts existing SVG/Mermaid answer figures outside widget/code blocks. Version 2 is limited to presentation changes: validated palette, font and outline edits must retain text, geometry and topology. The writer preserves the prior expertise cutoff and lets normal review replay refresh its cache; it does not assign confidence. Keep the kind; supply a full SVG element or unfenced Mermaid source. Preview, apply and verify a `revised` receipt as for widgets. A second visual in the same card needs a fresh hash. Presentation-only replacements preserve surrounding prose, grading, permissions and learning records.
+
+Check writer compatibility before submitting. A newer source CLI must not queue version 2 to an older open app. A separately authorized writer handoff can apply it while the app is closed; routine rendering QA still uses a hidden disposable profile and never restarts the live reader. Request validation does not replace actual rendering or editorial review.
