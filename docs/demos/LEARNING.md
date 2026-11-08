@@ -6,9 +6,9 @@
 
 ## Connect once
 
-1. Open **Settings & backups → Learning connections** and connect Codex, Claude Code or both. Enable learning capture, choose your timezone and save.
+1. Open **Settings & backups → Connections** and connect Codex, Claude Code or both. Enable learning capture, choose your timezone and save.
 2. Start a fresh assistant session. Use **Check readiness** and **Verify learning** to check that a real learning receipt reaches this library.
-3. If you want longer notes, open **Knowledge sources**. Connect existing Markdown, Obsidian or Notion notes, or choose **Create my first knowledge base**. You can select several destinations: one primary home, with optional mirrors.
+3. For longer notes, start with **Knowledge → Create a space**. Existing Markdown, Obsidian or Notion sources can be connected separately under **Connections → Your knowledge base**; choose one primary home, with optional mirrors.
 
 Local sources use the folder you select. Notion needs your assistant's working connector; follow **Finish Notion with assistant** when the setup is pending. Assistants write within the access you grant, verify the primary note, then mirror it. This is a guided workflow rather than continuous background syncing.
 
@@ -16,12 +16,12 @@ Local sources use the folder you select. Notion needs your assistant's working c
 
 You can ask questions in another connected project without opening the Recall repository. For example:
 
-> Explain weighted means with a concrete example. Use my connected learning skills to reuse or create the relevant Recall questions, and capture only what we discuss.
+> Explain weighted means with a concrete example. Capture the key idea for Recall after answering; queue any missing questions for later preparation.
 
-Read the assistant's receipt:
+The answer comes first, followed by a short local capture. Writing full notes and preparing missing cards happen separately. Read the assistant's receipt:
 
 - **Reused:** a suitable card already covers this objective.
-- **New:** a validated card was added.
+- **New:** a validated card was added during preparation.
 - **Pending:** something still needs authoring, a source or a quality check.
 
 Math and coding supplements are considered where they test something useful; every definition does not need both. Say **“Don't capture this discussion”** when you want to skip it. Capture is for substantive learning, not every operation or message.

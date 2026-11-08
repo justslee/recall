@@ -9,8 +9,10 @@ Start with the part that fits what you want to learn. Ordinary flashcard study w
 | Remember a concept, solve a problem or practise code    | [Study a card](STUDY.md)                             |
 | Turn questions from my day into something I can revisit | [Capture learning and take a Self Test](LEARNING.md) |
 | Explain an idea clearly to another person               | [Practise in Speak](SPEAK.md)                        |
+| Write and find a note                                   | [Your Knowledge space](../KNOWLEDGE_SPACE.md)        |
+| Keep a private notebook and submit only selected work   | [Notebooks](../NOTEBOOKS.md)                         |
 | Work by hand and discuss my reasoning with a tutor      | [Write on Recall Pad](PAPER.md)                      |
 
 The screenshots use demonstration material. They show the interface, not someone's private notes or evidence of a real assessment.
 
-**First visit?** Open Recall and choose **Try demo**. You can explore the study flow before connecting anything.
+**First visit?** Open Recall and choose **Try a short session**. You can explore the study flow before connecting anything.

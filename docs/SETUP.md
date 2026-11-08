@@ -6,9 +6,11 @@
 
 Only the Mac installation is required. You can study without an account, knowledge base, assistant or API key.
 
-| Start here                                                                                 | Add when you want it                                                                                                                                                     |
-| :----------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Install Recall](#install-and-open-recall) → [Try your first cards](#try-your-first-cards) | [Knowledge base](#choose-a-home-for-your-knowledge) · [Assistant learning](#learning-capture) · [Voice](#optional-voice-and-feedback) · [iPad](#optional-ipad-companion) |
+**Your first visit:** [Install](#install-and-open-recall) → [try one short session](#try-your-first-cards). You can stop there.
+
+**When you're ready:** [keep notes](#choose-a-home-for-your-knowledge) · [capture from an assistant](#learning-capture) · [speak](#optional-voice-and-feedback) · [write on iPad](#optional-ipad-companion). [Updating an existing app?](#update-an-existing-installation)
+
+This guide uses the current Mac interface. If a button is missing, update Recall first. Older screenshots may show **Library** for **Card Deck**, or **Learning connections** for **Connections**.
 
 ## Install and open Recall
 
@@ -46,11 +48,11 @@ Your empty study desk offers three starting points:
 
 ![Recall’s welcome screen with Try a short session, Import cards and Bring my learning](images/setup-welcome.png)
 
-| Action                  | What it does                                                                                     |
-| :---------------------- | :----------------------------------------------------------------------------------------------- |
-| **Try a short session** | Adds three original sample cards: a concept, a calculation and a coding exercise.                |
+| Action                  | What it does                                                                                       |
+| :---------------------- | :------------------------------------------------------------------------------------------------- |
+| **Try a short session** | Adds three original sample cards: a concept, a calculation and a coding exercise.                  |
 | **Import cards**        | Opens Anki import in **Card Deck**. Your original deck stays unchanged; inspect the import report. |
-| **Bring my learning**   | Opens settings for your knowledge sources and assistants. You can do this later.                 |
+| **Bring my learning**   | Opens settings for your knowledge sources and assistants. You can do this later.                   |
 
 <details>
 <summary>Bringing cards from Anki?</summary>
@@ -75,17 +77,25 @@ Concept and math study need no additional tools. Running Python or C++ exercises
 
 ## Choose a home for your knowledge
 
-**Using the current source build?** For the simplest local setup, open **Knowledge → Create a space**, choose a folder location, then **New note**. Recall manages the reading, writing and search while your files stay in that folder. [Read the illustrated Knowledge guide →](KNOWLEDGE_SPACE.md)
+**The simplest choice is a local Knowledge space in Recall.** You do not need Notion, Obsidian or an assistant to write and find notes.
 
-The unified Connections hub is in the current source build. Older releases may still call this tab **Learning connections**. [A quieter learning loop →](LEARNING_FLOW.md)
+1. Open **Knowledge → Create a space** and choose where its folder will live.
+2. Choose **New note**, write, then press **⌘S**. Switch to **Read** for the formatted page.
+3. Use **⌘K** to find it again. In a note's practice panel, use linked cards or **Prepare with assistant** to request questions from that note.
 
-**Optional.** A knowledge base holds longer explanations and related notes. Recall holds the questions you use to test yourself. You can connect existing notes or create your first knowledge base without editing configuration files.
+![A local Knowledge note with formatted reading and linked practice](images/knowledge-space-light.png)
 
-Open **Settings & backups → Connections → Your knowledge base**.
+Your Markdown and HTML files remain in the folder you chose. Saving a note does not automatically create cards. [Knowledge walkthrough →](KNOWLEDGE_SPACE.md)
+
+### Prefer Markdown, Obsidian or Notion?
+
+Open **Settings & backups → Connections → Your knowledge base**. Choose one primary home; add mirrors only if you need them. Recall and Obsidian can use the **same local folder**, with no duplicate copy to synchronize. Notion access goes through your assistant's Notion connector.
 
 ![Knowledge source setup with choices for Local Markdown, Obsidian and Notion](images/setup-knowledge-base.png)
 
 ### Create your first knowledge base
+
+For an assistant-managed setup, including multiple destinations:
 
 1. Choose **Create my first knowledge base**. With sources already connected, the button is **Create knowledge base**.
 2. Select **Local Markdown**, **Obsidian**, **Notion**, or several of them.
@@ -129,9 +139,13 @@ Open **Settings & backups → Connections → Codex or Claude**.
 
 **Skills installed** means setup files are present. CLI readiness and a learning receipt are separate checks. If sign-in needs attention, use [connection troubleshooting](TROUBLESHOOTING.md); do not assume the receipt exists from the badge alone.
 
-Now ask questions as you read or work. The assistant searches existing concepts, reuses suitable questions, and prepares genuinely missing cards, including useful math or coding variants. Ask it to respect your chosen knowledge sources and permissions. Routine operations are not learning, and exposure is not mastery.
+Now ask questions as you read or work. **The answer comes first.** The assistant makes a short local capture, reusing ready cards where they match and queuing missing objectives for later preparation. It does not need to update Notion, write a long note or build a new card before answering.
 
-Open **Self Test** to review a learning day. You can revisit earlier days. If a captured objective is blocked, use **Finish with assistant**; **Retry** is useful after a temporary failure is resolved. Optional catch-up scans and daily scheduling are separate choices, not automatically enabled by installation. [Daily learning walkthrough →](demos/LEARNING.md)
+Try: **“Explain this with an example, and capture the key idea for Recall.”** For a durable note, ask **“Save this explanation to my primary knowledge base.”** Say **“Don't capture this discussion”** to opt out.
+
+When ready, ask **“Prepare today's Recall Self Test from captured learning.”** Preparation creates and validates missing cards separately, considering math or code only when useful. **Pending** means captured, not ready to study. Routine operations are excluded; capture never establishes mastery.
+
+Open **Self Test** to review a learning day. Use **Study desk** for cards due for another spaced review. You can revisit earlier days. If a captured objective is blocked, use **Finish with assistant**; **Retry** is useful after a temporary failure is resolved. Optional catch-up scans and daily scheduling are separate choices, not automatically enabled by installation. [Daily learning walkthrough →](demos/LEARNING.md)
 
 ## Optional voice and feedback
 
@@ -140,6 +154,11 @@ Open **Settings & backups → Connections → Think out loud** if you want dicta
 ![Voice settings with optional OpenAI setup and privacy information](images/setup-voice-settings.png)
 
 Enter your own **OpenAI API key → Save key**. Recall keeps it on this device across restarts, outside library exports and backups. It uses a local owner-only file without Keychain prompts; see [credential storage](PRIVACY.md#api-key-storage) before deciding whether to save it.
+
+Then choose where to practice:
+
+- **A short card answer:** use the card's **Speak / Type** strip, edit the transcript, then request feedback against its reference.
+- **A longer explanation:** open **Speak**, choose a card/note or **Your own topic**, set the audience, and explain it. A reference enables accuracy feedback; without one, accuracy is not assessed.
 
 This is separate from a ChatGPT subscription: API billing and internet are required for these features. Recording sends audio to OpenAI; Recall saves no audio. You can edit the transcript before requesting feedback. Feedback does not rate the card for you. [Speak walkthrough →](demos/SPEAK.md) · [Voice reference →](VOICE.md)
 
@@ -168,11 +187,13 @@ _The native iPad app, shown in a simulator before pairing. It follows your iPad�
 
 ### Choose the right writing flow
 
-| **Recall Study**                                                                                                                    | **Tutor Pad**                                                                                                                   |
-| :---------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
-| Open a concept or math card on the Mac and choose **Write on iPad**. The iPad receives the question with its solution hidden.       | Start from a learning conversation, or open a blank sheet alongside any tutor. It does not need a Recall card.                  |
-| **Send for feedback** saves the attempt on the Mac. Feedback appears in Recall; you reveal the solution and rate the card yourself. | **Send to tutor** returns submitted pages through connected assistant tools. The manual **Send to Mac** flow is also available. |
-| Recall’s handwriting assessment needs your OpenAI API key and separate consent under **Handwriting feedback**.                      | Chat tutoring uses your assistant account; no separate OpenAI API key is required by Recall.                                    |
+| I want to…                  | Start here                                                                                   | Where my work goes                                                                                                                                      |
+| :-------------------------- | :------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Answer a Recall card**    | On the Mac, open a concept or math card → **Write on iPad**.                                 | **Send for feedback** saves the attempt in Recall. Assessment uses your OpenAI API key and consent; you reveal the solution and rate the card.          |
+| **Work with my chat tutor** | In a connected Codex chat, start a paper-learning session; open its prompt in **Tutor Pad**. | **Send to tutor** makes the pages available to that same chat. Your assistant account handles tutoring; Recall needs no separate API key for this flow. |
+| **Keep personal notes**     | In Recall Pad, choose **New note** or open **Notebooks**.                                    | Work stays private on the iPad. **Add to Recall…** sends only the snapshot you select, for later preparation.                                           |
+
+The first two flows are live practice. Notebooks are your own notes; writing in them does not automatically update a knowledge base or create cards.
 
 ### Learn on paper in your assistant chat
 
@@ -184,15 +205,17 @@ Start a fresh chat and ask:
 
 Open **Tutor Pad** on the iPad, write your steps, then choose **Send to tutor**. If the assistant is no longer waiting, say **“Check my paper.”** Your discussion, hints and feedback stay in that conversation. The tools read submitted images when invoked; sending a page does not attach it to a chat draft, send a chat message or wake an idle assistant.
 
-This is a Codex-first beta. One physical-iPad submission has been inspected in an existing Codex chat through an explicit tool fallback; fresh-client tool discovery and Claude/ChatGPT image flows still need separate verification. Supported ChatGPT desktop hosts can reuse the Codex registration; ordinary web chats need a separate connection. [Paper learning details →](PAPER_LEARNING.md)
+Start with Codex for the connected-chat beta, and check one submitted page before a longer session. Claude and ChatGPT have separate compatibility checks; installing their tools alone does not prove image delivery. For any unsupported chat, use the manual route below. [Paper learning and compatibility →](PAPER_LEARNING.md)
 
 ![Tutor Pad’s Mac page tray with a labeled synthetic page and Copy page](images/setup-tutor-pad.png)
 
-**Manual fallback:** tap **Send to Mac**, open **File → Tutor Pad** on the Mac, choose **Copy page**, then paste with **⌘V** into any chat. Review the attachment and press Send yourself. This needs no Accessibility access or timed handoff. PNG/PDF export and sharing are also available on the iPad.
+**Manual fallback:** on the Mac, open **File → Tutor Pad → Start receiving pages**. On the iPad, use a blank Tutor Pad sheet and tap **Send to Mac**. In the Mac tray, choose **Copy page**, then paste with **⌘V** into any chat. Review the attachment and press Send yourself. This needs no Accessibility access or timed handoff. PNG/PDF export and sharing are also available on the iPad.
 
 ### Keep private notebooks
 
-**Private notebooks (new source builds):** open **Notebooks** in Recall Pad to keep notebooks, notes and pages separately from live sessions. They stay on the iPad until you explicitly **Send to Recall**. On the Mac, finish the selected snapshot with Codex or Claude in **Connections → Open preparation queue → From your notebooks**. [Notebook walkthrough →](NOTEBOOKS.md)
+Open **New note** to start writing immediately; name it at the top when convenient. Use **Notebooks** to organize your notes. To share selected work, choose **Add to Recall…** (called **Send to Recall** in older builds), inspect the selection, then **Send selected**.
+
+**Received on Mac means saved, not converted into notes or cards.** On the Mac, open **Connections → Open preparation queue → From your notebooks → View pages** to see what arrived. Use **Finish with assistant** to prepare the selected snapshot. Later iPad edits stay private until you submit again. [Notebook walkthrough →](NOTEBOOKS.md)
 
 ## Update an existing installation
 

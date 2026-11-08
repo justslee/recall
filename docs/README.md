@@ -1,9 +1,5 @@
 # Recall guides
 
-**[Knowledge space →](KNOWLEDGE_SPACE.md)** Write, find and practice local notes in the current source build.
-
-**[My Brain and expertise →](CONSTELLATION.md)** Explore broader-to-specific topics, maintain their hierarchy, and understand the incremental review-based expertise index.
-
 [Back to Recall](../README.md)
 
 **New here? Start with [Set up your Recall](SETUP.md).** One illustrated guide covers the Mac app, your first cards, knowledge bases, assistants, optional voice and the iPad companion. You only need the parts you plan to use.
@@ -14,6 +10,8 @@ Each walkthrough follows one task with real app screenshots and demonstration co
 
 | Your goal                                                  | Walkthrough                                 |
 | :--------------------------------------------------------- | :------------------------------------------ |
+| Write, find and practice a local note                      | [Knowledge space](KNOWLEDGE_SPACE.md)       |
+| See connections and where review evidence is missing       | [My Brain](CONSTELLATION.md)                |
 | Remember an idea, solve a problem or practise code         | [Study a card](demos/STUDY.md)              |
 | Turn today's questions into a Self Test                    | [Capture learning](demos/LEARNING.md)       |
 | Set up connections, prepare quietly and find practice gaps | [A quieter learning loop](LEARNING_FLOW.md) |

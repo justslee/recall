@@ -2,7 +2,7 @@
 
 [Setup](SETUP.md) · [Knowledge-source connections](KNOWLEDGE.md)
 
-**Write a note, find it, and practice it in one place.** Knowledge is included in the current source build. Install a release that explicitly includes this feature, or build this checkout; older downloads do not gain it automatically.
+**Write a note, find it, and practice it in one place.** Open **Knowledge** in the Mac app. If your older installation has no Knowledge tab, [update Recall](SETUP.md#update-an-existing-installation) first.
 
 ![Knowledge reading view in light appearance, with synthetic notes and linked practice](images/knowledge-space-light.png)
 
@@ -85,6 +85,5 @@ A note can reuse a library card's interactive diagram through a `recall-visual` 
 ````
 
 Widget indexes start at zero. If widgets are disabled, choose **Enable interactive visuals for this card**, then **Load interactive**. Permission also applies to that card in the library. The isolated frame has no file, network or library access. Expand/Collapse and appearance changes retain inputs; leaving the note unloads the visual. Missing cards or widgets leave the note readable with an unavailable message. Older releases display the reference as a code block; install a release that includes this feature before adding live references.
-
 
 A diagram can also belong directly to its note, without a flashcard. The local source stores its immutable asset under `Visuals/`; the note references the returned content-addressed path. Choose **Enable this visual**, then **Load interactive**. This permission is local to that note and exact asset; it does not change the study library. Keep the `Visuals/` folder when copying or backing up your Knowledge source. Missing or changed assets remain unavailable instead of running different content. See the [authoring contract](../skills/recall-source/references/widget-contract.md#note-owned-visuals).
