@@ -29,7 +29,7 @@ The download is signed and notarized. **No Terminal, Node, API key, knowledge ba
 
 ![Recall Study Desk in light mode with original demo cards](docs/images/study-desk-light.png)
 
-*Demo content shown. [See dark mode](docs/images/study-desk-dark.png).*
+_Demo content shown. [See dark mode](docs/images/study-desk-dark.png)._
 
 ## Build a learning habit around your work
 
@@ -37,14 +37,18 @@ The download is signed and notarized. **No Terminal, Node, API key, knowledge ba
 
 With capture enabled, your assistant records useful concepts in a local inbox. Existing questions are reused; missing ones are prepared separately. **Self Test** brings captured learning back by day. Capture records exposure, not mastery.
 
-Choose a topic or collection in **Card Deck**, then choose the kind of practice you have room for:
+A simple daily rhythm:
 
-| Practice | What you do |
-| :--- | :--- |
+1. **Learn:** ask questions in your connected assistant. It answers first, then captures a short receipt; new card preparation happens separately.
+2. **Keep:** save longer explanations in **Knowledge** when useful. Press **⌘K** to find them again.
+3. **Test:** open **Self Test** for a captured learning day, or **Study desk** for scheduled reviews. Choose a topic or collection and the format you have room for:
+
+| Practice     | What you do                                                                              |
+| :----------- | :--------------------------------------------------------------------------------------- |
 | **Concepts** | Explain an idea from memory; check definitions, examples and useful interactive visuals. |
-| **Math** | Solve a problem and reveal its worked solution when you're ready. |
-| **Coding** | Complete a Python or C++ challenge with starter code and tests. |
-| **Mixed** | Combine the formats you want in one session. |
+| **Math**     | Solve a problem and reveal its worked solution when you're ready.                        |
+| **Coding**   | Complete a Python or C++ challenge with starter code and tests.                          |
+| **Mixed**    | Combine the formats you want in one session.                                             |
 
 Your **Again / Hard / Good / Easy** rating schedules the next review. Optional AI feedback never rates a card for you. **Progress** shows recorded practice; **Knowledge → My Brain** maps connected ideas and review evidence.
 
@@ -52,17 +56,19 @@ Your **Again / Hard / Good / Easy** rating schedules the next review. Optional A
 
 Start with one option. You can add the others later from the **gear icon → Connections**.
 
-| I want to… | Start here | What I need |
-| :--- | :--- | :--- |
-| **Keep notes in Recall** | **Knowledge → Create a space → New note**. [Guide](docs/KNOWLEDGE_SPACE.md) | A local folder for Markdown or HTML files. |
-| **Use existing notes** | Connect Markdown, Obsidian or Notion. [Guide](docs/SETUP.md#choose-a-home-for-your-knowledge) | A folder/vault, or an assistant with Notion connected. |
-| **Capture learning with Codex or Claude Code** | Connect, enable capture, start a fresh chat, then **Verify learning**. [Guide](docs/SETUP.md#learning-capture) | Your assistant account/client. |
-| **Practice explaining aloud** | Connect **Think out loud**, then open **Speak**. [Guide](docs/demos/SPEAK.md) | An OpenAI API key with billing; separate from ChatGPT. |
-| **Write with Apple Pencil** | Install Recall Pad, then pair it in **iPad & handwriting**. [Guide](docs/SETUP.md#optional-ipad-companion) | An iPad on iPadOS 17+, Apple Pencil, and a separate Recall Pad installation. |
+| I want to…                                     | Start here                                                                                                          | What I need                                                                  |
+| :--------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------- |
+| **Keep notes in Recall**                       | **Knowledge → Create a space → New note**. [Guide](docs/KNOWLEDGE_SPACE.md)                                         | A local folder for Markdown or HTML files.                                   |
+| **Use existing notes**                         | Connect Markdown, Obsidian or Notion. [Guide](docs/SETUP.md#choose-a-home-for-your-knowledge)                       | A folder/vault, or an assistant with Notion connected.                       |
+| **Capture learning with Codex or Claude Code** | Connect, enable capture, start a fresh chat, then **Verify learning**. [Guide](docs/SETUP.md#learning-capture)      | Your assistant account/client.                                               |
+| **Practice explaining aloud**                  | Connect **Think out loud**, then open **Speak**. [Guide](docs/demos/SPEAK.md)                                       | An OpenAI API key with billing; separate from ChatGPT.                       |
+| **Write with Apple Pencil**                    | Install Recall Pad, then pair it in **Connections → Write on iPad**. [Guide](docs/SETUP.md#optional-ipad-companion) | An iPad on iPadOS 17+, Apple Pencil, and a separate Recall Pad installation. |
 
 **No knowledge base yet?** Create a local space and start writing, or [set up Markdown, Obsidian or Notion](docs/SETUP.md#create-your-first-knowledge-base). Recall and Obsidian can share one folder. Notion updates go through your assistant; there is no continuous two-way sync.
 
-**Recall Pad is in beta.** Invited testers use TestFlight; there is no public invitation yet. Developers can [build it with Xcode](docs/IPAD_NATIVE.md). It supports handwritten answers, Codex-first paper learning and private notebooks. [Paper walkthrough](docs/demos/PAPER.md)
+**Recall Pad has three uses:** answer a Recall card, work through a problem with your chat tutor, or keep private notebooks. In a connected Codex paper session, the prompt and submitted pages belong to the same conversation; ask for a hint or say **“Check my paper”** to continue. Notebook pages reach Recall only when you select and send them. [iPad walkthrough](docs/demos/PAPER.md)
+
+**The iPad app is in beta.** Invited testers use TestFlight; there is no public invitation yet. Developers can [build it with Xcode](docs/IPAD_NATIVE.md). Install it separately and pair once; ordinary restarts keep that connection.
 
 ## Get the latest update
 

@@ -18,7 +18,7 @@ Try a topic such as **“How our data pipeline works”**. You can use your own 
 
 ## Say it, then review it
 
-1. Start recording, or type your explanation. Recording and evaluation need internet and your own OpenAI API key, saved once in **Settings & backups → Voice & feedback**; API billing is separate from ChatGPT.
+1. Start recording, or type your explanation. Recording and evaluation need internet and your own OpenAI API key, saved once in **Settings & backups → Connections → Think out loud**; API billing is separate from ChatGPT.
 2. Stop and edit the transcript so a transcription mistake does not become a content mistake.
 3. Request feedback. Review the main point, structure, audience fit and useful detail. With a reference, inspect the source-linked accuracy findings; without one, accuracy is **Not assessed**.
 4. Use **One more rep** and **Practice again** for one focused improvement, or try explaining the same idea to a different audience.

@@ -8,7 +8,7 @@ Recall Pad is optional and installed separately. Invited testers use TestFlight;
 
 ## Pair once
 
-1. Keep your Mac and iPad on the same local network. In Recall, open **Settings & backups → iPad & handwriting** and enable the companion.
+1. Keep your Mac and iPad on the same local network. In Recall, open **Settings & backups → Connections → Write on iPad** and enable the companion.
 2. Choose **Pair an iPad**. In Recall Pad, choose **Pair with Mac** and scan the QR code. Confirm the iPad on your Mac.
 3. Leave Recall running while transferring work. Closing its window keeps the enabled receiver running; **Quit Recall** stops it.
 
@@ -31,9 +31,11 @@ Paper and ink follow the iPad’s appearance. Exported pages use a readable whit
 
 ## Choose your workflow
 
-| Recall Study                                                                                                                                                                                                     | Tutor Pad                                                                                                                                                      |
-| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Start from a concept or math card on the Mac. Choose **Write on iPad**, work, then **Send for feedback**. Inspect the saved pages and feedback in Recall. Reveal the worked solution and rate the card yourself. | Start from your learning conversation. Ask the assistant to put a useful problem or note prompt on the pad. Submit your work and discuss it in that same chat. |
+| Flow             | Start                                                          | Finish                                                                                                                    |
+| :--------------- | :------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| **Recall Study** | Open a concept or math card on the Mac → **Write on iPad**.    | **Send for feedback**; inspect the pages in Recall. Reveal the solution and rate it yourself.                             |
+| **Tutor Pad**    | Ask your connected chat tutor for a problem or writing prompt. | **Send to tutor**, then discuss your steps in the same chat.                                                              |
+| **Notebooks**    | Choose **New note**, or open a note from a notebook.           | Keep it private, or explicitly **Add to Recall…** for later KB/card preparation. [Notebook walkthrough](../NOTEBOOKS.md). |
 
 Recall Study follows the Mac's next question with a small three-question desk. Earlier sheets remain saved. Coding stays in the Mac editor.
 
@@ -46,7 +48,7 @@ Recall Study follows the Mac's next question with a small three-question desk. E
 
 ## Learn with your chat tutor
 
-1. Under **Settings & backups → iPad & handwriting → Learn on paper with your tutor**, connect the paper tools to Codex or Claude Code, then start a fresh assistant session. The workflow is Codex-first; verify page delivery in the client you use.
+1. Under **Settings & backups → Connections → Write on iPad → Learn on paper with your tutor**, connect the paper tools to Codex or Claude Code, then start a fresh assistant session. The workflow is Codex-first; verify page delivery in the client you use.
 2. In that chat, say **“Start a paper learning session for linear algebra.”** Continue talking normally. Ask for a problem, hint or a writing prompt when useful.
 3. Open the prompt in Tutor Pad and write. Each published prompt has its own sheet. In the newer source UI, **Next question ready → Open** saves your work before switching sheets. Reconnecting keeps the current sheet open; no Follow toggle is needed. Older installed builds may still show **Follow tutor**.
 4. Choose **Send to tutor**. If the assistant is waiting, it can receive the pages in its active turn. Otherwise say **“Check my paper”** in the original chat.
@@ -58,7 +60,7 @@ The paper session has no countdown and stays linked across ordinary Mac restarts
 
 ![Recall's Mac Tutor Pad tray and connection controls](../images/setup-tutor-pad.png)
 
-No connected tools? Use a blank Tutor Pad sheet, choose **Send to Mac**, then **Copy page** in the Mac tray and paste into any chat yourself. Review the attachment and press Send. PNG/PDF export is another option. This manual route is separate from the chat-bound session.
+No connected tools? On the Mac, choose **File → Tutor Pad → Start receiving pages**. Use a blank Tutor Pad sheet on the iPad, choose **Send to Mac**, then **Copy page** in the Mac tray and paste into any chat yourself. Review the attachment and press Send. PNG/PDF export is another option. This manual route is separate from the chat-bound session.
 
 ## Keep long work readable
 

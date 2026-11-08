@@ -2,7 +2,6 @@
 
 **Simplified writing desk — source build.** Use **New note** directly from Home or **Continue [title]** to resume saved work. Notebooks remains in the toolbar for organization. The editor keeps Write, Erase and Undo at the front of its tool strip; **Shapes** opens the shape/text choices, with object selection and contextual actions retained. **Add to Recall…** opens the same explicit selection preview described below. An inline receipt identifies the last submitted copy and marks newer edits private; **Details** opens Sent snapshots. No storage migration or automatic sharing is introduced, and a new app build is required.
 
-
 _TestFlight build 7 has been checked on an iPad: continuous writing, scrolling, pinch zoom, editable diagrams, recovery and a multipage notebook transfer to the Mac work. KB/card preparation is a separate, explicit step. Build 7's Send screen can fail to show that a snapshot was saved; see [checking a send](#check-whether-your-work-arrived) before tapping it again._
 
 _Build 9 combines the direct drawing toolbar and clearer Send confirmation. It is available in internal TestFlight and has been installed on the test iPad with existing work present. A disposable-note check confirmed direct shape deletion, Undo restoring the shape and label, Done/reopen recovery, and returning to Pencil writing. Updated Send feedback and VoiceOver still need separate device checks._
@@ -83,7 +82,7 @@ The newer source UI keeps the saving/receipt panel visible above the selection l
 
 ## Turn those pages into learning
 
-On the Mac, open **Settings & backups → Learning connections → From your notebooks**. Choose **View pages** to inspect the complete ordered snapshot. To prepare learning, choose Codex or Claude and use **Finish with assistant**. There is no need to restart Recall to see newly received work. Copy its prompt into a fresh connected assistant session. This step shares only the selected snapshot with that assistant's provider.
+On the Mac, open **Settings & backups → Connections → Open preparation queue → From your notebooks**. Choose **View pages** to inspect the complete ordered snapshot. To prepare learning, choose Codex or Claude and use **Finish with assistant**. There is no need to restart Recall to see newly received work. Copy its prompt into a fresh connected assistant session. This step shares only the selected snapshot with that assistant's provider.
 
 If your assistant was connected before this update, click **Refresh instructions** on its connection once. This installs the latest shared notebook guidance without removing your other instructions. Refresh both connections if you use Codex and Claude.
 

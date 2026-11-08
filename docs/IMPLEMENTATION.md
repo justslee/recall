@@ -404,3 +404,24 @@ and historical reviews. Hidden Progress and My Brain checks passed with unchange
 synthetic cards, schedules, reviews and sessions. Documentation and repository
 privacy checks passed. No personal profile was opened or modified; these are
 source checks, not a new installed app or published release.
+
+### Dependency review and usage guides — November 8, 2026
+
+Mermaid 12 explicitly keeps Recall's Dagre/classic defaults and existing theme
+tokens. Hidden renderer checks cover flowchart, sequence, state, class and entity
+diagrams, while retaining the SVG image boundary and strict sanitization. A
+synthetic x509 2-to-3 check preserved the pinned Mac identity and paired device
+record while renewing the certificate for a changed IP address.
+
+The combined updates passed 503 local tests, packaging, packaged privacy checks
+and a dependency audit with no known vulnerabilities. Packaged visual, security,
+Progress, My Brain and paper-learning journeys passed with disposable data.
+Notebook test hooks now wait for renderer startup; lifecycle tests wait for the
+child process to exit and bound cleanup instead of hanging on failure. These are
+automated checks, not a new physical-iPad compatibility test.
+
+Setup and usage guides distinguish local notes, optional external sources,
+capture versus preparation, daily versus scheduled study, spoken answers versus
+longer explanations, and all three iPad workflows. The basic Mac installation
+still needs no Node or API key. Existing article edits and personal learning
+profiles were outside this review.
