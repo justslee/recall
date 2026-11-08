@@ -12,7 +12,7 @@ The [signed Mac download](https://github.com/justslee/recall/releases) is the si
 
 **To build from source:** Apple Silicon Mac, macOS 13 or later, and Node 24 or later. A current Node 24 LTS release is recommended; `.nvmrc` records the tested baseline.
 
-**Install Node before running setup.** Use the [Node.js 22 macOS installer](https://nodejs.org/en/download), which includes npm. Open a new Terminal window and run `node --version` and `npm --version` to verify installation. Recall's setup checks prerequisites; it does not install Node.
+**Install Node before running setup.** Use the [Node.js 24 LTS macOS installer](https://nodejs.org/en/download), which includes npm. Open a new Terminal window and run `node --version` and `npm --version` to verify installation. Recall's setup checks prerequisites; it does not install Node.
 
 From the cloned Recall folder:
 
