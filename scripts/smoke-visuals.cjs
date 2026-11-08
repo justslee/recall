@@ -10,7 +10,9 @@ const manifest = require("../examples/visual-benchmarks/manifest.json"),
   pack = require("../examples/visual-benchmarks/preview-pack.json");
 const output = path.join(__dirname, "../evidence/visual-benchmarks");
 async function run() {
-  await require("./require-invisible-runtime.cjs")(process.env.RECALL_TEST_EXECUTABLE);
+  await require("./require-invisible-runtime.cjs")(
+    process.env.RECALL_TEST_EXECUTABLE,
+  );
   const folder = require("../electron/verification-mode.cjs").createProfile();
   const s = new Store(folder),
     errors = [],
@@ -45,8 +47,14 @@ async function run() {
       env: { ...process.env, RECALL_DATA_DIR: folder, RECALL_VERIFY: "1" },
     });
     const page = await app.firstWindow();
-    assert.equal(await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows().some((w) => w.isVisible() || w.isFocused())), false);
+    assert.equal(
+      await app.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows().some(
+          (w) => w.isVisible() || w.isFocused(),
+        ),
+      ),
+      false,
+    );
     page.on("pageerror", (e) => errors.push(e.message));
     await page.evaluate(() => {
       window.__visualDiagnostics = [];
@@ -71,6 +79,31 @@ async function run() {
         .getByRole("button", { name: "Load interactive", exact: true })
         .click();
     };
+    const clickSettled = async (frame, selector) => {
+      const control = frame.locator(selector);
+      // Widget height messages are applied after an 80ms host debounce. Two
+      // animation frames of actionability can finish before that resize, moving
+      // the intended control under a pointer. Wait for the real geometry,
+      // without forcing a click, bypassing disabled state or retrying an action.
+      let last = null,
+        since = 0;
+      await expect
+        .poll(
+          async () => {
+            const box = await control.boundingBox();
+            const signature = box && JSON.stringify(box);
+            if (!signature || signature !== last) {
+              last = signature;
+              since = Date.now();
+              return false;
+            }
+            return Date.now() - since >= 200;
+          },
+          { intervals: [50] },
+        )
+        .toBe(true);
+      await control.click();
+    };
     for (const entry of manifest.benchmarks) {
       await open(entry.previewCardId);
       await expect(page.locator(".visual-widget")).toHaveAttribute(
@@ -87,9 +120,19 @@ async function run() {
         "undefined",
       );
       for (const scene of entry.interactions) {
-        await frame.locator(entry.reset).click();
+        await clickSettled(frame, entry.reset);
+        if (entry.id === "weak-reference") {
+          const initial = JSON.parse(
+            await frame.locator(entry.root).getAttribute("data-result"),
+          );
+          assert.deepEqual(
+            initial,
+            entry.interactions[0].expected,
+            `${scene.name}: reset acknowledged`,
+          );
+        }
         for (const step of scene.steps) {
-          if (step.click) await frame.locator(step.click).click();
+          if (step.click) await clickSettled(frame, step.click);
           else await frame.locator(step.input).fill(String(step.value));
         }
         const actual = JSON.parse(
@@ -271,18 +314,14 @@ async function run() {
               { intervals: [50] },
             )
             .toBe(true);
-          const innerGeometry = await frame
-            .locator("body")
-            .evaluate((el) => ({
-              body: el.getBoundingClientRect().height,
-              scene: el
-                .querySelector("[data-benchmark]")
-                .getBoundingClientRect().height,
-              bottom: el
-                .querySelector("[data-benchmark]")
-                .getBoundingClientRect().bottom,
-              padding: getComputedStyle(el).paddingBottom,
-            }));
+          const innerGeometry = await frame.locator("body").evaluate((el) => ({
+            body: el.getBoundingClientRect().height,
+            scene: el.querySelector("[data-benchmark]").getBoundingClientRect()
+              .height,
+            bottom: el.querySelector("[data-benchmark]").getBoundingClientRect()
+              .bottom,
+            padding: getComputedStyle(el).paddingBottom,
+          }));
           const outerGeometry = await page
             .locator(".visual-widget")
             .evaluate((el) => ({
