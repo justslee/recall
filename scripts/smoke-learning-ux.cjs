@@ -74,20 +74,14 @@ async function run() {
     page.on("pageerror", (e) => errors.push(e.message));
     await page.getByRole("button", { name: "Progress", exact: true }).click();
     await expect(
-      page.getByRole("heading", { name: "See the ground you’ve gained." }),
+      page.getByRole("heading", { name: "Review journal", exact: true }),
     ).toBeVisible();
-    assert((await page.locator(".atlas-node").count()) <= 24);
-    await page.getByLabel("Find a concept in Atlas").fill("Weighted");
-    await page.locator(".atlas-node").first().click();
-    await expect(page.getByLabel("Selected concept evidence")).toContainText(
-      "Needs practice",
+    await expect(
+      page.getByRole("button", { name: "Atlas", exact: true }),
+    ).toHaveCount(0);
+    await expect(page.locator(".progress-revisit")).toContainText(
+      demo[0].title,
     );
-    await page.getByRole("button", { name: "A week ago", exact: true }).click();
-    await expect(page.getByLabel("Selected concept evidence")).toContainText(
-      "No recorded attempt",
-    );
-    await page.getByRole("button", { name: "Now", exact: true }).click();
-    await page.getByLabel("Find a concept in Atlas").fill("");
     for (const theme of ["light", "dark"]) {
       await app.evaluate(({ nativeTheme }, v) => {
         nativeTheme.themeSource = v;
@@ -101,26 +95,11 @@ async function run() {
         .toBe(theme === "dark");
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({
-        path: path.join(output, `map-${theme}.png`),
+        path: path.join(output, `journal-${theme}.png`),
         fullPage: true,
         animations: "disabled",
       });
     }
-    await page
-      .getByRole("button", { name: "Review journal", exact: true })
-      .click();
-    await expect(
-      page.getByRole("heading", { name: "Your study rhythm" }),
-    ).toBeVisible();
-    await page.getByRole("button", { name: "Atlas", exact: true }).click();
-    await page.getByLabel("Atlas topic").selectOption("Systems");
-    await expect(page.locator(".atlas-node")).toHaveCount(4);
-    await page.getByRole("button", { name: /Explore all .*Systems/ }).click();
-    await expect(page.locator(".atlas-node")).toHaveCount(12);
-    await page
-      .getByRole("button", { name: "Next atlas page", exact: true })
-      .click();
-    await expect(page.locator(".atlas-node")).toHaveCount(5);
     await page
       .getByRole("button", { name: "Settings & backups", exact: true })
       .click();
@@ -187,14 +166,16 @@ async function run() {
     await expect(
       page.getByText("Connect Recall Pad", { exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Progress", exact: true }).click();
-    await page.getByLabel("Atlas topic").selectOption("all");
+    await page.getByRole("button", { name: "Study desk", exact: true }).click();
+    await page
+      .getByLabel("Collection", { exact: true })
+      .selectOption(demo[0].decks[0]);
     await page
       .getByRole("group", { name: "Question format" })
       .getByRole("button", { name: /^Math/ })
       .click();
     await page
-      .getByRole("button", { name: "Review a small set", exact: true })
+      .getByRole("button", { name: "Start review", exact: true })
       .click();
     await expect(
       page.getByRole("button", { name: "Reveal worked solution", exact: true }),
@@ -206,16 +187,22 @@ async function run() {
     assert.deepEqual(session.ids, [demo.find((c) => c.kind === "math").id]);
     await page.getByRole("button", { name: "Progress", exact: true }).click();
     await page
-      .getByRole("group", { name: "Question format" })
-      .getByRole("button", { name: /^Concepts/ })
+      .getByRole("button", { name: "Continue studying", exact: true })
       .click();
-    await page
-      .getByRole("button", { name: "Review a small set", exact: true })
-      .click();
+    await expect(
+      page.getByRole("button", { name: "Resume session", exact: true }),
+    ).toBeVisible();
     assert.deepEqual(
       await page.evaluate(async () => (await window.recall.snapshot()).session),
       session,
     );
+    await page
+      .getByRole("button", { name: "Resume session", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Reveal worked solution", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".answer")).toHaveCount(0);
     assert.equal(
       await app.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows().some(
@@ -238,7 +225,7 @@ async function run() {
     );
     after.close();
     console.log(
-      "Hidden UI checks passed: map, evidence, format-scoped sessions, unfinished session preservation, journal, connections, paper and speech; cards and reviews unchanged.",
+      "Hidden UI checks passed: journal, format-scoped study, unfinished session preservation, connections, paper and speech; cards and reviews unchanged.",
     );
   } finally {
     await app?.close();

@@ -144,6 +144,9 @@ const handle = (name, fn) =>
         "knowledgeRead",
         "knowledgeAsset",
         "knowledgePractice",
+        "setWidgetPermission",
+        "inspectKnowledgeVisual",
+        "setKnowledgeVisualPermission",
         "knowledgeRefresh",
         "knowledgeBootstrapState",
         "learningConnections",
@@ -441,6 +444,33 @@ app.whenReady().then(async () => {
   // strict CSP so the sandboxed frame can run its script and nothing else.
   function widgetResponse(url) {
     const [, rawId, index] = url.pathname.split("/");
+    if (rawId?.startsWith(require("./knowledge-visual-assets.cjs").PREFIX)) {
+      try {
+        const result = require("./knowledge-visual-assets.cjs").response(
+          store.folder,
+          decodeURIComponent(rawId),
+          index,
+        );
+        if (!result.allowed)
+          return new Response("This note visual is not enabled.", {
+            status: 403,
+          });
+        return new Response(
+          widgetDocument(result.widget, {
+            instance: url.searchParams.get("instance") || "legacy",
+          }),
+          {
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "Content-Security-Policy": WIDGET_CSP,
+              "Cache-Control": "no-store",
+            },
+          },
+        );
+      } catch {
+        return new Response("Not found", { status: 404 });
+      }
+    }
     let card;
     try {
       card = JSON.parse(store.card(decodeURIComponent(rawId)).content);
@@ -774,6 +804,13 @@ app.whenReady().then(async () => {
   handle("rate", (request) => store.rate(request));
   handle("undo", () => store.undo());
   handle("saveCard", (card) => store.saveCard(card));
+  handle("inspectKnowledgeVisual", (input) =>
+    require("./knowledge-visual-assets.cjs").inspect(store.folder, input),
+  );
+  handle("setKnowledgeVisualPermission", (input) =>
+    require("./knowledge-visual-assets.cjs").setPermission(store.folder, input),
+  );
+  handle("setWidgetPermission", (input) => store.setWidgetPermission(input));
   handle("suspend", (id, value) => store.suspend(id, value));
   handle("newDeck", (name) => {
     name = String(name).trim();

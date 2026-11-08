@@ -38,7 +38,11 @@ import {
 } from "./ReviewSession";
 import { HistoryView } from "./HistoryView";
 import { ProgressView } from "./ProgressView";
-const KnowledgeSpace = React.lazy(() => import("./KnowledgeSpace").then(module => ({ default: module.KnowledgeSpace })));
+const KnowledgeSpace = React.lazy(() =>
+  import("./KnowledgeSpace").then((module) => ({
+    default: module.KnowledgeSpace,
+  })),
+);
 import { SpeakView } from "./SpeakView";
 import { SettingsView } from "./SettingsView";
 import { PadStudyFollower, TutorPadWorkspace } from "./Handwriting";
@@ -81,7 +85,7 @@ function App() {
         event.preventDefault();
         setKnowledgeOpened(true);
         setView("knowledge");
-        setKnowledgeSearchSignal(n => n + 1);
+        setKnowledgeSearchSignal((n) => n + 1);
       }
     };
     window.addEventListener("keydown", handler);
@@ -425,7 +429,11 @@ function App() {
     await api.setting("session", next);
     setActiveSession(next);
   };
-  const startMapSession = async (ids, format = selection.format, origin = "Atlas") => {
+  const startMapSession = async (
+    ids,
+    format = selection.format,
+    origin = "Knowledge",
+  ) => {
     if (activeSession && activeSession.index < activeSession.ids.length) {
       notify(
         `Your current session is saved. Finish it before starting a ${origin} session.`,
@@ -790,7 +798,40 @@ function App() {
               study={view === "study"}
             />
           )}
-        {knowledgeOpened && <React.Suspense fallback={view === "knowledge" ? <p>Opening your Knowledge space…</p> : null}><KnowledgeSpace active={view === "knowledge"} cards={data.cards} searchSignal={knowledgeSearchSignal} onPractice={(ids, format) => startMapSession(ids, format, "Knowledge")} onCard={(id) => { const card = data.cards.find(c => c.id === id); if (card) browse(card); }} onSetup={() => { go("settings"); setSettingsSection("knowledge"); }} notify={notify} /></React.Suspense>}
+        {knowledgeOpened && (
+          <React.Suspense
+            fallback={
+              view === "knowledge" ? <p>Opening your Knowledge space…</p> : null
+            }
+          >
+            <KnowledgeSpace
+              active={view === "knowledge"}
+              cards={data.cards}
+              onEnableVisual={async (card) => {
+                await api.setWidgetPermission({
+                  id: card.id,
+                  expectedRevision: card.revision || 0,
+                  expectedAnswer: card.presentation?.answer ?? card.answer,
+                  allowed: true,
+                });
+                await refresh();
+              }}
+              searchSignal={knowledgeSearchSignal}
+              onPractice={(ids, format) =>
+                startMapSession(ids, format, "Knowledge")
+              }
+              onCard={(id) => {
+                const card = data.cards.find((c) => c.id === id);
+                if (card) browse(card);
+              }}
+              onSetup={() => {
+                go("settings");
+                setSettingsSection("knowledge");
+              }}
+              notify={notify}
+            />
+          </React.Suspense>
+        )}
         {view === "selftest" && (
           <SelfTest
             data={learning}
@@ -1070,13 +1111,6 @@ function App() {
         )}
         {view === "progress" && (
           <ProgressView
-            selection={selection}
-            onSelection={changeSelection}
-            onPractice={startMapSession}
-            onExplain={(id) => {
-              setSpeakCard(id);
-              go("speak");
-            }}
             onStudy={() => go("study")}
             onHistory={(day = null) => {
               setHistoryDay(day);

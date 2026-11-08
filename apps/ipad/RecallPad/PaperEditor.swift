@@ -18,8 +18,6 @@ struct PaperEditor: View {
     @State private var preview: PaperAttempt?
     @State private var command: PaperCanvas.CanvasCommand?
     @State private var showDisclosure = false
-    @State private var followMac = true
-    @State private var followTutor = false
     @State private var shareItems: [URL] = []
     @State private var showShare = false
     @State private var dirty = false
@@ -31,6 +29,7 @@ struct PaperEditor: View {
     @State private var sheetName = ""
     @State private var showToolSettings = false
     @State private var promptExpanded = true
+    @AppStorage("padLastWorkV1") private var lastWork = ""
     @AppStorage("assessmentDisclosureV1") private var disclosureAccepted = false
     @AppStorage("paperInkColorV1") private var inkColorName = PaperInkColor.graphite.rawValue
     @AppStorage("paperPenWidthV1") private var savedPenWidth = 2.5
@@ -47,6 +46,15 @@ struct PaperEditor: View {
     private var tutorTarget: String { document.tutorProblem == nil ? "clipboard" : "assistant" }
     private var belongsToTutor: Bool { document.tutorProblem != nil }
     private var latestSubmission: PaperAttempt? { store.attempts.first { $0.documentId == document.id } }
+    private var submissionReceipt: PaperSubmissionReceipt? {
+        latestSubmission.map { PaperSubmissionReceipt(document: document, attempt: $0, dirty: dirty, connected: bridge.connected, sending: bridge.isSending(document)) }
+    }
+    private var nextTutorProblem: TutorProblem? {
+        PaperIncomingWork.tutor(document: document, session: bridge.currentTutorSession, connected: bridge.connected)
+    }
+    private var nextStudyQuestion: QuestionPackage? {
+        PaperIncomingWork.study(document: document, session: bridge.currentStudySession, connected: bridge.connected)
+    }
     private var promptHTML: String? {
         document.mode == .study ? document.questionPackage?.prompt : document.tutorProblem?.prompt
     }
@@ -68,6 +76,7 @@ struct PaperEditor: View {
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(PadPalette.border, lineWidth: 1))
                     .padding(.horizontal, 12)
                     .accessibilityIdentifier("paper-writing-canvas")
+                    .modifier(PaperIncomingPromptOverlay(title: nextTutorProblem?.title ?? nextStudyQuestion?.title, onOpen: openIncomingPrompt))
                 answerStrip
             }
             .background(PadPalette.background)
@@ -78,12 +87,17 @@ struct PaperEditor: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Done") { if saveNow() { dismiss() } }.accessibilityIdentifier("paper-editor-done") }
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    if document.mode == .tutor { Button(belongsToTutor ? "Blank sheet" : "New sheet", systemImage: "doc.badge.plus") { newSheet() } }
                     Button { exportCurrent() } label: { Image(systemName: "square.and.arrow.up") }
                         .disabled(drawing.strokes.isEmpty)
                         .accessibilityLabel("Preview and export current work")
                         .accessibilityIdentifier("paper-export-work")
                     Menu {
+                        if document.mode == .tutor { Button(belongsToTutor ? "Blank sheet" : "New sheet", systemImage: "doc.badge.plus") { newSheet() } }
+                        if document.mode == .tutor { Button("Where your work is sent", systemImage: "info.circle") { showTutorHelp = true } }
+                        if document.mode == .study {
+                            Button("Previous saved question", systemImage: "chevron.left") { navigateQuestion(-1) }
+                            Button("Next saved question", systemImage: "chevron.right") { navigateQuestion(1) }
+                        }
                         Button("Rename sheet", systemImage: "pencil") { sheetName = document.title; showRename = true }
                         ForEach(store.attempts.filter { $0.documentId == document.id }) { attempt in
                             Button("Revision \(attempt.documentRevision) · \(attempt.state.title)") { preview = attempt }
@@ -99,15 +113,10 @@ struct PaperEditor: View {
             .task { load(initialDocument); if document.mode == .tutor && bridge.connected { await connectTutor() } }
             .onChange(of: phase) { _, value in if value != .active { _ = saveNow() } }
             .onChange(of: bridge.connected) { _, connected in
-                if !connected { followTutor = false }
                 guard connected, !deleted, !deletingSheet, document.mode == .tutor else { return }
 
                 Task { await connectTutor() }
             }
-            .onChange(of: bridge.studyQuestionsSession?.currentQuestionId) { _, _ in followCurrentMacQuestion() }
-            .onChange(of: bridge.currentTutorSession?.currentProblemId) { _, _ in followCurrentTutorProblem() }
-            .onChange(of: followTutor) { _, enabled in if enabled { followCurrentTutorProblem() } }
-            .onChange(of: pendingDeletion?.id) { _, id in if id == nil { followCurrentMacQuestion(); followCurrentTutorProblem() } }
             .onChange(of: bridge.tutorSession(for: tutorTarget)?.handoffId) { _, handoffId in
                 guard !deleted, !deletingSheet, document.mode == .tutor, !belongsToTutor, let handoffId else { return }
                 if document.handoffId != handoffId { document.handoffId = handoffId; scheduleSave() }
@@ -141,104 +150,64 @@ struct PaperEditor: View {
     }
 
     private var answerStrip: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 12) {
-                    sessionControls.fixedSize(horizontal: true, vertical: false)
-                    Spacer(minLength: 8)
-                    sendButton.fixedSize(horizontal: true, vertical: false)
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    sessionControls
-                    sendButton.frame(maxWidth: .infinity, alignment: .trailing)
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                destinationLabel.frame(maxWidth: .infinity, alignment: .leading)
+                sendButton.fixedSize(horizontal: true, vertical: false)
             }
-            if let latestSubmission {
-                Button { preview = latestSubmission } label: {
-                    Label(document.mode == .tutor ? tutorDeliverySummary(latestSubmission.state) : latestSubmission.state.title,
-                          systemImage: latestSubmission.state == .needsAttention ? "exclamationmark.circle" : "doc.badge.clock")
-                        .font(.caption)
-                        .foregroundStyle(PadPalette.muted)
-                        .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+            Group {
+                if let latestSubmission, let receipt = submissionReceipt {
+                    Button { preview = latestSubmission } label: {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Label(receipt.title, systemImage: latestSubmission.state == .needsAttention ? "exclamationmark.circle" : "checkmark.circle")
+                                .font(.caption.weight(.medium)).foregroundStyle(PadPalette.text)
+                            Text(receipt.detail).font(.caption).foregroundStyle(PadPalette.muted).multilineTextAlignment(.leading)
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("View latest submission: \(receipt.title). \(receipt.detail)")
+                    .accessibilityIdentifier("paper-latest-submission")
+                } else {
+                    Text(belongsToTutor ? "Saved privately on iPad until you send. Tutor access shares the submitted pages with its AI provider." : document.mode == .study ? "Your writing stays saved. Sending does not choose a review rating." : "Saved privately on iPad. Send a copy to your Mac when you’re ready.")
+                        .font(.caption).foregroundStyle(PadPalette.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("View latest submission: \(latestSubmission.state.title)")
-                .accessibilityIdentifier("paper-latest-submission")
-            } else if document.mode == .tutor && !belongsToTutor {
-                Text("Copy on Mac, then paste anywhere · receiver required")
-                    .font(.caption)
-                    .foregroundStyle(PadPalette.muted)
-            }
-            if belongsToTutor {
-                Text(horizontalSizeClass == .compact ? "Tutor access shares pages with its AI provider." : "Pages reach your assistant and its AI provider when the tutor reads them.")
-                    .font(.caption)
-                    .foregroundStyle(PadPalette.muted)
-            }
+            }.frame(minHeight: 38, alignment: .topLeading)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 18).padding(.vertical, 10)
         .background(.thinMaterial)
         .overlay(alignment: .top) { Rectangle().fill(PadPalette.border).frame(height: 1) }
         .accessibilityIdentifier("paper-send-strip")
+        .popover(isPresented: $showTutorHelp) { tutorHelp }
     }
 
-    @ViewBuilder private var sessionControls: some View {
-        if document.mode == .tutor {
-            HStack(spacing: 10) {
-                Label(belongsToTutor ? document.tutorTitle ?? "Your tutor" : "Mac page tray", systemImage: belongsToTutor ? "bubble.left.and.bubble.right" : "macbook")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(PadPalette.text)
-                    .lineLimit(1)
-                    .frame(maxWidth: 200, alignment: .leading)
-                if belongsToTutor {
-                    Toggle("Follow tutor", isOn: $followTutor)
-                        .toggleStyle(.button)
-                        .font(.caption.weight(.medium))
-                        .frame(minHeight: 44)
-                        .accessibilityIdentifier("paper-follow-tutor")
-                }
-                Button { showTutorHelp = true } label: {
-                    Image(systemName: "info.circle").frame(width: 44, height: 44)
-                }
-                .accessibilityLabel("Sending pages to your Mac")
-                .accessibilityIdentifier("paper-delivery-help")
-                .popover(isPresented: $showTutorHelp) { tutorHelp }
-            }
-        } else {
-            HStack(spacing: 6) {
-                Toggle("Follow Mac", isOn: $followMac)
-                    .toggleStyle(.button)
-                    .font(.subheadline.weight(.medium))
-                    .frame(minHeight: 44)
-                    .accessibilityIdentifier("paper-follow-mac")
-                Button { navigateQuestion(-1) } label: {
-                    Image(systemName: "chevron.left").frame(width: 44, height: 44)
-                }
-                .accessibilityLabel("Previous saved question")
-                .accessibilityIdentifier("paper-previous-question")
-                Button { navigateQuestion(1) } label: {
-                    Image(systemName: "chevron.right").frame(width: 44, height: 44)
-                }
-                .accessibilityLabel("Next saved question")
-                .accessibilityIdentifier("paper-next-question")
+    private var destinationLabel: some View {
+        HStack(spacing: 6) {
+            Label(document.mode == .study ? "Recall study" : belongsToTutor ? document.tutorTitle ?? "This conversation" : "Mac page tray", systemImage: document.mode == .study ? "book.closed" : belongsToTutor ? "bubble.left.and.bubble.right" : "macbook")
+                .font(.caption.weight(.medium)).foregroundStyle(PadPalette.muted)
+                .lineLimit(1).frame(maxWidth: 220, alignment: .leading)
+            if document.mode == .tutor && horizontalSizeClass != .compact {
+                Button { showTutorHelp = true } label: { Image(systemName: "info.circle").frame(width: 36, height: 44) }
+                    .buttonStyle(.plain).foregroundStyle(PadPalette.muted)
+                    .accessibilityLabel("Where your work is sent").accessibilityIdentifier("paper-delivery-help")
             }
         }
     }
 
     private var sendButton: some View {
-        Button {
-            if document.mode == .study && !disclosureAccepted { showDisclosure = true } else { submit() }
+        let unchanged = submissionReceipt?.isCurrent == true
+        let needsHelp = unchanged && latestSubmission?.state == .needsAttention
+        let disabled = drawing.strokes.isEmpty || (unchanged && !needsHelp)
+        return Button {
+            if needsHelp { preview = latestSubmission }
+            else if document.mode == .study && !disclosureAccepted { showDisclosure = true }
+            else { submit() }
         } label: {
-            Label(sendTitle, systemImage: "arrow.up")
-                .font(.subheadline.weight(.semibold))
-                .frame(minHeight: 32)
-                .padding(.horizontal, 4)
+            Label(needsHelp ? "Check delivery" : unchanged ? "Saved" : sendTitle, systemImage: unchanged ? "checkmark" : "arrow.up")
+                .font(.subheadline.weight(.semibold)).frame(minHeight: 32).padding(.horizontal, 4)
         }
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.roundedRectangle(radius: 12))
-        .tint(PadPalette.accent)
-        .foregroundStyle(drawing.strokes.isEmpty ? PadPalette.muted : PadPalette.accentInk)
-        .disabled(drawing.strokes.isEmpty)
+        .buttonStyle(PaperSendButtonStyle())
+        .disabled(disabled)
         .accessibilityIdentifier("paper-send-work")
     }
 
@@ -251,7 +220,7 @@ struct PaperEditor: View {
                 Text("Send to tutor saves these pages for this prompt in the original conversation’s session. Your assistant can access them when you ask it to review your work.")
                 Text("When the tutor reads them, the page images are shared with that assistant and its AI provider. You can also copy or export the saved pages on your Mac and paste them yourself.")
                 Text("Received on Mac means your work is saved and waiting. Available to tutor means the assistant has accessed a page; it does not promise feedback or send a chat message.")
-                Text("Follow tutor saves your working before the next published prompt appears. Hints and discussion keep the same sheet. Reconnecting leaves your current work open; turn Follow tutor on to continue.")
+                Text("New questions appear at the top of your page. Choose Open when ready; your current writing is saved first. Reconnecting never replaces the sheet you’re writing on.")
             } else {
                 Text("Send to Mac saves your pages in Tutor Pad on your Mac. Copy a page there, then paste it into any app or conversation with ⌘V.")
                 Text("Review the attachment and press Send yourself. Tutor Pad does not select a chat, paste automatically or send messages.")
@@ -273,12 +242,12 @@ struct PaperEditor: View {
         HStack(spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
-                    Picker("Writing tool", selection: $tool) {
-                        Image(systemName: "pencil.tip").accessibilityLabel("Pen").tag(PaperTool.pen)
-                        Image(systemName: "eraser").accessibilityLabel("Eraser").tag(PaperTool.eraser)
-                        Image(systemName: "lasso").accessibilityLabel("Select strokes").tag(PaperTool.select)
-                    }.pickerStyle(.segmented).frame(width: 156, height: 44)
-                        .accessibilityIdentifier("paper-writing-tools")
+                    HStack(spacing: 2) {
+                        writingToolButton("Pen", icon: "pencil.tip", value: .pen)
+                        writingToolButton("Eraser", icon: "eraser", value: .eraser)
+                    }
+                    .padding(3).background(PadPalette.raised, in: RoundedRectangle(cornerRadius: 10))
+                    .accessibilityIdentifier("paper-writing-tools")
                     if tool != .select {
                         Button { showToolSettings.toggle() } label: {
                             HStack(spacing: 5) {
@@ -304,22 +273,20 @@ struct PaperEditor: View {
                     Button { command = .init(id: UUID(), undo: true) } label: {
                         Image(systemName: "arrow.uturn.backward").frame(width: 44, height: 44)
                     }.accessibilityLabel("Undo").accessibilityIdentifier("paper-undo")
-                    Button { command = .init(id: UUID(), undo: false) } label: {
-                        Image(systemName: "arrow.uturn.forward").frame(width: 44, height: 44)
-                    }.accessibilityLabel("Redo").accessibilityIdentifier("paper-redo")
                     Menu {
-                        ForEach(PaperStyle.allCases, id: \.self) { style in
-                            Button { document.paperStyle = style; scheduleSave() } label: {
-                                if style == document.paperStyle {
-                                    Label(style.rawValue.capitalized, systemImage: "checkmark")
-                                } else {
-                                    Text(style.rawValue.capitalized)
+                        Button("Redo", systemImage: "arrow.uturn.forward") { command = .init(id: UUID(), undo: false) }
+                            .accessibilityIdentifier("paper-redo")
+                        Button("Select strokes", systemImage: "lasso") { tool = .select }
+                        Menu("Paper style", systemImage: "square.grid.3x3") {
+                            ForEach(PaperStyle.allCases, id: \.self) { style in
+                                Button { document.paperStyle = style; scheduleSave() } label: {
+                                    if style == document.paperStyle { Label(style.rawValue.capitalized, systemImage: "checkmark") }
+                                    else { Text(style.rawValue.capitalized) }
                                 }
                             }
-                        }
-                    } label: {
-                        Image(systemName: "square.grid.3x3").frame(width: 44, height: 44)
-                    }.accessibilityLabel("Paper style").accessibilityIdentifier("paper-style-menu")
+                        }.accessibilityIdentifier("paper-style-menu")
+                    } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
+                        .accessibilityLabel("More writing tools").accessibilityIdentifier("paper-more-tools")
                 }
             }.frame(height: 44)
             ViewThatFits(in: .horizontal) {
@@ -340,6 +307,15 @@ struct PaperEditor: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .onChange(of: tool) { _, _ in showToolSettings = false }
+    }
+
+    private func writingToolButton(_ title: String, icon: String, value: PaperTool) -> some View {
+        Button { tool = value } label: {
+            Image(systemName: icon).frame(width: 44, height: 38)
+                .background(tool == value ? PadPalette.surface : Color.clear, in: RoundedRectangle(cornerRadius: 7))
+        }
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(tool == value ? [.isSelected] : [])
     }
 
     @ViewBuilder private var toolSettings: some View {
@@ -414,9 +390,7 @@ struct PaperEditor: View {
             drawing = try store.drawing(for: item)
             if document.id != item.id { promptExpanded = true }
             document = item
-            followTutor = item.tutorProblem != nil && bridge.connected
-                && bridge.currentTutorSession?.handoffId == item.tutorProblem?.sessionId
-                && bridge.currentTutorSession?.currentProblemId == item.tutorProblem?.id
+            lastWork = "sheet:\(item.id)"
             height = item.canvasHeight
             dirty = false
         } catch { self.error = error.localizedDescription }
@@ -450,9 +424,9 @@ struct PaperEditor: View {
                       session.questions.contains(where: { $0.id == document.questionPackage?.id }) {
                 document.handoffId = session.handoffId
             }
-            let attempt = try store.submit(document, drawing: drawing)
+            _ = try PaperSubmissionFlow.submit(document, drawing: drawing, store: store)
+            if let saved = store.documents.first(where: { $0.id == document.id }) { document = saved }
             dirty = false
-            if document.mode == .study { preview = attempt }
             Task { await bridge.flushOutbox() }
         } catch { self.error = error.localizedDescription }
     }
@@ -462,6 +436,7 @@ struct PaperEditor: View {
             // Local export does not enter the network outbox.
             let attempt = try store.submit(document, drawing: drawing)
             try store.updateAttempt(attempt.id, state: .savedOffline, retryAllowed: false)
+            if let saved = store.documents.first(where: { $0.id == document.id }) { document = saved }
             preview = attempt
         } catch { self.error = error.localizedDescription }
     }
@@ -484,7 +459,6 @@ struct PaperEditor: View {
         guard let session = bridge.studyQuestionsSession, let index = session.questions.firstIndex(where: { $0.id == document.questionPackage?.id }) else { return }
         let target = index + direction
         guard session.questions.indices.contains(target) else { return }
-        followMac = false
         switchQuestion(session.questions[target], handoffId: session.handoffId)
     }
     private func connectTutor() async {
@@ -498,41 +472,14 @@ struct PaperEditor: View {
 
         if document.handoffId != session.handoffId { document.handoffId = session.handoffId; scheduleSave() }
     }
-    private func followCurrentTutorProblem() {
-        guard bridge.connected, !deleted, !deletingSheet, pendingDeletion == nil, followTutor,
-              let session = bridge.currentTutorSession,
-              session.nextTutorProblem(after: document, following: followTutor, connected: bridge.connected) != nil else { return }
+    private func openIncomingPrompt() {
+        guard !deleted, !deletingSheet, pendingDeletion == nil, saveNow() else { return }
 
-        saveTask?.cancel()
-        do {
-            if let next = try store.followTutorProblem(from: document, drawing: drawing, in: session) { load(next) }
-        } catch {
-            followTutor = false
-            self.error = "Your working could not be saved before switching prompts. Keep this sheet open and retry. \(error.localizedDescription)"
-        }
-    }
-    private func followCurrentMacQuestion() {
-        guard !deleted, !deletingSheet, pendingDeletion == nil, followMac, document.mode == .study,
-              let session = bridge.studyQuestionsSession,
-              let question = session.questions.first(where: { $0.id == session.currentQuestionId }),
-              question.id != document.questionPackage?.id else { return }
-
-        switchQuestion(question, handoffId: session.handoffId)
-    }
-    private func tutorDeliverySummary(_ state: DeliveryState) -> String {
-        switch state {
-        case .savedOffline: return "Saved on iPad · not sent"
-        case .waitingForMac: return "Waiting for Mac · your pages are saved"
-        case .receivedOnMac, .queuedOnMac: return belongsToTutor ? "Received on Mac · waiting for tutor" : "Received on Mac · check the Tutor Pad page tray"
-        case .availableToTutor: return "Available to tutor · continue in the original chat"
-        case .needsResume: return "Pages ready on Mac · open Tutor Pad"
-        case .copiedForTutor: return "Copied on Mac · paste into any app"
-        case .manualPageTray: return "Pages ready on Mac · copy them from Tutor Pad"
-        case .pasting: return "Earlier handoff · pages saved on Mac"
-        case .pasteUnverified: return "Earlier paste unverified · check your Mac"
-        case .stagedInChat: return "Earlier chat attachment · review on Mac"
-        case .needsAttention: return "Delivery needs attention · your work is kept"
-        case .evaluating, .feedbackReady: return "Saved on Mac · feedback stays in your tutor"
+        if let problem = nextTutorProblem {
+            do { load(try store.open(mode: .tutor, tutorProblem: problem, tutorTitle: bridge.currentTutorSession?.tutorTitle)) }
+            catch { self.error = error.localizedDescription }
+        } else if let question = nextStudyQuestion {
+            switchQuestion(question, handoffId: bridge.currentStudySession?.handoffId)
         }
     }
     private func deleteSheet(_ item: PaperDocument) throws {
@@ -554,6 +501,126 @@ struct PaperEditor: View {
             if isCurrentSheet && dirty { scheduleSave() }
             throw error
         }
+    }
+}
+
+private struct PaperSendButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .foregroundStyle(isEnabled ? PadPalette.accentInk : PadPalette.muted)
+            .background(isEnabled ? PadPalette.accent : PadPalette.accentSoft, in: RoundedRectangle(cornerRadius: 12))
+            .opacity(configuration.isPressed && isEnabled ? 0.82 : 1)
+    }
+}
+
+struct PaperIncomingPromptOverlay: ViewModifier {
+    let title: String?
+    let onOpen: () -> Void
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .top) { banner }
+    }
+
+    @ViewBuilder private var banner: some View {
+        if let title {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Next question ready").font(.caption.weight(.semibold)).foregroundStyle(PadPalette.accent)
+                    Text(title).font(.caption).lineLimit(1).foregroundStyle(PadPalette.text)
+                }
+                Spacer(minLength: 8)
+                Button("Open", action: onOpen)
+                    .buttonStyle(.bordered).accessibilityLabel("Open next question: \(title)")
+                    .accessibilityIdentifier("paper-open-next-question")
+            }
+            .padding(.horizontal, 16).padding(.vertical, 8)
+            .background(PadPalette.accentSoft, in: RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal, 12).padding(.top, 6)
+            .accessibilityIdentifier("paper-next-question-banner")
+        }
+    }
+
+}
+
+// Presentation only: saved sheets and immutable attempts keep their existing formats.
+enum PaperIncomingWork {
+    static func tutor(document: PaperDocument, session: StudySession?, connected: Bool) -> TutorProblem? {
+        guard let session, session.hasValidTutorBinding else { return nil }
+        return session.nextTutorProblem(after: document, connected: connected)
+    }
+
+    static func study(document: PaperDocument, session: StudySession?, connected: Bool) -> QuestionPackage? {
+        guard connected, document.mode == .study, let session, session.mode == "study",
+              let question = session.questions.first(where: { $0.id == session.currentQuestionId }),
+              question.id != document.questionPackage?.id else { return nil }
+        return question
+    }
+}
+
+struct PaperSubmissionReceipt {
+    let title: String
+    let detail: String
+    let isCurrent: Bool
+
+    init(document: PaperDocument, attempt: PaperAttempt, dirty: Bool, connected: Bool, sending: Bool) {
+        isCurrent = !dirty && PaperSubmissionFlow.matches(document: document, attempt: attempt)
+        let newerWork = dirty || document.revision > attempt.documentRevision
+        let prefix = newerWork ? "New changes haven’t been sent. Last submitted copy: " : ""
+        let explanation: String
+        switch attempt.state {
+        case .savedOffline:
+            title = "Saved on iPad"
+            explanation = "This exported copy has not been sent."
+        case .waitingForMac:
+            title = sending ? "Sending…" : "Waiting for Mac"
+            explanation = connected ? "Your submitted copy is saved on iPad until the Mac confirms receipt." : "Your submitted copy is saved on iPad. Keep Recall Pad open to send when your Mac reconnects."
+        case .needsAttention:
+            title = "Delivery needs attention"
+            explanation = "Your submitted copy is kept. Open details to check or retry."
+        case .availableToTutor:
+            title = "Opened by tutor"
+            explanation = "A submitted page was accessed. Continue in the original chat for feedback."
+        case .evaluating:
+            title = "Received on Mac"
+            explanation = "Feedback is being prepared on your Mac."
+        case .feedbackReady:
+            title = "Feedback ready on Mac"
+            explanation = "Your review rating is still your choice."
+        default:
+            title = "Received on Mac"
+            explanation = document.mode == .study ? "Open Recall on your Mac to review this submission." : document.tutorProblem != nil ? "In the original chat, say “Check my paper.”" : "Open Tutor Pad on your Mac to copy or share the pages."
+        }
+        detail = prefix + explanation
+    }
+}
+
+@MainActor
+enum PaperSubmissionFlow {
+    nonisolated static func matches(document: PaperDocument, attempt: PaperAttempt) -> Bool {
+        let target = document.mode == .tutor ? (document.tutorProblem == nil ? "clipboard" : "assistant") : nil
+        return attempt.documentId == document.id && attempt.documentRevision == document.revision
+            && attempt.mode == document.mode && attempt.state != .savedOffline
+            && attempt.questionPackageId == document.questionPackage?.id
+            && attempt.tutorProblemId == document.tutorProblem?.id
+            && attempt.handoffId == document.handoffId && attempt.deliveryTarget == target
+            && attempt.destination == (document.mode == .tutor ? target : document.destination)
+    }
+
+    static func submit(_ document: PaperDocument, drawing: PKDrawing, store: DocumentStore) throws -> PaperAttempt {
+        guard let saved = store.documents.first(where: { $0.id == document.id }), saved.revision == document.revision else {
+            throw PadError.rejected("This sheet has a newer saved version. Reopen it before sending; all saved work is kept.")
+        }
+        guard saved.tutorProblem == document.tutorProblem, saved.questionPackage == document.questionPackage, saved.destination == document.destination else {
+            throw PadError.rejected("This sheet’s original question or destination changed. Reopen the saved sheet before sending.")
+        }
+        if let existing = store.attempts.first(where: { matches(document: document, attempt: $0) }) {
+            let savedInk = try Data(contentsOf: store.attemptURL(existing.id).appendingPathComponent("drawing.data"))
+            if savedInk == drawing.dataRepresentation() { return existing }
+        }
+        return try store.submit(document, drawing: drawing)
     }
 }
 

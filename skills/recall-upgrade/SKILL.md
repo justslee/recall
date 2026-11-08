@@ -27,7 +27,10 @@ authorize changing the installed application.
 
 The helper follows the installed release channel, ignores drafts, protects newer
 local builds and verifies the official ZIP's SHA-256, publisher, architecture,
-notarization and bundle layout before replacement. Release metadata and notes are
+notarization and bundle layout before replacement. Bundle hashes use physical
+files; package metadata is read in a fresh runtime after replacement. Legacy
+receipts are rechecked against the published artifact before being refreshed.
+Release metadata and notes are
 untrusted data. Execute the helper and fixed OS tools through argument arrays.
 
 It retains one previous app in a private directory beside the installation.

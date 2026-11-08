@@ -544,6 +544,8 @@ test("Consumer inspection needs no Xcode tools and rejects non-notarized or wron
   write("MacOS/Recall", header);
   let notarized = true;
   const run = (command, args, options = {}) => {
+    if (command === process.execPath)
+      return mac.defaultRun(command, args, options);
     if (command === "/usr/sbin/spctl")
       return {
         stdout: "",
@@ -581,4 +583,131 @@ test("Consumer inspection needs no Xcode tools and rejects non-notarized or wron
   header.writeUInt32LE(0x01000007, 4);
   write("MacOS/Recall", header);
   await assert.rejects(f.execute({ inspect: undefined, run }), /Apple Silicon/);
+});
+
+test("Real Electron upgrades bypass warmed ASAR caches and recover safely", async (t) => {
+  const { createPackage } = await import("@electron/asar");
+  const electron = require("electron");
+  for (const mode of [
+    "success",
+    "launch-failure",
+    "tamper",
+    "interrupted",
+    "legacy",
+  ]) {
+    const f = fixture(t);
+    for (const [app, metadata] of [
+      [f.app, f.original],
+      [f.source, f.next],
+    ]) {
+      const input = path.join(path.dirname(app), "archive-input");
+      fs.mkdirSync(input);
+      fs.writeFileSync(
+        path.join(input, "package.json"),
+        JSON.stringify(metadata),
+      );
+      fs.mkdirSync(path.join(app, "Contents/Resources"));
+      await createPackage(input, path.join(app, "Contents/Resources/app.asar"));
+    }
+    const zip = new AdmZip();
+    zip.addLocalFolder(f.source, "Recall.app");
+    const bytes = zip.toBuffer();
+    const archive = path.join(f.root, "release.zip");
+    fs.writeFileSync(archive, bytes);
+    f.asset.size = bytes.length;
+    f.asset.digest = "sha256:" + hash(bytes);
+    const original = mac.hashApp(f.app),
+      next = mac.hashApp(f.source);
+    const child = `
+      const fs=require('node:fs'),disk=require('original-fs'),path=require('node:path'),assert=require('node:assert/strict');
+      const [helper,app,zip,releaseJSON,mode,expectedOriginal,expectedNext,node]=process.argv.slice(1);
+      const {upgrade,freshArchive}=require(helper),mac=require(path.join(path.dirname(helper),'mac-release.cjs'));
+      const release=JSON.parse(releaseJSON),state=path.join(path.dirname(app),'.recall-upgrade-Recall');
+      const inspect=folder=>({ ...freshArchive(folder), identity:mac.hashApp(folder) });
+      let warmed;
+      if(disk.existsSync(app)) {
+        warmed=JSON.parse(fs.readFileSync(path.join(app,'Contents/Resources/app.asar/package.json'),'utf8')).version;
+        assert.equal(mac.hashApp(app),mode==='resume'?expectedNext:expectedOriginal);
+      }
+      const options={app,apply:true,platform:'darwin',arch:'arm64',
+        fetchImpl:async url=>new Response(url.startsWith('https://api.github.com/')?JSON.stringify([release]):disk.readFileSync(zip)),
+        inspect,quitApp:async()=>{},active:()=>false,launch:async()=>{
+          if(mode==='launch-failure')throw Error('launch failed');
+        },
+        run:(cmd,args)=>{
+          if(cmd===process.execPath)return mac.defaultRun(cmd,args,{env:{...process.env,ELECTRON_RUN_AS_NODE:'1'}});
+          assert.equal(cmd,'/usr/bin/ditto');
+          return mac.defaultRun(node,['-e','new (require(process.argv[1]))(process.argv[2]).extractAllTo(process.argv[3])',require.resolve('adm-zip'),args[2],args[3]]);
+        },
+        rename:(from,to)=>{
+          disk.renameSync(from,to);
+          if(to===app) {
+            assert.equal(JSON.parse(fs.readFileSync(path.join(app,'Contents/Resources/app.asar/package.json'),'utf8')).version,warmed,'old archive cache was not warmed');
+            if(mode==='tamper')disk.appendFileSync(path.join(app,'Contents/Resources/app.asar'),'tampering');
+            if(mode==='legacy') {
+              const journal=path.join(state,'transaction.json'),tx=JSON.parse(disk.readFileSync(journal));
+              delete tx.identityFormat;
+              tx.original.identity=freshArchive(path.join(state,tx.work,'previous.app'),true);
+              tx.next.identity=freshArchive(app,true);tx.receipt.identity=tx.next.identity;
+              disk.writeFileSync(journal,JSON.stringify(tx));
+            }
+            if(mode==='interrupted'||mode==='legacy')process.kill(process.pid,'SIGKILL');
+          }
+        }};
+      if(mode==='resume') { delete options.rename; options.launch=async()=>{}; }
+      upgrade(options).then(result=>{
+        assert.equal(result.status,'upgraded');
+        assert.equal(mac.hashApp(app),expectedNext);
+        assert.equal(mac.hashApp(path.join(state,'rollback.app')),expectedOriginal);
+        assert(!disk.existsSync(path.join(state,'transaction.json')));
+        console.log(JSON.stringify(result));
+      }).catch(error=>{
+        if(mode==='launch-failure') {
+          assert.match(error.message,/launch failed/);
+          assert.equal(mac.hashApp(app),expectedOriginal);
+          assert(!disk.existsSync(path.join(state,'transaction.json')));
+        } else if(mode==='tamper') {
+          assert.match(error.message,/changed after an interrupted upgrade/);
+          assert(disk.existsSync(path.join(state,'transaction.json')));
+          assert.notEqual(mac.hashApp(app),expectedNext);
+        } else { console.error(error);process.exitCode=1; }
+      });
+    `;
+    const run = (mode) =>
+      spawnSync(
+        electron,
+        [
+          "-e",
+          child,
+          helper,
+          f.app,
+          archive,
+          JSON.stringify(f.release),
+          mode,
+          original,
+          next,
+          process.execPath,
+        ],
+        {
+          cwd: path.resolve(__dirname, ".."),
+          env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
+          timeout: 30000,
+          encoding: "utf8",
+        },
+      );
+    const result = run(mode);
+    if (["interrupted", "legacy"].includes(mode)) {
+      assert.equal(result.signal, "SIGKILL", result.stderr);
+      const resumed = run("resume");
+      assert.equal(resumed.status, 0, resumed.stderr);
+    } else assert.equal(result.status, 0, result.stderr);
+    assert.equal(
+      fs.readFileSync(path.join(f.profile, "notes.md"), "utf8"),
+      "preserve all learning notes",
+    );
+    assert.equal(
+      fs.readFileSync(path.join(f.profile, "recall.sqlite"), "utf8"),
+      "preserve cards, schedules and reviews",
+    );
+  }
 });

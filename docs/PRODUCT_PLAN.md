@@ -24,15 +24,17 @@ Each profile can lock its approved top-level domains. Content is classified into
 
 The provisional expertise index uses scored review evidence, separately exposes coverage and confidence, keeps unassessed requirements distinct from failures, and never reaches 100. Incremental SQLite projections update affected objectives and ancestor summaries without changing review history or scheduling. See [Constellation and expertise](CONSTELLATION.md).
 
-Recall Pad separates live Study/Tutor sessions from private **Notebooks → Notes → Pages**. Notebook writing saves locally and is never automatically captured. An explicit **Send to Recall** shares a selected, immutable snapshot for source-aware KB and card preparation. Receipts distinguish durable receipt, preparation, actual destination outcomes and the last successfully added version; later edits remain private. See [Notebooks](NOTEBOOKS.md).
+Recall Pad opens to **Continue**, **New note** and recent work. Notebooks remains a secondary organization view. Live Study/Tutor sessions stay separate from private **Notebooks → Notes → Pages** beneath this shared writing desk. Notebook writing saves locally and is never automatically captured. An explicit **Add to Recall…** shares a selected, immutable snapshot for source-aware KB and card preparation. Receipts distinguish durable receipt, preparation, actual destination outcomes and the last successfully added version; later edits remain private. See [Notebooks](NOTEBOOKS.md).
 
 New notebook notes open straight into one growing sheet with pinch zoom, Pencil ink and editable shapes with attached labels. Additional sheets and existing multi-page notes remain accessible through an optional page tray. Autosave and explicit sharing preserve both handwriting and diagrams.
 
-Notebook editing opens in **Write**. Direct tools make object selection and shape creation discoverable; a floating selected-object bar exposes Text, Style, Duplicate and Delete without shifting the sheet. Shape deletion is immediately undoable. Ink erasing and stroke selection remain distinct from object selection, with contextual properties instead of permanent editing panels.
+Notebook editing opens in **Write**. The compact toolbar keeps writing, erasing and Undo first, with shape creation under **Shapes** and direct object selection; a floating selected-object bar exposes Text, Style, Duplicate and Delete without shifting the sheet. Shape deletion is immediately undoable. Ink erasing and stroke selection remain distinct from object selection, with contextual properties instead of permanent editing panels.
 
 Object selection exposes four resize corners and a top rotation handle, with a fixed opposite corner during resizing and text rotating with its shape. Lines and arrows support a single smooth midpoint bend; anchored endpoints follow rotated, moved or resized targets. Writing remains the default.
 
 At every supported zoom level, the visible paper must remain writable without moving existing ink. Lines and arrows can attach to nearby container outlines, follow movement, rotation and resizing, and reconnect through visible endpoint handles. Existing free arrows stay free until explicitly attached; deleting a target keeps its arrow visible and Undo restores the relationship.
+
+Incoming questions remain an explicit **Open** action, preserving the current sheet through arrival and reconnect. Submission keeps the writing surface open with an inline receipt. Receipts distinguish saved, received and accessed work; they never imply grading or a chosen review rating. Existing saved work and immutable attempts remain unchanged.
 
 ## Preservation and scope
 
@@ -43,4 +45,4 @@ Existing users retain content, identifiers, diagrams, attempts, schedules, draft
 
 ## Quiet learning loop
 
-Preparation must preserve the reader’s flow: existing ready objectives can be studied immediately, new work is bounded and resumable, and routine visual QA runs invisibly in disposable profiles. Setup belongs in one optional Connections hub. Progress opens to Atlas: bounded topic regions, focused ideas, format-specific evidence, week-ago comparison and explicit source relationships. Concepts, Math, Coding and Mixed remain separate for evidence and sessions. The existing review journal remains available; unknown evidence is never presented as mastery. See [the implemented workflow](LEARNING_FLOW.md).
+Preparation must preserve the reader’s flow: existing ready objectives can be studied immediately, new work is bounded and resumable, and routine visual QA runs invisibly in disposable profiles. Setup belongs in one optional Connections hub. Progress opens directly to the Review journal: review activity, a seven-day recall trend, upcoming scheduled reviews and format/topic breakdowns. Knowledge’s Constellation owns graph exploration; Progress has no second Atlas view. Concepts, Math, Coding and Mixed remain separate for evidence and sessions. Activity and self-ratings are never presented as permanent mastery. See [the implemented workflow](LEARNING_FLOW.md).

@@ -28,7 +28,7 @@ const folder = dataDir(option("data"));
 const apply = flag("apply"),
   json = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const usage =
-  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/revise/revision-status/search/link/trust | cards inspect CARD_ID [--previous] | taxonomy list/preview/apply/status | kb index/read/scan/search/save/asset/ingest/ack/setup | connections status/connect/disconnect/config | paper connect codex/claude [--apply] | paper connection-status | paper mcp | paper start/publish/status/wait/read/end JSON_FILE | notebook list/inspect/page/export | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
+  "recall [--data DIR] init | doctor | config FILE | demo | cards validate/import/import-status/revise/revision-status/search/link/trust | cards inspect CARD_ID [--previous] | taxonomy list/preview/apply/status | kb index/read/scan/search/save/asset/visual/ingest/ack/setup | connections status/connect/disconnect/config | paper connect codex/claude [--apply] | paper connection-status | paper mcp | paper start/publish/status/wait/read/end JSON_FILE | notebook list/inspect/page/export | catch-up scan | inbox status/add/inspect/preview/prepare DIGEST/submit/apply/retry | capture FILE | self-test status/prepare | backup [DIR] | restore DIR --apply | skills install DIR";
 function withStore(fn) {
   const { Store } = require("../electron/store.cjs");
   const s = new Store(folder);
@@ -323,6 +323,14 @@ function readonly(fn) {
           apply,
           expectedRevision: option("revision"),
         });
+      else if (action === "visual") {
+        const visuals = require("../electron/knowledge-visual-assets.cjs");
+        if (rest[0] !== "save") throw Error("kb visual save SOURCE FILE [--apply]");
+        const asset = json(rest[2]);
+        result = apply
+          ? visuals.saveAsset(folder, rest[1], asset)
+          : { mode: "preview", ...visuals.previewAsset(folder, rest[1], asset) };
+      }
       else if (action === "asset")
         result = kb.asset(folder, rest[0], rest[1], rest[2]);
       else if (action === "ingest") {

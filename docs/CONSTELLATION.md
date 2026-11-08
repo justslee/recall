@@ -28,7 +28,7 @@ Use concept identity to group the same idea. A card's optional `objectiveId` dis
 
 The displayed number is a **provisional review-based expertise index**, not a validated psychometric measurement or a percentage of all possible knowledge. Its scope is the mapped, ready review objectives. Unassessed notes remain visible separately. Displayed coverage and confidence make the scope and evidential limits inspectable.
 
-Only scored, non-practice `Again`, `Hard`, `Good`, and `Easy` reviews count in this version. Skips, undone reviews, future events, captured conversations, generated answers, and note imports contribute no scored evidence. Existing Atlas explanation, code-test, and handwriting evidence remains available there; it is not silently converted into independent ratings. Concepts, Math, and Coding have separate summaries, with an explicit Mixed view.
+Only scored, non-practice `Again`, `Hard`, `Good`, and `Easy` reviews count in this version. Skips, undone reviews, future events, captured conversations, generated answers, and note imports contribute no scored evidence. Recorded explanation, code-test and handwriting evidence is preserved when Atlas is removed from Progress; it is not silently converted into independent ratings. Concepts, Math, and Coding have separate summaries, with an explicit Mixed view.
 
 The projection retains full numerical precision through card and ancestor calculations; formatting happens at display time. A versioned precision upgrade recomputes derived scores from existing checkpoints in bounded batches, retaining pending corrections and avoiding a replay of historical reviews.
 

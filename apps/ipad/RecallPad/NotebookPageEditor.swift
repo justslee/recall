@@ -29,9 +29,11 @@ struct NotebookPageEditor: View {
     @State private var showRename = false
     @State private var pageTitle = ""
     @State private var showPages = false
+    @State private var showSentReceipts = false
     @State private var editingNoteTitle = false
     @State private var noteTitleDraft = ""
     @State private var showShapes = false
+    @State private var showDiagramTools = false
     @State private var showShapeStyle = false
     @State private var showShapeText = false
     @FocusState private var noteTitleFocused: Bool
@@ -39,8 +41,9 @@ struct NotebookPageEditor: View {
     @AppStorage("paperInkColorV1") private var inkColorName = PaperInkColor.graphite.rawValue
     @AppStorage("paperPenWidthV1") private var savedPenWidth = 2.5
     @AppStorage("paperEraserWidthV1") private var savedEraserWidth = 24.0
+    @AppStorage("padLastWorkV1") private var lastWork = ""
 
-    private var notebookKeyboardActionsEnabled: Bool { !editingNoteTitle && !showShapeText && !showShapeStyle && !showToolSettings && !showShapes && !showRename && !showDelete && !showPages && sendScope == nil && error == nil }
+    private var notebookKeyboardActionsEnabled: Bool { !editingNoteTitle && !showShapeText && !showShapeStyle && !showToolSettings && !showShapes && !showDiagramTools && !showRename && !showDelete && !showPages && sendScope == nil && error == nil }
     private var note: PadNotebookNote? { notebooks.notes.first { $0.id == page.noteId } }
     private var orderedPages: [PadNotebookPage] { note.map { notebooks.pages(in: $0) } ?? [] }
     private var pageIndex: Int { orderedPages.firstIndex { $0.id == page.id } ?? 0 }
@@ -101,7 +104,7 @@ struct NotebookPageEditor: View {
                         Button("Add another sheet", systemImage: "doc.badge.plus") { addPage() }
                             .disabled(!loaded).accessibilityIdentifier("notebook-editor-add-page")
                         Button("Rename page", systemImage: "pencil") { pageTitle = page.title; showRename = true }
-                        Button("Send this note…", systemImage: "arrow.up.doc") { if saveNow() { sendScope = .note(page.noteId) } }.disabled(bridge.pairedMac == nil)
+                        Button("Add this note to Recall…", systemImage: "arrow.up.doc") { if saveNow() { sendScope = .note(page.noteId) } }.disabled(bridge.pairedMac == nil)
                         Divider()
                         Button("Delete page…", systemImage: "trash", role: .destructive) { showDelete = true }
                             .disabled(bridge.activeNotebookNoteId == page.noteId)
@@ -116,7 +119,7 @@ struct NotebookPageEditor: View {
             .onChange(of: selectedShapeId) { _, _ in showShapeStyle = false }
             .onDisappear { saveTask?.cancel(); if !deleted { _ = saveNow() } }
             .sheet(isPresented: $showPages) {
-                NotebookPageBrowser(noteId: page.noteId, currentPageId: page.id, onOpen: { selected in
+                NotebookPageBrowser(noteId: page.noteId, currentPageId: page.id, showSent: showSentReceipts, onOpen: { selected in
                     guard saveNow() else { return false }
                     return load(selected)
                 }, onDelete: { removed in
@@ -179,13 +182,32 @@ struct NotebookPageEditor: View {
                 HStack(spacing: 12) { pageNavigation; Spacer(minLength: 8); sendButton.fixedSize(horizontal: true, vertical: false) }
                 VStack(alignment: .leading, spacing: 6) { pageNavigation; sendButton.frame(maxWidth: .infinity, alignment: .trailing) }
             }
-            if let note { NotebookSyncLabel(summary: notebooks.syncSummary(for: note)) }
-            if bridge.pairedMac == nil { Text("Pair with a Mac to add selected work to Recall. Writing stays private and works offline.").font(.caption).foregroundStyle(PadPalette.muted) }
+            submissionReceipt
         }
         .padding(.horizontal, 18).padding(.vertical, 10)
         .background(.thinMaterial)
         .overlay(alignment: .top) { Rectangle().fill(PadPalette.border).frame(height: 1) }
         .accessibilityIdentifier("notebook-page-strip")
+    }
+
+    private var submissionReceipt: some View {
+        let receipt = NotebookWritingReceipt.resolve(page: page, submissions: notebooks.submissions, dirty: dirty)
+        return HStack(alignment: .top, spacing: 8) {
+            Image(systemName: receipt.symbol).padding(.top, 2).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(receipt.title).font(.caption.weight(.medium))
+                Text(bridge.pairedMac == nil && !receipt.hasSubmission ? "Pair with your Mac to share selected work. Writing stays private." : receipt.detail).font(.caption2)
+            }
+            Spacer(minLength: 4)
+            if receipt.hasSubmission {
+                Button("Details") { openPages(showSent: true) }
+                    .font(.caption).frame(minHeight: 44)
+                    .accessibilityLabel("View saved submission receipts")
+            }
+        }
+        .foregroundStyle(PadPalette.muted)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("notebook-inline-receipt")
     }
 
     private var pageNavigation: some View {
@@ -212,7 +234,7 @@ struct NotebookPageEditor: View {
 
     private var sendButton: some View {
         Button { if saveNow() { sendScope = .pages(noteId: page.noteId, pageIds: [page.id]) } } label: {
-            Label("Send to Recall", systemImage: "arrow.up.doc")
+            Label("Add to Recall…", systemImage: "arrow.up.doc")
                 .font(.subheadline.weight(.semibold)).padding(.horizontal, 16).padding(.vertical, 12)
                 .foregroundStyle(!hasContent || bridge.pairedMac == nil ? PadPalette.muted : PadPalette.accentInk)
                 .background(!hasContent || bridge.pairedMac == nil ? PadPalette.raised : PadPalette.accent, in: Capsule())
@@ -226,14 +248,17 @@ struct NotebookPageEditor: View {
                 HStack(spacing: 4) {
                     writingToolButton("Write", icon: "pencil.tip", value: .pen, showTitle: true)
                     writingToolButton("Ink eraser", icon: "eraser", value: .eraser)
+                    Button { command = .init(id: UUID(), undo: true) } label: { Image(systemName: "arrow.uturn.backward").frame(width: 44, height: 44) }.accessibilityLabel("Undo")
                     Divider().frame(height: 24).padding(.horizontal, 4)
+                    Button { showDiagramTools.toggle() } label: {
+                        Label(creationToolTitle, systemImage: "square.on.circle")
+                            .font(.subheadline.weight(.medium)).frame(minHeight: 44).padding(.horizontal, 8)
+                            .background(diagramTool != .none && diagramTool != .select ? PadPalette.accentSoft : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    .accessibilityLabel("Shapes and text").accessibilityValue(creationToolTitle)
+                    .accessibilityIdentifier("notebook-shapes-menu")
+                    .popover(isPresented: $showDiagramTools) { creationTools.padding(16).frame(width: 280).presentationCompactAdaptation(.popover) }
                     diagramToolbarButton("Select objects", icon: "cursorarrow", value: .select)
-                    diagramToolbarButton("Rectangle", icon: "rectangle", value: .rectangle)
-                    diagramToolbarButton("Circle", icon: "circle", value: .ellipse)
-                    diagramToolbarButton("Diamond", icon: "diamond", value: .diamond)
-                    diagramToolbarButton("Line", icon: "line.diagonal", value: .line)
-                    diagramToolbarButton("Arrow", icon: "arrow.up.right", value: .arrow)
-                    diagramToolbarButton("Text", icon: "textformat", value: .text)
                     Divider().frame(height: 24).padding(.horizontal, 4)
                     if diagramTool != .none || tool != .select {
                         Button { showToolSettings.toggle() } label: {
@@ -245,9 +270,8 @@ struct NotebookPageEditor: View {
                         }.accessibilityLabel(diagramTool != .none || tool == .pen ? "Ink color and line thickness" : "Eraser size")
                         .popover(isPresented: $showToolSettings) { toolSettings.padding(20).frame(width: 320).presentationCompactAdaptation(.popover) }
                     }
-                    Button { command = .init(id: UUID(), undo: true) } label: { Image(systemName: "arrow.uturn.backward").frame(width: 44, height: 44) }.accessibilityLabel("Undo")
-                    Button { command = .init(id: UUID(), undo: false) } label: { Image(systemName: "arrow.uturn.forward").frame(width: 44, height: 44) }.accessibilityLabel("Redo")
                     Menu {
+                        Button("Redo", systemImage: "arrow.uturn.forward") { command = .init(id: UUID(), undo: false) }
                         Button("Select ink strokes", systemImage: "lasso") { chooseWritingTool(.select) }
                         Button("Objects on this sheet", systemImage: "square.stack.3d.up") { showShapes = true }
                         Menu("Paper", systemImage: "square.grid.3x3") {
@@ -279,6 +303,41 @@ struct NotebookPageEditor: View {
         tool = value
         showToolSettings = false
         showShapeStyle = false
+        showDiagramTools = false
+    }
+
+    private var creationToolTitle: String {
+        switch diagramTool {
+        case .none, .select: return "Shapes"
+        case .ellipse: return "Circle"
+        default: return diagramTool.rawValue.capitalized
+        }
+    }
+
+    private var creationTools: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Shapes & text").font(.system(.headline, design: .serif))
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                creationTool("Rectangle", icon: "rectangle", value: .rectangle)
+                creationTool("Circle", icon: "circle", value: .ellipse)
+                creationTool("Diamond", icon: "diamond", value: .diamond)
+                creationTool("Line", icon: "line.diagonal", value: .line)
+                creationTool("Arrow", icon: "arrow.up.right", value: .arrow)
+                creationTool("Text", icon: "textformat", value: .text)
+            }
+        }
+        .foregroundStyle(PadPalette.text)
+    }
+
+    private func creationTool(_ title: String, icon: String, value: NotebookDiagramTool) -> some View {
+        Button { chooseDiagramTool(value) } label: {
+            Label(title, systemImage: icon).font(.subheadline)
+                .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                .padding(.horizontal, 10)
+                .background(diagramTool == value ? PadPalette.accentSoft : PadPalette.surface, in: RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain).accessibilityAddTraits(diagramTool == value ? [.isSelected] : [])
+        .accessibilityIdentifier("notebook-shape-\(value.rawValue)")
     }
 
     private func writingToolButton(_ title: String, icon: String, value: PaperTool, showTitle: Bool = false) -> some View {
@@ -307,6 +366,7 @@ struct NotebookPageEditor: View {
         showShapes = false
         showToolSettings = false
         showShapeStyle = false
+        showDiagramTools = false
     }
 
     private var diagramInstruction: String {
@@ -351,7 +411,7 @@ struct NotebookPageEditor: View {
                         }
                     }
                 }.frame(maxHeight: 180)
-            } else { Text("No shapes yet. Choose a shape in the toolbar to draw one.").font(.footnote).foregroundStyle(PadPalette.muted) }
+            } else { Text("No shapes yet. Open Shapes to draw one.").font(.footnote).foregroundStyle(PadPalette.muted) }
         }
     }
 
@@ -594,6 +654,7 @@ struct NotebookPageEditor: View {
             command = nil
             dirty = false
             loaded = true
+            lastWork = "note:\(page.noteId)"
             return true
         } catch { self.error = error.localizedDescription; return false }
     }
@@ -625,7 +686,9 @@ struct NotebookPageEditor: View {
             return true
         } catch { self.error = error.localizedDescription; return false }
     }
-    private func openPages() { if saveNow() { showPages = true } }
+    private func openPages(showSent: Bool = false) {
+        if saveNow() { showSentReceipts = showSent; showPages = true }
+    }
     private func navigate(_ offset: Int) {
         let next = pageIndex + offset
         guard orderedPages.indices.contains(next), saveNow() else { return }
@@ -639,6 +702,32 @@ struct NotebookPageEditor: View {
         guard bridge.activeNotebookNoteId != page.noteId else { error = "This note is transferring. Wait for the transfer to finish before deleting a page."; return }
         saveTask?.cancel()
         do { try notebooks.delete(page); deleted = true; dirty = false; dismiss() } catch { self.error = error.localizedDescription }
+    }
+}
+
+struct NotebookWritingReceipt: Equatable {
+    let title: String
+    let detail: String
+    let symbol: String
+    let hasSubmission: Bool
+
+    static func resolve(page: PadNotebookPage, submissions: [NotebookSubmission], dirty: Bool) -> Self {
+        let latest = submissions.filter { $0.noteId == page.noteId && $0.selectedPageIds.contains(page.id) }
+            .max { $0.createdAt == $1.createdAt ? $0.id < $1.id : $0.createdAt < $1.createdAt }
+        guard let latest else {
+            return Self(title: "Private note", detail: "Only selected work is shared when you add it to Recall.", symbol: "lock", hasSubmission: false)
+        }
+
+        let changed = dirty || !latest.sourcePages.contains { $0.id == page.id && $0.revision == page.revision && $0.hash == page.contentHash }
+        let changes = changed ? " Newer edits stay private." : ""
+        if latest.receivedAt != nil {
+            let attention = latest.lastError != nil || [.needsAttention, .paused].contains(latest.state)
+            return Self(title: attention ? "Received on Mac · needs attention" : "Received on Mac", detail: "Latest submitted copy.\(changes) See Details for KB and card outcomes.", symbol: attention ? "exclamationmark.circle" : "checkmark.circle", hasSubmission: true)
+        }
+        if latest.lastError != nil || !latest.retryAllowed || [.needsAttention, .paused].contains(latest.state) {
+            return Self(title: "Transfer needs attention", detail: "The submitted copy is saved on this iPad.\(changes) See Details for recovery options.", symbol: "exclamationmark.circle", hasSubmission: true)
+        }
+        return Self(title: "Waiting for Mac", detail: "The submitted copy is saved and will send when connected.\(changes)", symbol: "clock", hasSubmission: true)
     }
 }
 

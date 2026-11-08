@@ -40,7 +40,7 @@ Recall Study follows the Mac's next question with a small three-question desk. E
 ## Make room for your working
 
 - Tap **Hide** above the question to expand your writing space; **Show** brings the question back. A new problem opens its prompt again.
-- Use **All / Study / Tutor** to find saved sheets. Touch and hold a sheet for its actions, or swipe left to reveal **Delete**. Deletion always asks for confirmation and removes only the iPad copy.
+- Use the **Recent work** filter to find saved notes, Study and Tutor sheets. Touch and hold a sheet for its actions, or swipe left to reveal **Delete**. Deletion always asks for confirmation and removes only the iPad copy.
 - Pencil writes; fingers scroll and pinch to zoom. The toolbar has Undo/Redo, ink color, pen thickness, eraser size and paper style. Swipe the toolbar horizontally when space is tight.
 - Tap the share button to preview and export your current pages. Sending and exporting leave your editable sheet in place.
 
@@ -48,7 +48,7 @@ Recall Study follows the Mac's next question with a small three-question desk. E
 
 1. Under **Settings & backups → iPad & handwriting → Learn on paper with your tutor**, connect the paper tools to Codex or Claude Code, then start a fresh assistant session. The workflow is Codex-first; verify page delivery in the client you use.
 2. In that chat, say **“Start a paper learning session for linear algebra.”** Continue talking normally. Ask for a problem, hint or a writing prompt when useful.
-3. Open the prompt in Tutor Pad and write. Each published prompt has its own sheet. With **Follow tutor** on, a new prompt saves the earlier work before switching sheets. Reconnecting keeps your work open; turn **Follow tutor** back on when ready.
+3. Open the prompt in Tutor Pad and write. Each published prompt has its own sheet. In the newer source UI, **Next question ready → Open** saves your work before switching sheets. Reconnecting keeps the current sheet open; no Follow toggle is needed. Older installed builds may still show **Follow tutor**.
 4. Choose **Send to tutor**. If the assistant is waiting, it can receive the pages in its active turn. Otherwise say **“Check my paper”** in the original chat.
 5. Discuss your reasoning and ask for the next problem when ready. Ask to end the paper session when you finish; the saved work remains.
 

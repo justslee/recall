@@ -21,10 +21,9 @@ This is a Codex-first development workflow. The repository includes the shared `
 
 Submitting does not paste an image into the draft, send a chat message or wake an idle assistant. A bounded tool wait can receive work while the assistant is active; it can otherwise check when you ask. The Mac page tray remains available for explicit copying into any application, and the iPad supports PNG/PDF export and sharing.
 
-With **Follow tutor** on, a new published prompt saves the previous work before switching sheets.
-Hints and conversation do not create another sheet. Reconnection leaves the current sheet open;
-turn **Follow tutor** back on when ready. **Blank sheet** is a separate manual workspace, not a way
-to reassign work from one prompt to another.
+The newer source UI offers **Next question ready → Open** instead of automatically switching sheets. Open saves the current work first. Hints, conversation and reconnects leave the same writing surface in place. **… → Blank sheet** creates a separate manual workspace, not a new binding for the original work. Older installed builds may still offer **Follow tutor**.
+
+After submission, the source editor stays on the sheet with an inline receipt: **Waiting for Mac**, **Received on Mac**, or **Opened by tutor** after an actual page-read receipt. Newer edits are labeled unsent. Tap the receipt for ordered pages and existing delivery retry controls. Received or opened does not mean evaluated, and submitting still does not wake an idle assistant.
 
 ## Connect the tools
 

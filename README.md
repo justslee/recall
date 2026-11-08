@@ -58,7 +58,7 @@ The current source build also adds **Knowledge**, a local home for Markdown and 
 
 Knowledge now opens to **Constellation**: expand and collapse topic branches on one continuous canvas, follow connections, and inspect a provisional expertise index derived from scored reviews. Domain roots stay on the same canvas as you explore; pinch, pan, Fit all, and canvas search help you navigate without page controls. The bundled taxonomy skill respects each profile's approved domains, while incremental checkpoints keep review updates local and bounded. [Constellation and scoring details →](docs/CONSTELLATION.md)
 
-The current source build brings assistant, knowledge-base, iPad and speech setup into one **Connections** hub. **Progress → Atlas** turns your topics and practice evidence into an explorable map, with separate Concepts, Math, Coding and Mixed views. [Explore setup, background preparation and Atlas →](docs/LEARNING_FLOW.md)
+The current source build brings assistant, knowledge-base, iPad and speech setup into one **Connections** hub. **Progress** opens your Review journal with daily activity, a seven-day recall trend, upcoming scheduled reviews and format/topic breakdowns. Explore relationships in **Knowledge → Constellation**. [Explore setup, background preparation and progress →](docs/LEARNING_FLOW.md)
 
 **Learn → capture → self-test → revisit.**
 

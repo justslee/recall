@@ -1,4 +1,6 @@
-const fs = require("node:fs");
+const fs = process.versions.electron
+  ? require("original-fs")
+  : require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const mac = require("./mac-release.cjs");
@@ -266,6 +268,24 @@ async function downloadAsset(asset, expected, destination, fetchImpl) {
   }
 }
 
+function freshArchive(app, legacyIdentity = false, run = mac.defaultRun) {
+  const script = legacyIdentity
+    ? 'const m=require(process.argv[1]);console.log(JSON.stringify(m.hashApp(process.argv[2],require("node:fs"))));'
+    : 'console.log(require("node:fs").readFileSync(process.argv[2]+"/Contents/Resources/app.asar/package.json","utf8"));';
+  return JSON.parse(
+    run(
+      process.execPath,
+      ["-e", script, require.resolve("./mac-release.cjs"), app],
+      {
+        env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
+        maxBuffer: 1024 * 1024,
+        releaseError:
+          "The app archive could not be inspected in a fresh Recall runtime.",
+      },
+    ).stdout,
+  );
+}
+
 function inspectApp(app, { run, notarized = false }) {
   const stapled =
     notarized || fs.existsSync(path.join(app, "Contents/CodeResources"));
@@ -293,17 +313,8 @@ function inspectApp(app, { run, notarized = false }) {
       throw Error("The app has no verified Apple notarization.");
   }
   const info = mac.plistJSON(path.join(app, "Contents/Info.plist"), run);
-  let pkg;
-  try {
-    pkg = JSON.parse(
-      fs.readFileSync(
-        path.join(app, "Contents/Resources/app.asar/package.json"),
-        "utf8",
-      ),
-    );
-  } catch {
-    throw Error("Run the upgrade helper with Recall's bundled runtime.");
-  }
+  // A fresh runtime cannot reuse the old package at the replaced app path.
+  const pkg = freshArchive(app, false, run);
   const build = Number(info.CFBundleVersion);
   if (
     info.CFBundleIdentifier !== mac.BUNDLE_ID ||
@@ -390,8 +401,53 @@ function transactionPaths(state, transaction) {
 async function recover(app, state, options) {
   const journal = path.join(state, "transaction.json");
   if (!fs.existsSync(journal)) return;
-  const transaction = read(journal);
+  let transaction = read(journal);
   const p = transactionPaths(state, transaction);
+  if (transaction.identityFormat !== "physical-v1") {
+    if (transaction.identityFormat !== undefined)
+      throw Error("The interrupted upgrade identity format is unsupported.");
+
+    // Authenticate legacy journal identities before converting to disk hashes.
+    const identities = new Map();
+    for (const file of [app, p.previous, p.rollback, p.obsolete]) {
+      if (!fs.existsSync(file)) continue;
+      mac.directory(file);
+      const legacy = process.versions.electron
+        ? freshArchive(file, true, options.run)
+        : mac.hashApp(file);
+      const verified = options.inspect(file, { run: options.run });
+      if (
+        identities.has(legacy) &&
+        identities.get(legacy) !== verified.identity
+      )
+        throw Error(
+          "The legacy upgrade identities are ambiguous; saved copies were retained.",
+        );
+
+      identities.set(legacy, verified.identity);
+    }
+    const convert = (value) => identities.get(value) || value;
+    transaction = {
+      ...transaction,
+      identityFormat: "physical-v1",
+      original: {
+        ...transaction.original,
+        identity: convert(transaction.original.identity),
+      },
+      next: transaction.next && {
+        ...transaction.next,
+        identity: convert(transaction.next.identity),
+      },
+      priorRollback: convert(transaction.priorRollback),
+      ...(transaction.receipt && {
+        receipt: {
+          ...transaction.receipt,
+          identity: convert(transaction.receipt.identity),
+        },
+      }),
+    };
+    atomic(journal, transaction);
+  }
   const identity = (file) =>
     fs.existsSync(file) ? (mac.directory(file), mac.hashApp(file)) : null;
   if (transaction.next === null) {
@@ -496,7 +552,7 @@ async function upgrade({
     path.dirname(app),
     ".recall-upgrade-" + path.basename(app, ".app"),
   );
-  const options = { run, quitApp, active };
+  const options = { run, quitApp, active, inspect };
   let unlock;
   if (apply) {
     mac.loadZip();
@@ -546,6 +602,7 @@ async function upgrade({
     try {
       atomic(path.join(state, "transaction.json"), {
         schemaVersion: 1,
+        identityFormat: "physical-v1",
         work: path.basename(work),
         original: installed,
         next: null,
@@ -596,6 +653,7 @@ async function upgrade({
         );
       const transaction = {
         schemaVersion: 1,
+        identityFormat: "physical-v1",
         work: path.basename(work),
         original: installed,
         next,
@@ -678,4 +736,10 @@ if (require.main === module) {
     });
 }
 
-module.exports = { upgrade, compareVersions, chooseRelease, parseArgs };
+module.exports = {
+  upgrade,
+  compareVersions,
+  chooseRelease,
+  parseArgs,
+  freshArchive,
+};

@@ -206,6 +206,14 @@ struct NotebookPageBrowser: View {
     private var submissions: [NotebookSubmission] { notebooks.submissions.filter { $0.noteId == noteId } }
     private enum BrowserTab: String, CaseIterable { case pages = "Pages", sent = "Sent snapshots" }
 
+    init(noteId: String, currentPageId: String, showSent: Bool = false, onOpen: @escaping (PadNotebookPage) -> Bool, onDelete: @escaping (PadNotebookPage) -> Void) {
+        self.noteId = noteId
+        self.currentPageId = currentPageId
+        self.onOpen = onOpen
+        self.onDelete = onDelete
+        _tab = State(initialValue: showSent ? .sent : .pages)
+    }
+
     var body: some View {
         NavigationStack {
             Group {
