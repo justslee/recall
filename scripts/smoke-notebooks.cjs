@@ -131,6 +131,13 @@ const reviewRows = (store) =>
         ANTHROPIC_API_KEY: "",
       },
     });
+    // Electron's inspector can attach before main has finished loading. Wait
+    // for the real renderer before requiring more app modules from the inspector;
+    // re-entering startup can capture partially initialized CommonJS exports.
+    const main = await app.firstWindow({ timeout: 30000 }),
+      errors = [];
+    main.on("pageerror", (error) => errors.push(error.message));
+    await expect(main.locator(".index-brand")).toBeVisible();
     await app.evaluate(({ app, clipboard, session, shell }) => {
       const require = process.mainModule.require.bind(process.mainModule),
         worker = require(
@@ -175,10 +182,6 @@ const reviewRows = (store) =>
         },
       );
     });
-    const main = await app.firstWindow(),
-      errors = [];
-    main.on("pageerror", (error) => errors.push(error.message));
-    await expect(main.locator(".index-brand")).toBeVisible();
     await main
       .getByRole("button", { name: "Settings & backups", exact: true })
       .click();
