@@ -1,6 +1,12 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const methods = [
   "snapshot",
+  "updateStatus",
+  "checkUpdate",
+  "installUpdate",
+  "cancelUpdate",
+  "chooseUpdateSource",
+  "clearUpdateSource",
   "padStatus",
   "padConfigure",
   "padPairing",
@@ -48,9 +54,23 @@ const methods = [
   "profileInfo",
   "configureLearning",
   "knowledgeSources",
-  "knowledgeStatus", "knowledgeSearch", "knowledgeFolders", "knowledgeRead", "knowledgeAsset", "knowledgeRefresh",
-  "knowledgeDraft", "knowledgeSave", "knowledgeCreate", "knowledgeDiscard", "knowledgeMove", "knowledgeCreateSpace",
-  "knowledgePractice", "knowledgeLink", "knowledgeAuthorPrompt", "knowledgeReveal", "knowledgeOpenLink",
+  "knowledgeStatus",
+  "knowledgeSearch",
+  "knowledgeFolders",
+  "knowledgeRead",
+  "knowledgeAsset",
+  "knowledgeRefresh",
+  "knowledgeDraft",
+  "knowledgeSave",
+  "knowledgeCreate",
+  "knowledgeDiscard",
+  "knowledgeMove",
+  "knowledgeCreateSpace",
+  "knowledgePractice",
+  "knowledgeLink",
+  "knowledgeAuthorPrompt",
+  "knowledgeReveal",
+  "knowledgeOpenLink",
   "knowledgeChooseFolder",
   "knowledgeTestSource",
   "knowledgeSaveSource",
@@ -113,6 +133,11 @@ const methods = [
   "challengeSource",
 ];
 contextBridge.exposeInMainWorld("recall", {
+  onUpdateEvent: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("recall:update-event", listener);
+    return () => ipcRenderer.removeListener("recall:update-event", listener);
+  },
   onKnowledgeEvent: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on("recall:knowledge-event", listener);

@@ -1060,7 +1060,7 @@ export function SpeakView({
                         <small>
                           {source.topic ||
                             (source.kind === "card"
-                              ? "Recall library"
+                              ? "Card Deck"
                               : "Knowledge base")}{" "}
                           · {source.kind === "card" ? "Card" : "KB note"}
                         </small>

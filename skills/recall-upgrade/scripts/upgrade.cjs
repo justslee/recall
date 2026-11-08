@@ -240,7 +240,13 @@ async function checksum(release, download, fetchImpl) {
   return matches[0][1];
 }
 
-async function downloadAsset(asset, expected, destination, fetchImpl) {
+async function downloadAsset(
+  asset,
+  expected,
+  destination,
+  fetchImpl,
+  progress,
+) {
   const response = await assetResponse(asset.browser_download_url, fetchImpl);
   if (!response.ok || !response.body)
     throw Error(`The release download failed (${response.status}).`);
@@ -248,6 +254,7 @@ async function downloadAsset(asset, expected, destination, fetchImpl) {
   const fd = fs.openSync(destination, "wx", 0o600);
   const hash = crypto.createHash("sha256");
   let size = 0;
+  let reported = -1;
   try {
     for (;;) {
       const { done, value } = await reader.read();
@@ -258,6 +265,11 @@ async function downloadAsset(asset, expected, destination, fetchImpl) {
       const bytes = Buffer.from(value);
       hash.update(bytes);
       fs.writeFileSync(fd, bytes);
+      const percent = Math.floor((size / asset.size) * 100);
+      if (percent !== reported) {
+        reported = percent;
+        progress({ phase: "downloading", percent });
+      }
     }
     if (size !== asset.size || hash.digest("hex") !== expected)
       throw Error("The release download size or checksum did not match.");
@@ -537,8 +549,11 @@ async function upgrade({
   launch = (target) =>
     run("/usr/bin/open", [target], {
       releaseError: "The upgraded app could not be opened.",
+      env: mac.guiEnvironment(),
     }),
   rename = fs.renameSync,
+  progress = () => {},
+  beforeLaunch = async () => {},
 } = {}) {
   if (platform !== "darwin" || arch !== "arm64")
     throw Error("Recall upgrades currently support Apple Silicon macOS.");
@@ -565,6 +580,7 @@ async function upgrade({
         return { status: "cleanup_pending", app };
     }
     mac.directory(app);
+    progress({ phase: "checking" });
     const installed = inspect(app, { run });
     const release = chooseRelease(await releases(fetchImpl), installed.version);
     const available = release.tag_name.replace(/^v/, "");
@@ -609,7 +625,9 @@ async function upgrade({
         committed: false,
       });
       journalWritten = true;
-      await downloadAsset(file, expected, zip, fetchImpl);
+      progress({ phase: "downloading", percent: 0, ...summary });
+      await downloadAsset(file, expected, zip, fetchImpl, progress);
+      progress({ phase: "verifying" });
       const name = mac.inspectMacArchive(zip);
       fs.mkdirSync(extract, { mode: 0o700 });
       run("/usr/bin/ditto", ["-x", "-k", zip, extract], {
@@ -643,6 +661,7 @@ async function upgrade({
       const priorRollback = fs.existsSync(rollback)
         ? inspect(rollback, { run }).identity
         : null;
+      progress({ phase: "ready_to_restart" });
       await quitApp(app, run);
       if (
         active(app, run) ||
@@ -670,6 +689,7 @@ async function upgrade({
       };
       atomic(path.join(state, "transaction.json"), transaction);
       journalWritten = true;
+      progress({ phase: "installing" });
       rename(app, path.join(work, "previous.app"));
       rename(candidate, app);
       if (inspect(app, { run, notarized: true }).identity !== next.identity)
@@ -677,6 +697,11 @@ async function upgrade({
       if (fs.existsSync(rollback))
         rename(rollback, path.join(work, "obsolete.app"));
       rename(path.join(work, "previous.app"), rollback);
+      await beforeLaunch({
+        ...summary,
+        installedVersion: available,
+        installedBuild: next.build,
+      });
       await launch(app);
       atomic(path.join(state, "transaction.json"), {
         ...transaction,
@@ -742,4 +767,5 @@ module.exports = {
   chooseRelease,
   parseArgs,
   freshArchive,
+  quit,
 };

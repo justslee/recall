@@ -81,7 +81,7 @@ export function DetailToolbar({
   onBack,
   onPrev,
   onNext,
-  backLabel = "Back to library",
+  backLabel = "Back to Card Deck",
 }) {
   return (
     <div className="review-toolbar">

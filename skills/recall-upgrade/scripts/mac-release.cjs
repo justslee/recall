@@ -31,6 +31,16 @@ function within(parent, child) {
   );
 }
 
+function guiEnvironment(env = process.env) {
+  const next = { ...env };
+  // The helper uses Electron as Node. Carrying that flag through LaunchServices
+  // makes the replacement exit as a command-line process instead of opening UI.
+  delete next.ELECTRON_RUN_AS_NODE;
+  delete next.NODE_OPTIONS;
+  delete next.NODE_PATH;
+  return next;
+}
+
 function defaultRun(command, args, options = {}) {
   const result = spawnSync(command, args, {
     encoding: "utf8",
@@ -454,6 +464,7 @@ function hashApp(app, io = fs) {
     .digest("hex");
 }
 module.exports = {
+  guiEnvironment,
   BUNDLE_ID,
   failure,
   within,

@@ -25,7 +25,7 @@ const { _electron: electron, expect } = require("@playwright/test"),
     ).toHaveCount(0);
     const catalogCards = snapshot.cards.filter((c) => c.catalog),
       deck = catalogCards[0].decks[0];
-    await page.getByRole("button", { name: "Library", exact: true }).click();
+    await page.getByRole("button", { name: "Card Deck", exact: true }).click();
     await page.getByLabel("Collection", { exact: true }).selectOption("all");
     await page.locator(".scope-popover summary").first().click();
     await page.getByRole("button", { name: "All topics", exact: true }).click();

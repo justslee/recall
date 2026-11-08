@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FolderOpen, DatabaseBackup, Download } from "lucide-react";
 import { useAppearance } from "./appearance";
 import { ConnectionsHub } from "./ConnectionsHub";
+import { UpdateSettings } from "./AppUpdates";
 
 function Setting({ title, description, value, action }) {
   return (
@@ -68,6 +69,7 @@ export function SettingsView({
         />
       )}
       <div hidden={section !== "general"}>
+        <UpdateSettings version={version} />
         <section className="settings-group">
           <span className="eyebrow">Appearance</span>
           <Setting
@@ -147,7 +149,7 @@ export function SettingsView({
           />
           <Setting
             title="Keyboard"
-            description="During review: Space or Enter reveals, 1–4 rates, S skips, ⌘Z undoes, Esc pauses. In the library: ⌘F searches; in card details, ← and → move between cards."
+            description="During review: Space or Enter reveals, 1–4 rates, S skips, ⌘Z undoes, Esc pauses. In Card Deck: ⌘F searches; in card details, ← and → move between cards."
             value="Always on"
           />
           <Setting

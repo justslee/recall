@@ -47,7 +47,7 @@ The [Verify workflow](https://github.com/justslee/recall/actions/workflows/verif
 ## 3. Follow only the README from a fresh clone
 
 - [ ] Commit the reviewed candidate and test `npm run setup` in a fresh clone with an isolated profile.
-- [ ] Verify **Try demo**, **Import cards** → Library and **Connect learning** → Learning connections.
+- [ ] Verify **Try demo**, **Import cards** → Card Deck and **Connect learning** → Learning connections.
 - [ ] Complete a Concepts/Math/Coding/Mixed review: math starts hidden, flip replaces the front, and widgets/code need explicit actions.
 - [ ] Connect Markdown/Obsidian scopes with explicit access and **Test connection**; the check must not author notes or change other sources.
 - [ ] Create a multi-destination KB: primary/mirror choices, preview without writes, explicit consent and safe retry without overwritten notes.

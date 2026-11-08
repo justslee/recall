@@ -213,7 +213,7 @@ async function study(format) {
     await nav("Review history");
     await expect(page.locator(".ledger-entry").first()).toBeVisible();
     await shot("demo-review-history");
-    await nav("Library");
+    await nav("Card Deck");
     await shot("demo-library");
 
     await settings("Learning connections");

@@ -224,7 +224,7 @@ async function run() {
     await page.setViewportSize({ width: 1420, height: 1100 });
     await page.getByRole("button", { name: "Knowledge", exact: true }).click();
     const constellation = page.getByRole("region", {
-      name: "Constellation knowledge graph",
+      name: "My Brain knowledge graph",
     });
     await expect(constellation).toBeVisible();
     await expect(page.locator(".constellation-knowledge-status")).toContainText(
@@ -232,7 +232,7 @@ async function run() {
     );
     const switcher = page.getByRole("group", { name: "Knowledge view" });
     await expect(
-      switcher.getByRole("button", { name: "Constellation", exact: true }),
+      switcher.getByRole("button", { name: "My Brain", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     const focus = page.locator(".constellation-evidence h2");
     const node = (id) =>
@@ -256,7 +256,7 @@ async function run() {
       if (await collapseAll.isVisible()) await collapseAll.click();
       else
         await page
-          .getByRole("navigation", { name: "Constellation hierarchy" })
+          .getByRole("navigation", { name: "My Brain hierarchy" })
           .getByRole("button", { name: "All knowledge", exact: true })
           .click();
       await expect(focus).toHaveText("Evidence behind the constellation");
@@ -602,7 +602,7 @@ async function run() {
       "\nA draft preserved while exploring.";
     await page.getByLabel("Write in Markdown").fill(draft);
     await switcher
-      .getByRole("button", { name: "Constellation", exact: true })
+      .getByRole("button", { name: "My Brain", exact: true })
       .click();
     await expect(constellation).toBeVisible();
     await page.keyboard.press("Meta+s");
@@ -614,7 +614,7 @@ async function run() {
     await switcher.getByRole("button", { name: "Notes", exact: true }).click();
     await expect(page.getByLabel("Write in Markdown")).toHaveValue(draft);
     await switcher
-      .getByRole("button", { name: "Constellation", exact: true })
+      .getByRole("button", { name: "My Brain", exact: true })
       .click();
     await constellation
       .getByRole("button", {

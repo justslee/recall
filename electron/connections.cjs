@@ -279,4 +279,4 @@ function status(folder, options = {}) {
     ),
   };
 }
-module.exports = { settings, save, connect, disconnect, status, replaceBlock };
+module.exports = { settings, save, connect, disconnect, status, replaceBlock, ownsConnection };

@@ -144,7 +144,7 @@ Never bypass this through profile settings. A backup restore clears native-code 
 
 [Package Recall and keep it in Applications](SETUP.md#keep-recall-in-applications), then launch it once. Development `npm start` alone does not install the protocol handler.
 
-Some chat clients block custom URL schemes. Search the exact card title in **Library** instead. Links identify a card in the receiving app's local library; they do not transfer cards or choose another data profile.
+Some chat clients block custom URL schemes. Search the exact card title in **Card Deck** instead. Links identify a card in the receiving app's local library; they do not transfer cards or choose another data profile.
 
 ### Recall says the library is in use
 
