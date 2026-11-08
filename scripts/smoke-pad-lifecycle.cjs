@@ -33,7 +33,14 @@ const before = {
 fixture.close();
 
 (async () => {
-  let application, child;
+  let application,
+    child,
+    phase = "launch";
+  const deadline = setTimeout(() => {
+    console.error(`Lifecycle check timed out during ${phase}`);
+    if (child?.exitCode === null) child.kill("SIGKILL");
+    process.exit(1);
+  }, 120000);
   try {
     application = await electron.launch({
       ...(process.env.RECALL_TEST_EXECUTABLE
@@ -46,7 +53,8 @@ fixture.close();
       timeout: 30000,
     });
     child = application.process();
-    let page = await application.firstWindow();
+    phase = "opening the initial card";
+    let page = await application.firstWindow({ timeout: 30000 });
     page.setDefaultTimeout(15000);
     await expect(
       page.getByRole("heading", { name: math.title, exact: true }),
@@ -125,6 +133,7 @@ fixture.close();
       },
       { folder, shutdownFile },
     );
+    phase = "importing handwriting";
     const attempt = await page.evaluate(
       async ({ cardId, png }) => {
         const bytes = Uint8Array.from(atob(png), (char) => char.charCodeAt(0));
@@ -151,6 +160,7 @@ fixture.close();
     assert.equal(savedPage.index, 0);
     assert.equal(savedPage.name, "Synthetic page.png");
     await expect(page.locator(".answer")).toHaveCount(0);
+    phase = "starting the receiver";
     const status = await page.evaluate(() =>
       window.recall.padConfigure({ enabled: true }),
     );
@@ -198,6 +208,7 @@ fixture.close();
       ).toBeVisible();
       return page;
     };
+    phase = "closing and reopening windows";
     await closeWindow();
     await reopened(() =>
       application.evaluate(({ app }) => app.emit("activate")),
@@ -230,6 +241,7 @@ fixture.close();
     ).toBeVisible();
     await expect(page.locator(".answer")).toHaveCount(0);
 
+    phase = "repeated quit";
     const exited = application.waitForEvent("close", { timeout: 20000 });
     await application.evaluate(({ app }) => {
       setTimeout(() => {
@@ -238,7 +250,9 @@ fixture.close();
       }, 25);
     });
     await exited;
-    assert.equal(child.exitCode, 0);
+    // The Electron debugger can disconnect before Node observes process exit.
+    // Wait for the actual exit rather than asserting on a still-null status.
+    await expect.poll(() => child.exitCode, { timeout: 10000 }).toBe(0);
     const shutdown = JSON.parse(fs.readFileSync(shutdownFile, "utf8"));
     assert(
       shutdown.quitEvents >= 3,
@@ -251,6 +265,7 @@ fixture.close();
     );
     assert.equal(shutdown.closes, 1);
     assert.equal(shutdown.bridgeStopped, true);
+    phase = "verifying saved data";
     const after = new Store(folder);
     try {
       assert.deepEqual(
@@ -273,8 +288,22 @@ fixture.close();
     console.log(
       "PASS real handwriting IPC/native image intake, page roundtrip, hidden answers and schedules, background receiver, activate/deep-link/second-launch reopen, repeated quit and released writer. Bonjour is inert; no real API, iPad or chat actions.",
     );
+  } catch (error) {
+    // Print the original failure before cleanup, which can itself stall after
+    // a window/quit failure. Never turn a failed assertion into a passing test.
+    console.error(`Lifecycle check failed during ${phase}:`, error);
+    throw error;
   } finally {
-    if (child?.exitCode === null) await application.close();
+    phase = "cleanup";
+    if (child?.exitCode === null) {
+      const killTimer = setTimeout(() => child.kill("SIGKILL"), 5000);
+      try {
+        await application.close();
+      } finally {
+        clearTimeout(killTimer);
+      }
+    }
+    clearTimeout(deadline);
   }
 })().catch((error) => {
   console.error(error);
