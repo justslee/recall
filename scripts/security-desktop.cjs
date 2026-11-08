@@ -2,7 +2,6 @@ const fs = require("node:fs"),
   path = require("node:path"),
   assert = require("node:assert/strict");
 const repo = path.resolve(__dirname, "..");
-const os = require("node:os");
 const evidence = path.join(repo, "evidence");
 fs.mkdirSync(evidence, { recursive: true });
 const { _electron: electron, expect } = require(
@@ -11,9 +10,7 @@ const { _electron: electron, expect } = require(
 const { Store } = require(repo + "/electron/store.cjs");
 const { cardLink } = require(repo + "/electron/card-links.cjs");
 (async () => {
-  const folder = fs.mkdtempSync(
-    path.join(os.tmpdir(), "recall-security-desktop-"),
-  );
+  const folder = require("../electron/verification-mode.cjs").createProfile();
   const s = new Store(folder);
   const base = require(repo + "/examples/demo.json").cards[0];
   const cssCard = {
@@ -54,6 +51,35 @@ const { cardLink } = require(repo + "/electron/card-links.cjs");
     answer:
       '```mermaid\n%%{init: {"themeCSS":"body{--recall-security-probe:escaped!important}"}}%%\nflowchart LR\n  A[Recall a concept] --> B[Test an example]\n```',
   };
+  const diagramCases = [
+    [
+      "sequence",
+      "sequenceDiagram\n participant Learner\n participant Tutor\n Learner->>Tutor: Explain the method\n Tutor-->>Learner: Check the example",
+      "Explain the method",
+    ],
+    [
+      "state",
+      "stateDiagram-v2\n [*] --> Draft\n Draft --> Ready: Validate\n Ready --> [*]",
+      "Validate",
+    ],
+    [
+      "class",
+      "classDiagram\n class Notebook {\n +String title\n }\n class Page\n Notebook --> Page: contains",
+      "Notebook",
+    ],
+    [
+      "entity",
+      "erDiagram\n NOTEBOOK ||--o{ PAGE : contains\n NOTEBOOK {\n string title\n }",
+      "NOTEBOOK",
+    ],
+  ].map(([name, source, label]) => ({
+    ...base,
+    id: `audit:mermaid-${name}`,
+    title: `Synthetic ${name} diagram`,
+    widgetsAllowed: false,
+    answer: `\`\`\`mermaid\n${source}\n\`\`\``,
+    label,
+  }));
   const untrustedCode = {
     ...require(repo + "/examples/demo.json").cards.find(
       (c) => c.kind === "code",
@@ -66,6 +92,7 @@ const { cardLink } = require(repo + "/electron/card-links.cjs");
     disabledCard,
     authoredSvgCard,
     mermaidCard,
+    ...diagramCases,
     untrustedCode,
   ]);
   s.close();
@@ -79,10 +106,18 @@ const { cardLink } = require(repo + "/electron/card-links.cjs");
             args: [cardLink(cssCard.id)],
           }
         : { args: [repo, cardLink(cssCard.id)] }),
-      env: { ...process.env, RECALL_DATA_DIR: folder },
+      env: { ...process.env, RECALL_DATA_DIR: folder, RECALL_VERIFY: "1" },
       timeout: 30000,
     });
     const p = await app.firstWindow();
+    assert.equal(
+      await app.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows().some(
+          (w) => w.isVisible() || w.isFocused(),
+        ),
+      ),
+      false,
+    );
     p.setDefaultTimeout(12000);
     const logs = [],
       pageErrors = [];
@@ -144,6 +179,35 @@ const { cardLink } = require(repo + "/electron/card-links.cjs");
     }
     result.mermaid =
       "Rendered isolated image; injected global CSS did not escape";
+    for (const diagram of diagramCases) {
+      await app.evaluate(
+        ({ app }, url) => app.emit("open-url", { preventDefault() {} }, url),
+        cardLink(diagram.id),
+      );
+      await p
+        .getByRole("button", { name: "Reveal answer", exact: true })
+        .click();
+      for (const theme of ["dark", "light"]) {
+        await p.emulateMedia({ colorScheme: theme });
+        await p.waitForFunction(
+          () =>
+            document.querySelector(".answer .diagram img")?.naturalWidth > 0,
+        );
+        const src = await p.locator(".answer .diagram img").getAttribute("src");
+        assert.ok(src.startsWith("data:image/svg+xml;charset=utf-8,"));
+        const svg = decodeURIComponent(src.slice(src.indexOf(",") + 1));
+        assert.ok(
+          svg.includes(diagram.label),
+          `${diagram.id}: missing label in ${theme}`,
+        );
+        assert.ok(
+          !/<(?:script|foreignObject)\b/i.test(svg),
+          "Diagrams remain inert SVG images",
+        );
+      }
+    }
+    result.diagramCompatibility =
+      "Sequence, state, class and entity diagrams render with labels in both appearances";
     await app.evaluate(
       ({ app }, url) => app.emit("open-url", { preventDefault() {} }, url),
       cardLink(authoredSvgCard.id),
