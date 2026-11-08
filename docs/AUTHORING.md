@@ -28,7 +28,7 @@ review, and missing upstream cards are retained.
 
 Recall can stay open during imports. With `--apply`, the CLI queues an import for
 the running app's writer when that library is in use. The app applies it within
-about five seconds and refreshes the shelf and Library, preserving active study
+about five seconds and refreshes the shelf and Card Deck, preserving active study
 and drafts. When the app is closed, imports apply immediately.
 
 A queued request is not yet an imported card. Use the returned `requestId` to

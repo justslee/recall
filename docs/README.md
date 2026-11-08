@@ -2,7 +2,7 @@
 
 **[Knowledge space →](KNOWLEDGE_SPACE.md)** Write, find and practice local notes in the current source build.
 
-**[Constellation and expertise →](CONSTELLATION.md)** Explore broader-to-specific topics, maintain their hierarchy, and understand the incremental review-based expertise index.
+**[My Brain and expertise →](CONSTELLATION.md)** Explore broader-to-specific topics, maintain their hierarchy, and understand the incremental review-based expertise index.
 
 [Back to Recall](../README.md)
 

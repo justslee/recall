@@ -174,7 +174,7 @@ export function Constellation({
         .then(async () => {
           if (!api.constellation)
             throw Error(
-              "This Recall runtime needs the Constellation update. Your notes are available in Notes.",
+              "Update Recall to use My Brain. Your notes are available in Notes.",
             );
           for (let attempt = 0; attempt < 3; attempt++) {
             const nodes = new Map(),
@@ -756,7 +756,7 @@ export function Constellation({
   return (
     <section
       className="recall-constellation"
-      aria-label="Constellation knowledge graph"
+      aria-label="My Brain knowledge graph"
       hidden={!active}
     >
       <div className="constellation-toolbar">
@@ -907,7 +907,7 @@ export function Constellation({
           )}
           <div className="constellation-navigation">
             <nav
-              aria-label="Constellation hierarchy"
+              aria-label="My Brain hierarchy"
               className="constellation-breadcrumbs"
             >
               {[...data.ancestors, data.focus].map((n, i, list) => (

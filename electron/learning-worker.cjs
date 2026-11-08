@@ -256,4 +256,4 @@ async function prepare(
     release();
   }
 }
-module.exports = { prepare, request, preview, recover, executable, cancel };
+module.exports = { prepare, request, preview, recover, executable, cancel, isBusy: () => active.size > 0 };

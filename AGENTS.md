@@ -10,7 +10,7 @@ This is a local Mac app; do not add hosting or a required account.
 Topics are broad knowledge domains. Decks are collections; tags describe narrow concepts.
 Concept, Math and Coding are first-class card formats, chosen by learning objective.
 Follow macOS appearance: dark Forest Glass and warm ivory/sage light surfaces. Preserve matching, spacious coding workspaces. Theme changes must not remount editors or reset attempts.
-Math solutions must start hidden in Study and Library, with an explicit show/hide toggle.
+Math solutions must start hidden in Study and Card Deck, with an explicit show/hide toggle.
 Use rendered Mermaid or meaningful interactive visuals on card backs where helpful; ASCII diagrams belong only in recoverable source notes, never as the main visual explanation.
 
 ## Execution and preservation

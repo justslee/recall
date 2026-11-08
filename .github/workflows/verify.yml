@@ -46,6 +46,7 @@ jobs:
       - run: npm run test:live-imports
       - run: npm run test:progress
       - run: npm run test:connections
+      - run: npm run test:updates
       - run: node scripts/smoke-knowledge-setup.cjs
       - run: npm run test:knowledge-bootstrap
       - run: npm run test:knowledge-space
@@ -60,6 +61,9 @@ jobs:
       - run: npm run audit:release
       - run: npm run package
       - run: npm run audit:package
+      - run: npm run test:updates
+        env:
+          RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall
       - run: npm run test:visuals
         env:
           RECALL_TEST_EXECUTABLE: release/Recall-darwin-arm64/Recall.app/Contents/MacOS/Recall

@@ -45,6 +45,7 @@ const KnowledgeSpace = React.lazy(() =>
 );
 import { SpeakView } from "./SpeakView";
 import { SettingsView } from "./SettingsView";
+import { UpdateProgress } from "./AppUpdates";
 import { PadStudyFollower, TutorPadWorkspace } from "./Handwriting";
 import { WelcomeGuide } from "./WelcomeGuide";
 import { AuthorForm, NewDeck } from "./AuthorForm";
@@ -63,7 +64,7 @@ const ratingKeys = { 1: "Again", 2: "Hard", 3: "Good", 4: "Easy" };
 const eyebrows = {
   study: "Study desk",
   selftest: "Daily learning",
-  library: "Your knowledge",
+  library: "Card Deck",
   history: "Your progress",
   progress: "Your learning journal",
   speak: "Speaking practice",
@@ -343,7 +344,7 @@ function App() {
         if (!card)
           return fail(
             new Error(
-              "This card isn't in this Recall library. Search the library or ask for an updated link.",
+              "This card isn't in your Card Deck. Search by title or ask for an updated link.",
             ),
           );
         setData(next);
@@ -685,7 +686,7 @@ function App() {
           : selection.deck
       : {
           selftest: "Your self test",
-          library: "A library that stays with you.",
+          library: "Your cards, ready to revisit.",
           catalog: catalogTitle,
           history: "Every attempt has a place.",
           progress: "What’s staying with you?",
@@ -728,7 +729,7 @@ function App() {
         <nav className="index-nav" aria-label="Main">
           {[
             ["study", "Study desk", BookOpen],
-            ["library", "Library", Library],
+            ["library", "Card Deck", Library],
             ["knowledge", "Knowledge", FileText],
             ["selftest", "Self test", CalendarCheck],
             ["speak", "Speak", Mic],
@@ -1054,7 +1055,7 @@ function App() {
               onToggleWide={() => setWide(!expanded)}
               index={detailIndex}
               total={detailCards.length}
-              backLabel={detailIds ? "Back to challenges" : "Back to library"}
+              backLabel={detailIds ? "Back to challenges" : "Back to Card Deck"}
               onBack={() => go(detailIds ? "catalog" : "library")}
               onPrev={() => step(-1)}
               onNext={() => step(1)}
@@ -1202,6 +1203,7 @@ function App() {
         </footer>
       </main>
       <Toast toast={toast} onDismiss={() => setToast(null)} />
+      <UpdateProgress onOpenSettings={() => go("settings")} />
     </div>
   );
 }

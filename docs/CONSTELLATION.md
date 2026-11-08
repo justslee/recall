@@ -1,6 +1,6 @@
-# Constellation and expertise
+# My Brain and expertise
 
-Knowledge opens to Constellation. All domain roots stay on one canvas while selecting a topic expands its children in place. Open several branches to compare them and follow their connections; use **Collapse branch** or **Collapse all** to simplify the view. Pinch to zoom, drag to pan, or use the zoom and **Fit all** controls. Breadcrumbs preserve the selected path. Notes remains available beside Constellation; opening a linked note uses the normal reader and draft-preservation workflow.
+Knowledge opens to My Brain. All domain roots stay on one canvas while selecting a topic expands its children in place. Open several branches to compare them and follow their connections; use **Collapse branch** or **Collapse all** to simplify the view. Pinch to zoom, drag to pan, or use the zoom and **Fit all** controls. Breadcrumbs preserve the selected path. Notes remains available beside My Brain; opening a linked note uses the normal reader and draft-preservation workflow.
 
 The app loads expanded nodes and connections automatically through bounded requests, checking that the batches belong to the same graph revision. These are internal loading boundaries, not user-facing pages or a six-node display limit. At wide zoom levels, labels are selected for the viewport while the other node markers remain on the canvas. **Find on this canvas** searches the loaded, expanded graph and provides selectable results, including nodes whose labels are not currently shown. Expand a branch to include its children in that search. Keyboard zoom, pan and Fit controls supplement pointer gestures.
 

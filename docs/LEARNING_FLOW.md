@@ -37,4 +37,4 @@ Open **Progress** for your **Review journal**. Choose 7, 28 or 90 days. Select a
 
 “Recalled” includes **Hard, Good and Easy**; Hard still deserves practice. Skips, undone ratings and practice runs are excluded from these scored-review charts. Practice ratings remain a separate count. These are self-ratings, not independently measured retention or a prediction of permanent mastery.
 
-Use **Knowledge → Constellation** for the topic graph, relationships and the provisional review-based expertise index. Atlas is no longer a second dashboard tab. Removing that view does not remove its underlying recorded reviews, explanations, code attempts or handwriting evidence. [Constellation and its evidence boundaries](CONSTELLATION.md)
+Use **Knowledge → My Brain** for the topic graph, relationships and the provisional review-based expertise index. Atlas is no longer a second dashboard tab. Removing that view does not remove its underlying recorded reviews, explanations, code attempts or handwriting evidence. [My Brain and its evidence boundaries](CONSTELLATION.md)

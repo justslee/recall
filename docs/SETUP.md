@@ -49,7 +49,7 @@ Your empty study desk offers three starting points:
 | Action                  | What it does                                                                                     |
 | :---------------------- | :----------------------------------------------------------------------------------------------- |
 | **Try a short session** | Adds three original sample cards: a concept, a calculation and a coding exercise.                |
-| **Import cards**        | Opens Anki import in **Library**. Your original deck stays unchanged; inspect the import report. |
+| **Import cards**        | Opens Anki import in **Card Deck**. Your original deck stays unchanged; inspect the import report. |
 | **Bring my learning**   | Opens settings for your knowledge sources and assistants. You can do this later.                 |
 
 <details>
@@ -67,7 +67,7 @@ On **Study desk**, choose a collection or topic and a study format: **Concepts**
 
 Start a review. Answer from memory, then **Flip card** or reveal the worked solution. Choose **Again**, **Hard**, **Good** or **Easy** yourself; that rating schedules the next review. Solutions stay hidden until you choose to see them. Interactive explanations appear on cards where they help.
 
-**Library** is where you browse, search, edit and import. **Progress** and **Review history** reflect your actual study. [Study walkthrough →](demos/STUDY.md)
+**Card Deck** is where you browse, search, edit and import. **Progress** and **Review history** reflect your actual study. [Study walkthrough →](demos/STUDY.md)
 
 ### Optional coding runtimes
 
@@ -196,9 +196,23 @@ This is a Codex-first beta. One physical-iPad submission has been inspected in a
 
 ## Update an existing installation
 
+### Update inside Recall
+
+Available in Mac v0.6.0-beta.10 and later. Older apps can use the assistant or manual steps below once to install the version containing this button.
+
+1. Finish any recording, evaluation, coding run or paper transfer.
+2. Open **Settings & backups → General → Recall updates → Check for updates**.
+3. Choose **Update & restart**. Recall downloads and verifies the published app, replaces it at the existing path, and reopens the same learning profile. Download progress stays visible; you can cancel before installation starts.
+
+Existing Codex/Claude connections refresh after restart. Start fresh assistant chats to load their updated instructions. A connection that changed ownership or paths is preserved and flagged for attention. One previous app remains for recovery; superseded managed copies and downloads are removed. The updater never deletes learning profiles or restores an older learning database.
+
+**Have a source clone too?** Under **Also update my source code**, choose your existing `justslee/recall` repository once. The update action also fetches the latest `main` and advances a clean checkout. It does not reset local changes, switch branches, run Git hooks, install dependencies or build source. A dirty, diverged or custom checkout stays unchanged with a separate message; the signed app can still update. The source branch can contain changes beyond the published release. Source ZIP folders and running development copies retain the manual workflow below.
+
+Updates run only when requested. No automatic installation, GitHub sign-in or separate Node runtime is required. Apps running from a disk image or macOS temporary download location must first be moved into Applications.
+
 ### Update with an assistant
 
-Install the public [`recall-upgrade`](../skills/recall-upgrade/SKILL.md) folder through your assistant's skill installer or the Recall plugin, then start a fresh chat. For example, ask Codex **“Install the recall-upgrade skill from justslee/recall, path skills/recall-upgrade.”** This source change must be available on the selected Git branch. The next Mac source build also installs it globally when connecting Codex or Claude Code in **Connections**. An existing unrelated skill with the same name is preserved.
+Install the public [`recall-upgrade`](../skills/recall-upgrade/SKILL.md) folder through your assistant's skill installer or the Recall plugin, then start a fresh chat. For example, ask Codex **“Install the recall-upgrade skill from justslee/recall, path skills/recall-upgrade.”** Recall also installs it globally when connecting Codex or Claude Code in **Connections**. An existing unrelated skill with the same name is preserved.
 
 Ask **“Use recall-upgrade to update Recall.”** The skill uses the installed app's bundled runtime, so no separate Node installation or GitHub login is needed. It follows the installed release channel: stable installations use stable releases; beta installations include published betas. A version-check request only checks. An explicit upgrade request downloads and verifies the official ZIP, quits Recall gracefully when replacement is needed, replaces it at the same path, and reopens it. A same-version build may need one download before its build number can be confirmed.
 

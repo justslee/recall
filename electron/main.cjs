@@ -55,6 +55,7 @@ let store,
   paperConnection,
   paperConnectionError,
   knowledgeSpace,
+  updates,
   tray,
   reopenWindow,
   shutdownStarted = false,
@@ -72,7 +73,7 @@ function acceptCardLink(url) {
     pendingCardLink = { id: parseCardLink(url) };
   } catch {
     pendingCardLink = {
-      error: "This Recall link is invalid. Open the card from your library.",
+      error: "This Recall link is invalid. Open the card from Card Deck.",
     };
   }
   if (win && !win.isDestroyed()) {
@@ -121,6 +122,7 @@ const handle = (name, fn) =>
       invisibleVerification &&
       !new Set([
         "snapshot",
+        "updateStatus",
         "consumeCardLink",
         "openLearningCard",
         "reviewHistory",
@@ -162,14 +164,30 @@ const handle = (name, fn) =>
         "challengeAttempts",
         "challengeSource",
       ]).has(name)
-    )
-      {
-        // Exercise authoring only against fixtures inside the marked QA profile.
-        const fixtureWrite = ["knowledgeDraft", "knowledgeSave", "knowledgeCreate", "knowledgeDiscard", "knowledgeMove", "knowledgeLink"].includes(name);
-        const source = fixtureWrite && require("../adapters/knowledge.cjs").source(store.folder, args[0]?.sourceId);
-        if (!source?.root || !fs.realpathSync(source.root).startsWith(fs.realpathSync(store.folder) + path.sep))
-          throw Error("This action is disabled during invisible verification.");
-      }
+    ) {
+      // Exercise authoring only against fixtures inside the marked QA profile.
+      const fixtureWrite = [
+        "knowledgeDraft",
+        "knowledgeSave",
+        "knowledgeCreate",
+        "knowledgeDiscard",
+        "knowledgeMove",
+        "knowledgeLink",
+      ].includes(name);
+      const source =
+        fixtureWrite &&
+        require("../adapters/knowledge.cjs").source(
+          store.folder,
+          args[0]?.sourceId,
+        );
+      if (
+        !source?.root ||
+        !fs
+          .realpathSync(source.root)
+          .startsWith(fs.realpathSync(store.folder) + path.sep)
+      )
+        throw Error("This action is disabled during invisible verification.");
+    }
     if (tutorRequest) {
       if (name === "paperAttempts") return pad.paper.attempts(null, "tutor");
       if (
@@ -193,6 +211,48 @@ app.whenReady().then(async () => {
   if (app.isPackaged && !process.env.RECALL_DATA_DIR)
     app.setAsDefaultProtocolClient("recall");
   store = new Store(app.getPath("userData"));
+  const { AppUpdates } = require("./app-updates.cjs");
+  updates = new AppUpdates({
+    profile: store.folder,
+    appPath: app.isPackaged ? path.resolve(process.execPath, "../../..") : null,
+    packaged: app.isPackaged,
+    version: app.getVersion(),
+    busy: () =>
+      !!(
+        voice?.active ||
+        voice?.assessment ||
+        speak?.assessment ||
+        runner.active ||
+        pad?.assessment?.active ||
+        pad?.draining ||
+        pad?.bridge?.pendingWrites ||
+        require("./learning-worker.cjs").isBusy()
+      ),
+    quit: () => app.quit(),
+    emit: (status) => {
+      if (win && !win.isDestroyed())
+        win.webContents.send("recall:update-event", status);
+    },
+  });
+  try {
+    updates.refreshAfterRestart();
+  } catch {
+    /* The persisted request is retained for retry. */
+  }
+  handle("updateStatus", () => updates.status());
+  handle("checkUpdate", () => updates.start(false));
+  handle("installUpdate", () => updates.start(true));
+  handle("cancelUpdate", () => updates.cancel());
+  handle("chooseUpdateSource", async () => {
+    const result = await dialog.showOpenDialog(win, {
+      title: "Choose your Recall source repository",
+      properties: ["openDirectory"],
+    });
+    return result.canceled
+      ? updates.status()
+      : updates.chooseSource(result.filePaths[0]);
+  });
+  handle("clearUpdateSource", () => updates.chooseSource(null));
   const { VoiceService, allowsMicrophone } = require("./voice.cjs");
   voice = new VoiceService({
     folder: store.folder,
@@ -530,7 +590,15 @@ app.whenReady().then(async () => {
       ),
     }),
   );
-  handle("snapshot", () => store.snapshot());
+  handle("snapshot", () => {
+    const snapshot = store.snapshot();
+    try {
+      updates.confirmReady(app.getVersion());
+    } catch {
+      /* Update receipts must not prevent ordinary library access. */
+    }
+    return snapshot;
+  });
   handle("reviewHistory", (options) =>
     require("./review-history.cjs").page(store, options),
   );
@@ -586,30 +654,76 @@ app.whenReady().then(async () => {
   const knowledgeModule = require("./knowledge-space.cjs");
   knowledgeSpace = new knowledgeModule.KnowledgeSpace(store.folder, (event) => {
     require("./constellation.cjs").invalidateNotes(store.folder);
-    if (win && !win.isDestroyed()) win.webContents.send("recall:knowledge-event", event);
+    if (win && !win.isDestroyed())
+      win.webContents.send("recall:knowledge-event", event);
   });
   // Keep the derived index fresh for assistant lookups even before Knowledge is opened.
   setImmediate(() => knowledgeSpace.call("status").catch(() => {}));
-  for (const [name, method] of Object.entries({ knowledgeStatus: "status", knowledgeSearch: "search", knowledgeFolders: "folders", knowledgeRead: "read", knowledgeAsset: "asset", knowledgeRefresh: "refresh", knowledgeDraft: "draft", knowledgeSave: "save", knowledgeCreate: "create", knowledgeDiscard: "discard", knowledgeMove: "move" }))
-    handle(name, input => knowledgeSpace.call(method, input));
+  for (const [name, method] of Object.entries({
+    knowledgeStatus: "status",
+    knowledgeSearch: "search",
+    knowledgeFolders: "folders",
+    knowledgeRead: "read",
+    knowledgeAsset: "asset",
+    knowledgeRefresh: "refresh",
+    knowledgeDraft: "draft",
+    knowledgeSave: "save",
+    knowledgeCreate: "create",
+    knowledgeDiscard: "discard",
+    knowledgeMove: "move",
+  }))
+    handle(name, (input) => knowledgeSpace.call(method, input));
   handle("knowledgeCreateSpace", async () => {
-    const result = await dialog.showSaveDialog(win, { title: "Create a knowledge space", buttonLabel: "Create space", defaultPath: path.join(app.getPath("documents"), "My Knowledge"), properties: ["createDirectory"] });
+    const result = await dialog.showSaveDialog(win, {
+      title: "Create a knowledge space",
+      buttonLabel: "Create space",
+      defaultPath: path.join(app.getPath("documents"), "My Knowledge"),
+      properties: ["createDirectory"],
+    });
     if (result.canceled || !result.filePath) return null;
-    const source = require("./knowledge-files.cjs").createSpace(store.folder, result.filePath);
+    const source = require("./knowledge-files.cjs").createSpace(
+      store.folder,
+      result.filePath,
+    );
     await knowledgeSpace.call("refresh");
     return source;
   });
-  handle("knowledgePractice", async input => knowledgeModule.practiceLinks(store.folder, await knowledgeSpace.call("read", input), store.cards()));
-  handle("knowledgeLink", async input => knowledgeModule.linkCard(store.folder, await knowledgeSpace.call("read", input), input.cardId, store.cards(), !!input.remove));
-  handle("knowledgeAuthorPrompt", async input => knowledgeModule.authorPrompt(store.folder, await knowledgeSpace.call("read", input)));
-  handle("knowledgeReveal", async input => {
+  handle("knowledgePractice", async (input) =>
+    knowledgeModule.practiceLinks(
+      store.folder,
+      await knowledgeSpace.call("read", input),
+      store.cards(),
+    ),
+  );
+  handle("knowledgeLink", async (input) =>
+    knowledgeModule.linkCard(
+      store.folder,
+      await knowledgeSpace.call("read", input),
+      input.cardId,
+      store.cards(),
+      !!input.remove,
+    ),
+  );
+  handle("knowledgeAuthorPrompt", async (input) =>
+    knowledgeModule.authorPrompt(
+      store.folder,
+      await knowledgeSpace.call("read", input),
+    ),
+  );
+  handle("knowledgeReveal", async (input) => {
     const note = await knowledgeSpace.call("read", input);
-    const source = require("../adapters/knowledge.cjs").source(store.folder, note.sourceId);
-    shell.showItemInFolder(require("./knowledge-files.cjs").checkedPath(source, note.path));
+    const source = require("../adapters/knowledge.cjs").source(
+      store.folder,
+      note.sourceId,
+    );
+    shell.showItemInFolder(
+      require("./knowledge-files.cjs").checkedPath(source, note.path),
+    );
   });
-  handle("knowledgeOpenLink", async value => {
+  handle("knowledgeOpenLink", async (value) => {
     const url = new URL(value);
-    if (!["https:", "http:"].includes(url.protocol)) throw Error("Only web links can open externally.");
+    if (!["https:", "http:"].includes(url.protocol))
+      throw Error("Only web links can open externally.");
     await shell.openExternal(url.toString());
   });
   handle("knowledgeSources", () => knowledgeSetup.list());
@@ -625,12 +739,24 @@ app.whenReady().then(async () => {
   handle("knowledgeTestSource", (draft) => knowledgeSetup.testSource(draft));
   handle("knowledgeSaveSource", async (draft, testId) => {
     const result = knowledgeSetup.saveSource(draft, testId);
-    knowledgeSpace.call("refresh").catch(error => { if (win && !win.isDestroyed()) win.webContents.send("recall:knowledge-event", { event: "error", error: error.message }); });
+    knowledgeSpace.call("refresh").catch((error) => {
+      if (win && !win.isDestroyed())
+        win.webContents.send("recall:knowledge-event", {
+          event: "error",
+          error: error.message,
+        });
+    });
     return result;
   });
   handle("knowledgeRemoveSource", async (id) => {
     const result = knowledgeSetup.removeSource(id);
-    knowledgeSpace.call("refresh").catch(error => { if (win && !win.isDestroyed()) win.webContents.send("recall:knowledge-event", { event: "error", error: error.message }); });
+    knowledgeSpace.call("refresh").catch((error) => {
+      if (win && !win.isDestroyed())
+        win.webContents.send("recall:knowledge-event", {
+          event: "error",
+          error: error.message,
+        });
+    });
     return result;
   });
   handle("knowledgeSourcePrompt", (id) => knowledgeSetup.assistantPrompt(id));
@@ -655,7 +781,13 @@ app.whenReady().then(async () => {
   );
   handle("knowledgeBootstrapCreate", async (input, previewId) => {
     const result = knowledgeBootstrap.create(input, previewId);
-    knowledgeSpace.call("refresh").catch(error => { if (win && !win.isDestroyed()) win.webContents.send("recall:knowledge-event", { event: "error", error: error.message }); });
+    knowledgeSpace.call("refresh").catch((error) => {
+      if (win && !win.isDestroyed())
+        win.webContents.send("recall:knowledge-event", {
+          event: "error",
+          error: error.message,
+        });
+    });
     return result;
   });
   handle("knowledgeBootstrapPrompt", (id) =>
@@ -759,7 +891,8 @@ app.whenReady().then(async () => {
         !!require("./card-revisions.cjs").applyPending(store).applied ||
         changed;
       changed =
-        !!require("./taxonomy-queue.cjs").applyPending(store).changed || changed;
+        !!require("./taxonomy-queue.cjs").applyPending(store).changed ||
+        changed;
       const expertise = require("./expertise.cjs").refresh(store, {
         budget: 100,
       });

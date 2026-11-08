@@ -217,7 +217,13 @@ class PadBridge {
         headersTimeout: 15000,
         maxHeaderSize: 8192,
       },
-      (req, res) => this.request(req, res),
+      (req, res) => {
+        const writing = ["POST", "PUT", "DELETE"].includes(req.method);
+        if (writing) this.pendingWrites = (this.pendingWrites || 0) + 1;
+        this.request(req, res).finally(() => {
+          if (writing) this.pendingWrites--;
+        });
+      },
     );
     this.wss = new WebSocketServer({ noServer: true, maxPayload: 4096 });
     this.server.on("upgrade", (req, socket, head) => {

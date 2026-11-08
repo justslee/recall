@@ -66,7 +66,7 @@ const fs = require("node:fs"),
       .getByRole("button", { name: "Import cards", exact: true })
       .click();
     await expect(
-      page.getByRole("button", { name: "Library", exact: true }),
+      page.getByRole("button", { name: "Card Deck", exact: true }),
     ).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("status")).toContainText("Import cancelled");
     assert.equal(
@@ -197,7 +197,7 @@ const fs = require("node:fs"),
     await expect(page.getByRole("status")).toContainText("Saved.");
     assert.deepEqual(errors, []);
     console.log(
-      "PASS public app: three welcome paths, Library import routing/cancellation, guided learning entry, empty profile, demo, both themes, widget behavior/isolation, hidden math, Monaco/Python, capture opt-in",
+      "PASS public app: three welcome paths, Card Deck import routing/cancellation, guided learning entry, empty profile, demo, both themes, widget behavior/isolation, hidden math, Monaco/Python, capture opt-in",
     );
   } finally {
     if (app) await app.close();

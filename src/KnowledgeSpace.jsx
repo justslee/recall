@@ -24,7 +24,7 @@ import {
   Save,
   AlertCircle,
   MoveRight,
-  Orbit,
+  Brain,
 } from "lucide-react";
 import { KnowledgeDocument } from "./KnowledgeDocument";
 import { Constellation } from "./Constellation";
@@ -449,8 +449,8 @@ export function KnowledgeSpace({
           aria-pressed={knowledgeView === "constellation"}
           onClick={() => switchKnowledgeView("constellation")}
         >
-          <Orbit size={15} />
-          Constellation
+          <Brain size={15} />
+          My Brain
         </button>
         <button
           aria-pressed={knowledgeView === "notes"}
@@ -1030,7 +1030,7 @@ export function KnowledgeSpace({
             <input
               autoFocus
               aria-label="Find an existing card"
-              placeholder="Search your card library…"
+              placeholder="Search Card Deck…"
               value={cardQuery}
               onChange={(e) => setCardQuery(e.target.value)}
             />

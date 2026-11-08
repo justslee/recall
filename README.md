@@ -37,7 +37,7 @@ The [illustrated setup guide](docs/SETUP.md) takes you from download to your fir
 Choose **Try demo** for three original sample cards, **Import cards** for a compatible Anki deck, or **Connect learning** to make the system yours. You can study without an account, API key, knowledge base or iPad. Setup needs internet; ordinary study works offline afterward.
 
 > [!NOTE]
-> This is a beta. Mac updates are manual. Recall Pad is a separate iPad app: invited testers use TestFlight, and a [personal Xcode build](docs/IPAD_NATIVE.md) remains available. There is no public TestFlight invitation yet.
+> This is a beta. Mac updates happen only when you request them. Recall Pad is a separate iPad app: invited testers use TestFlight, and a [personal Xcode build](docs/IPAD_NATIVE.md) remains available. There is no public TestFlight invitation yet.
 
 ## Choose the practice you have room for
 
@@ -56,9 +56,9 @@ Choose a **topic** or **collection** separately from format. Cards can contain L
 
 The current source build also adds **Knowledge**, a local home for Markdown and HTML notes. Write and read in the app, search an indexed folder with **⌘K**, and practice the connected ideas. An Obsidian folder can be used directly. [See the illustrated Knowledge guide →](docs/KNOWLEDGE_SPACE.md)
 
-Knowledge now opens to **Constellation**: expand and collapse topic branches on one continuous canvas, follow connections, and inspect a provisional expertise index derived from scored reviews. Domain roots stay on the same canvas as you explore; pinch, pan, Fit all, and canvas search help you navigate without page controls. The bundled taxonomy skill respects each profile's approved domains, while incremental checkpoints keep review updates local and bounded. [Constellation and scoring details →](docs/CONSTELLATION.md)
+Knowledge now opens to **My Brain**: expand and collapse topic branches on one continuous canvas, follow connections, and inspect a provisional expertise index derived from scored reviews. Domain roots stay on the same canvas as you explore; pinch, pan, Fit all, and canvas search help you navigate without page controls. The bundled taxonomy skill respects each profile's approved domains, while incremental checkpoints keep review updates local and bounded. [My Brain and scoring details →](docs/CONSTELLATION.md)
 
-The current source build brings assistant, knowledge-base, iPad and speech setup into one **Connections** hub. **Progress** opens your Review journal with daily activity, a seven-day recall trend, upcoming scheduled reviews and format/topic breakdowns. Explore relationships in **Knowledge → Constellation**. [Explore setup, background preparation and progress →](docs/LEARNING_FLOW.md)
+The current source build brings assistant, knowledge-base, iPad and speech setup into one **Connections** hub. **Progress** opens your Review journal with daily activity, a seven-day recall trend, upcoming scheduled reviews and format/topic breakdowns. Explore relationships in **Knowledge → My Brain**. [Explore setup, background preparation and progress →](docs/LEARNING_FLOW.md)
 
 **Learn → capture → self-test → revisit.**
 
@@ -85,7 +85,9 @@ Voice transcription, Speak evaluation and Recall's handwriting assessment use an
 
 ## Get the latest update
 
-**With Codex or Claude Code:** install the public [recall-upgrade skill](skills/recall-upgrade/SKILL.md), then ask **“Use recall-upgrade to update Recall.”** It checks published releases, verifies the download, quits and replaces the app when needed, reopens it, and retains one previous app. The next source build also installs this skill through **Connections**. Your learning library is preserved. [Upgrade setup and behavior →](docs/SETUP.md#update-an-existing-installation)
+**In the app (v0.6.0-beta.10 and later):** open **Settings & backups → General → Recall updates**, choose **Check for updates**, then **Update & restart**. Recall verifies the download, replaces itself in the same location, refreshes existing assistant connections and reopens with your library intact. It keeps one previous app for recovery and removes older managed copies. If you also maintain a Git clone, expand **Also update my source code** and select it once. Local edits and diverged branches are preserved. Older releases need the assistant or manual route below once to gain this button.
+
+**With Codex or Claude Code:** install the public [recall-upgrade skill](skills/recall-upgrade/SKILL.md), then ask **“Use recall-upgrade to update Recall.”** It checks published releases, verifies the download, quits and replaces the app when needed, reopens it, and retains one previous app. Recall also installs this skill through **Connections**. Your learning library is preserved. [Upgrade setup and behavior →](docs/SETUP.md#update-an-existing-installation)
 
 **Manual update:**
 

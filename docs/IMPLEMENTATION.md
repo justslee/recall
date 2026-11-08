@@ -6,6 +6,22 @@ Recall is an Apple Silicon macOS beta. Install a published app from [GitHub Rele
 
 **Study → capture → prepare → self-test → revisit.**
 
+## Navigation labels (v0.6.0-beta.10)
+
+Knowledge’s graph is labeled **My Brain**, with a matching brain icon. The card browser is labeled **Card Deck**, including its back links, search guidance and current setup documentation. Existing route keys, saved view preferences, graph identities and learning data are unchanged. Older verification records below retain the names used at the time.
+
+Verified locally with 492 passing regression tests, the production build, documentation checks and the invisible graph/navigation journey across light, dark and narrow layouts. The synthetic cards, reviews, note drafts and unfinished session were preserved. These labels are included in the v0.6.0-beta.10 candidate; these checks did not replace the installed app.
+
+## In-app updates (v0.6.0-beta.10)
+
+General settings now includes explicit release checking, progress, cancellation before replacement, and **Update & restart**. The UI reuses the signed-release helper's checksum, publisher, architecture, notarization, transaction recovery and one-app rollback. A detached worker waits for the main process to quit normally before replacing the existing app; it reopens the same selected profile. Existing owned Codex/Claude connections refresh from the new runtime without adding hosts or changing capture preferences. Downloads and update receipts are outside profile backups.
+
+An optional user-selected official Git clone receives a clean `main` fast-forward. The updater disables Git hooks, credential prompts, global configuration and submodule recursion; it rejects custom execution/filter/include configuration, local edits, local commits/divergence and non-main branches. A source failure is reported independently and does not block installing a verified app. It never runs downloaded source, builds dependencies, resets work or treats a source ZIP as a clone.
+
+**Verified locally on November 8, 2026:** all 492 regression tests passed, including detached-worker completion after the parent exits, same-profile relaunch arguments, busy/cancel guards, version-bound readiness, owned-connection refresh, source preservation and the existing signed-release recovery fixtures. The web build, Mac development package, documentation checks, source/history privacy audit and packaged privacy audit passed. Hidden source and packaged UI checks covered release discovery, progress, cancellation, repository selection, both appearances and narrow layout while preserving synthetic cards, reviews and an unfinished session. CI now includes this hidden update journey.
+
+These checks used disposable profiles and mocked release delivery. No live library or installed app was replaced. A real signed release-to-release UI upgrade remains a distribution acceptance check; this source change has not been published as a new release. The new app must serve its first successful library snapshot before the helper commits replacement; an unsuccessful launch follows the helper's rollback path without restoring a learning database.
+
 ## Local Knowledge space (source build)
 
 Knowledge adds a scoped Markdown/HTML notebook with light/dark reading, Markdown editing, safe HTML source editing, recoverable local drafts, revision-conflict checks, move/rename, local assets, KaTeX/Mermaid, explicit backlinks and linked practice. Concepts, Math, Coding and Mixed remain independent session choices; an unfinished session is preserved. Existing note folders and Notion roles are not migrated. New Markdown notes retain canonical IDs in frontmatter; legacy notes moved inside Recall retain identity in a private sidecar.
@@ -36,7 +52,7 @@ The current source build adds a previewed background queue of up to eight captur
 
 Routine visual QA now has a guarded invisible Electron mode restricted to marked temporary profiles. The real app renderer, widget origin and sandbox remain intact. Strict verification disables ratings, native runs, provider calls and connection changes; copied QA widget permissions never flow into the real library. The card verifier hashes content, scenarios, runtime/dependencies and its own rules, and caches only successful reports with intact screenshot evidence. Older executables that lack hidden mode are rejected before launch.
 
-Settings now has a unified Connections hub, recognizable integration icons and progressive readiness details. Paper setup is reachable from the assistant as well as iPad setup; speech uses the existing shared credential flow. Exact-revision local coding attempts are recorded for ordinary coding cards as well as catalog challenges. Progress now opens to the Review journal, and Knowledge’s Constellation provides graph exploration. Existing review, explanation and attempt records are preserved; navigating the journal does not replace an unfinished session.
+Settings now has a unified Connections hub, recognizable integration icons and progressive readiness details. Paper setup is reachable from the assistant as well as iPad setup; speech uses the existing shared credential flow. Exact-revision local coding attempts are recorded for ordinary coding cards as well as catalog challenges. Progress now opens to the Review journal, and Knowledge’s My Brain provides graph exploration. Existing review, explanation and attempt records are preserved; navigating the journal does not replace an unfinished session.
 
 **Verified locally on October 31, 2026:** all 326 Node tests and the web build passed, along with 25 hidden visual-runtime scenarios. Three representative cards passed the content-addressed verifier; repeating unchanged checks reused all three cached reports. Hidden source and packaged UI checks covered both appearances, setup navigation, evidence inspection, a math-only map session and preservation of an unfinished session. Documentation links and source/history/packaged privacy audits passed. A synthetic 1,100-card local retrieval benchmark improved from a 209 ms median to 1.1 ms warm (33 ms cold); this measures candidate lookup, not provider response time. No live provider benchmark or new iPad device test was performed for this change. This is a locally built candidate, not a newly published release.
 
@@ -61,7 +77,7 @@ No storage schema, saved drawing format or learning-history migration is involve
 
 ### Review journal (source build)
 
-Progress now opens directly to the Review journal. Knowledge’s Constellation is the graph entry point; the duplicate Atlas dashboard tab is removed. The journal uses the shared warm-light/forest-dark appearance with coordinated chart colors, selectable daily activity and the existing 7/28/90-day ranges. It adds first-versus-repeat activity, a review-weighted trailing-seven-day recall trend and a seven-day snapshot of scheduled reviews with older overdue cards separated. Format/topic summaries, difficult-card links and day-history navigation remain available.
+Progress now opens directly to the Review journal. Knowledge’s My Brain is the graph entry point; the duplicate Atlas dashboard tab is removed. The journal uses the shared warm-light/forest-dark appearance with coordinated chart colors, selectable daily activity and the existing 7/28/90-day ranges. It adds first-versus-repeat activity, a review-weighted trailing-seven-day recall trend and a seven-day snapshot of scheduled reviews with older overdue cards separated. Format/topic summaries, difficult-card links and day-history navigation remain available.
 
 The added metrics read existing cards, schedules and review events without a database migration. First reviews use each card’s earliest surviving scored event across all history; trends include the six earlier days needed at the visible range boundary. Practice, undone, invalid and future ratings are excluded. Schedule counts exclude new, draft and suspended cards and do not simulate future repetitions. Unknown recall remains unestimated, and none of these charts claims mastery. Existing Atlas evidence records and backend evidence tests are retained.
 
@@ -319,7 +335,7 @@ The October 11 Tutor Pad entry update removes the initial destination dialog. Ho
 
 ## Still outside this beta
 
-- An automatic Mac updater and verified support for other platforms.
+- Unattended app updates and verified support for other platforms.
 - Production-verified handwriting grading and full spoken back-and-forth conversation.
 - Continuous knowledge-base synchronization and universal conversation capture.
 - A bundled Notion OAuth/API client or connector authentication.

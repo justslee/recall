@@ -165,7 +165,7 @@ const cli = (...args) =>
         "same page",
       );
       await checkAttempt();
-      await page.getByRole("button", { name: "Library", exact: true }).click();
+      await page.getByRole("button", { name: "Card Deck", exact: true }).click();
       // The rendered collection selector proves the renderer took the notification.
       await expect(
         page
