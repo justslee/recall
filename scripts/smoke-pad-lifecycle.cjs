@@ -250,7 +250,9 @@ fixture.close();
       }, 25);
     });
     await exited;
-    assert.equal(child.exitCode, 0);
+    // The Electron debugger can disconnect before Node observes process exit.
+    // Wait for the actual exit rather than asserting on a still-null status.
+    await expect.poll(() => child.exitCode, { timeout: 10000 }).toBe(0);
     const shutdown = JSON.parse(fs.readFileSync(shutdownFile, "utf8"));
     assert(
       shutdown.quitEvents >= 3,
