@@ -56,7 +56,7 @@
     "test:updates": "node scripts/smoke-app-updates.cjs"
   },
   "dependencies": {
-    "@peculiar/x509": "2.1.0",
+    "@peculiar/x509": "3.1.0",
     "adm-zip": "^0.6.1",
     "ajv": "^8.17.1",
     "dompurify": "^3.4.17",
