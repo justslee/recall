@@ -96,7 +96,7 @@ const st = require("../electron/self-test.cjs");
     await open("recall://card/missing");
     const linkError = p.locator('.toast[role="alert"]');
     await expect(linkError).toContainText(
-      "isn't in this Recall library",
+      "isn't in your Card Deck",
     );
     await open("recall://card/valid?run=true");
     await expect(linkError).toContainText("link is invalid");
