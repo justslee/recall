@@ -24,6 +24,10 @@ function configureDiagrams(appearance) {
     ],
     maxTextSize: 50000,
     maxEdges: 500,
+    // Mermaid 12 changes these defaults. Keep existing cards' familiar layout
+    // and shapes while continuing to use Recall's light/dark color tokens.
+    layout: "dagre",
+    look: "classic",
     theme: "base",
     htmlLabels: false,
     flowchart: {
