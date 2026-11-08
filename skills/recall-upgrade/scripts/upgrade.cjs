@@ -549,6 +549,7 @@ async function upgrade({
   launch = (target) =>
     run("/usr/bin/open", [target], {
       releaseError: "The upgraded app could not be opened.",
+      env: mac.guiEnvironment(),
     }),
   rename = fs.renameSync,
   progress = () => {},

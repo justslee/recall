@@ -34,7 +34,7 @@ test("Detached update worker finishes after the UI process exits and retains the
   );
   fs.writeFileSync(
     path.join(root, "mac-release.cjs"),
-    `exports.defaultRun=(cmd,args)=>{const fs=require('node:fs'),path=require('node:path');fs.writeFileSync(path.join(__dirname,'launch.json'),JSON.stringify({cmd,args}));fs.writeFileSync(path.join(__dirname,'ready.json'),JSON.stringify({id:'test',app:'/fixture/Recall.app',version:'1.0.0'}));};`,
+    `exports.guiEnvironment=()=>({PATH:'/usr/bin:/bin'});exports.defaultRun=(cmd,args,options)=>{const fs=require('node:fs'),path=require('node:path');fs.writeFileSync(path.join(__dirname,'launch.json'),JSON.stringify({cmd,args,env:options.env}));fs.writeFileSync(path.join(__dirname,'ready.json'),JSON.stringify({id:'test',app:'/fixture/Recall.app',version:'1.0.0'}));};`,
   );
   const parent = path.join(root, "parent.cjs");
   fs.writeFileSync(
@@ -62,6 +62,7 @@ test("Detached update worker finishes after the UI process exits and retains the
   assert.equal(state.result.status, "upgraded");
   const launched = JSON.parse(fs.readFileSync(path.join(root, "launch.json")));
   assert.equal(launched.cmd, "/usr/bin/open");
+  assert.deepEqual(launched.env, { PATH: "/usr/bin:/bin" });
   assert(launched.args.includes("RECALL_DATA_DIR=/fixture/custom profile"));
   assert.equal(
     JSON.parse(fs.readFileSync(path.join(root, "refresh.json"))).id,
@@ -301,4 +302,22 @@ test("Source update fast-forwards only, skips remote hooks and never resets loca
   );
   assert(!calls.some((c) => ["reset", "stash", "checkout"].includes(c[0])));
   assert(calls.find((c) => c[0] === "merge").includes("--no-overwrite-ignore"));
+});
+
+test("GUI relaunch drops helper-only Node flags without changing the caller", () => {
+  const {
+    guiEnvironment,
+  } = require("../skills/recall-upgrade/scripts/mac-release.cjs");
+  const original = {
+    ELECTRON_RUN_AS_NODE: "1",
+    NODE_OPTIONS: "--inspect",
+    NODE_PATH: "/fixture/modules",
+    PATH: "/usr/bin:/bin",
+    RECALL_DATA_DIR: "/fixture/profile",
+  };
+  assert.deepEqual(guiEnvironment(original), {
+    PATH: original.PATH,
+    RECALL_DATA_DIR: original.RECALL_DATA_DIR,
+  });
+  assert.equal(original.ELECTRON_RUN_AS_NODE, "1");
 });

@@ -53,7 +53,7 @@ Source builds are separate from the publisher's signed, notarized releases. Inte
 
 ## Update an existing installation
 
-The next Mac release adds **Settings & backups → General → Recall updates → Check for updates → Update & restart**. It uses the same verified release helper, a detached replacement worker, the current installation path and selected profile. Optional source updates target a user-selected clean clone of official `main`; source errors remain separate from app-update outcomes. See [in-app update steps](SETUP.md#update-inside-recall). Older apps need one assistant or manual update to receive this UI.
+Mac v0.6.0-beta.10 and later include **Settings & backups → General → Recall updates → Check for updates → Update & restart**. It uses the same verified release helper, a detached replacement worker, the current installation path and selected profile. Optional source updates target a user-selected clean clone of official `main`; source errors remain separate from app-update outcomes. See [in-app update steps](SETUP.md#update-inside-recall). Older apps need one assistant or manual update to receive this UI.
 
 For a verified assistant-driven Mac update, use the public [recall-upgrade skill](SETUP.md#update-with-an-assistant). The manual and source-checkout options below remain available.
 

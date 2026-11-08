@@ -113,6 +113,7 @@ async function main() {
           "/usr/bin/open",
           ["-n", target, "--env", `RECALL_DATA_DIR=${input.profile}`],
           {
+            env: mac.guiEnvironment(),
             releaseError:
               "The update was installed but Recall could not reopen. Open it from its existing Applications location.",
           },
@@ -146,12 +147,11 @@ async function main() {
     // Reopen it only if its bundle survived recovery; never restore a learning DB.
     if (input.apply && !alive(input.parentPid) && fs.existsSync(input.app)) {
       try {
-        mac.defaultRun("/usr/bin/open", [
-          "-n",
-          input.app,
-          "--env",
-          `RECALL_DATA_DIR=${input.profile}`,
-        ]);
+        mac.defaultRun(
+          "/usr/bin/open",
+          ["-n", input.app, "--env", `RECALL_DATA_DIR=${input.profile}`],
+          { env: mac.guiEnvironment() },
+        );
       } catch {}
     }
   } finally {
